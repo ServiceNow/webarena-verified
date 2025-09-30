@@ -1,0 +1,139 @@
+[project]
+name = "webarena-verified"
+version = "1.0.0-rc.12"
+description = "A verified version of the WebArena Benchmark"
+readme = "README.md"
+authors = [
+    { name = "Amine Elhattami", email = "amine.elhattami@servicenow.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "geopy==2.4.1",
+    "geographiclib==2.1",
+    "pint==0.25",
+    "price-parser==0.5.0",
+    "pydantic==2.12.0",
+    "python-dateutil==2.9.0.post0",
+    "pytimeparse2==1.7.1",
+    "unidecode==1.4.0",
+    "url-normalize==2.2.1",
+    "word2number==1.1",
+    "usaddress==0.5.16",
+    "us==3.2.0",
+    "usaddress-scourgify==0.6.0",
+    "beautifulsoup4==4.14.2",
+    "jsonpath-ng==1.7.0",
+    "compact-json==1.8.1",
+    "thefuzz>=0.22.1",
+]
+
+[project.optional-dependencies]
+contributing = [
+    "click>=8.3.0",
+    "pydantic-settings>=2.11.0",
+    "litellm>=1.80.5",
+]
+examples = [
+    "playwright>=1.55.0",
+    "browser-use>=0.8.1",
+    "jinja2>=3.1.6",
+    "aiohttp>=3.12.15",
+    "filelock>=3.16.1",
+    "requests>=2.32.0",
+    "browser-use>=0.9.6",
+]
+
+[project.scripts]
+webarena-verified = "webarena_verified.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/webarena_verified"]
+exclude = [
+    "dev/",
+]
+
+[tool.hatch.build.targets.wheel.force-include]
+"assets" = "webarena_verified/assets"
+
+[tool.hatch.build.targets.sdist]
+include = ["assets/**"]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.31.7",
+    "invoke>=2.2.0",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.21",
+    "mkdocstrings>=0.30.1",
+    "mkdocstrings-python>=1.12.2",
+    "mkdocs-redirects>=1.2.2",
+    "pytest>=8.4.2",
+    "pytest-cov>=6.0.0",
+    "rich>=14.2.0",
+    "ruff>=0.14.1"
+]
+
+[tool.uv]
+default-groups = "all"
+
+[tool.basedpyright]
+typeCheckingMode = "basic"
+pythonVersion = "3.11"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "SIM108", # use ternary operator instead of if-else-block
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["webarena_verified"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src/webarena_verified"]
+omit = [
+    "*/tests/*",
+    "*/__main__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
+precision = 2
+show_missing = true
