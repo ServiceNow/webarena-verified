@@ -3,10 +3,14 @@
 <p align="center">
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg" alt="Python 3.11+"></a>
   <a href="tests"><img src="https://img.shields.io/badge/Tests-Pytest-6B2F8.svg" alt="Tests: Pytest"></a>
+  <a href="https://servicenow.github.io/webarena-verified/"><img src="https://img.shields.io/badge/Docs-MkDocs-0288D1.svg" alt="Docs: MkDocs"></a>
 </p>
 
 WebArena-Verified is the verified release of the WebArena benchmark. It distributes a curated, version-controlled dataset of web tasks together with deterministic evaluators that operate on agent responses and captured network traces. The project is designed for reproducible benchmarking of web agents and provides tooling for both single-task debugging and batch evaluation.
 
+<p align="center">
+  <a href="https://servicenow.github.io/webarena-verified/">📖 Documentation</a>
+</p>
 
 ## 📢 Announcements
 
@@ -53,7 +57,7 @@ Evaluate a task using the CLI or programmatically:
 webarena-verified eval-tasks \
   --task-ids 108 \
   --output-dir examples/agent_logs/demo \
-  --config examples/config.json
+  --config examples/configs/config.example.json
 ```
 
 **Library:**
@@ -95,11 +99,9 @@ result = wa.evaluate_task(
 print(f"Score: {result.score}, Status: {result.status}")
 ```
 
-**With Content:**
+**With Inline Response:**
 ```python
-import json
-
-# Evaluate a task with direct content
+# Evaluate a task with inline response
 result = wa.evaluate_task(
     task_id=44,
     agent_response={
@@ -107,21 +109,43 @@ result = wa.evaluate_task(
         "status": "SUCCESS",
         "retrieved_data": None
     },
-    network_trace=json.loads(Path("output/44/network_44.har").read_text())
+    network_trace=Path("output/44/network_44.har")
 )
 
 print(f"Score: {result.score}, Status: {result.status}")
 ```
 
+See the [Quick Start Guide](https://servicenow.github.io/platform-labs-webarena-verified/) for a complete walkthrough using example task logs.
 
 ## 📊 Dataset
 
-Coming soon (December 4th, 2025)
+- WebArena Verified dataset is in `assets/dataset/webarena-verified.json`
+- The original WebArena dataset is in `assets/dataset/test.raw.json` (kept for reference)
+- The WebArena Verified Hard subset task IDs are in `assets/dataset/subsets/webarena-verified-hard.json`
+
+To export the hard subset's task data:
+
+```bash
+webarena-verified subset-export --name webarena-verified-hard --output webarena-verified-hard.json
+```
+
+See the [documentation](https://servicenow.github.io/webarena-verified/) for more info.
 
 ## 🤝 Contributing
 
-We welcome improvements to both the dataset and the evaluation tooling.
+We welcome improvements to both the dataset and the evaluation tooling. See the [Contributing Guide](https://servicenow.github.io/platform-labs-webarena-verified/contributing/) for guidelines, local development tips, and dataset update workflows.
 
-## 📚 Citation
+## 📄 Citation
 
-Coming soon (December 4th, 2025)
+If you use WebArena-Verified in your research, please cite our paper:
+
+```bibtex
+@inproceedings{
+hattami2025webarena,
+title={WebArena Verified: Reliable Evaluation for Web Agents},
+author={Amine El hattami and Megh Thakkar and Nicolas Chapados and Christopher Pal},
+booktitle={Workshop on Scaling Environments for Agents},
+year={2025},
+url={https://openreview.net/forum?id=94tlGxmqkN}
+}
+```

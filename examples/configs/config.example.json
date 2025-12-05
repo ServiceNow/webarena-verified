@@ -1,0 +1,33 @@
+{
+  "environments": {
+    "__SHOPPING_ADMIN__": {
+      "urls": [],
+      "active_url_idx": null,
+      "use_header_login": true,
+      "credentials": { "username": "admin", "password": "admin1234" }
+    },
+    "__GITLAB__": {
+      "urls": [],
+      "active_url_idx": null,
+      "credentials": { "username": "byteblaze", "password": "hello1234" }
+    },
+    "__REDDIT__": {
+      "urls": [],
+      "active_url_idx": null,
+      "credentials": { "username": "MarvelsGrantMan136", "password": "test1234" }
+    },
+    "__SHOPPING__": {
+      "urls": [],
+      "active_url_idx": null,
+      "credentials": { "username": "emma.lopez@gmail.com", "password": "Password.123" }
+    },
+    "__WIKIPEDIA__": {
+      "urls": [],
+      "active_url_idx": null
+    },
+    "__MAP__": {
+      "urls": [],
+      "active_url_idx": null
+    }
+  }
+}
