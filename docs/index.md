@@ -28,8 +28,8 @@ This quick start is divided into two parts:
 === "uv"
 
     ```bash
-    git clone https://github.com/ServiceNow/platform-labs-webarena-verified.git
-    cd platform-labs-webarena-verified
+    git clone https://github.com/ServiceNow/webarena-verified.git
+    cd webarena-verified
     uv sync --extra examples
     source .venv/bin/activate
     playwright install chromium  # Only needed for example agents, not the evaluation framework
@@ -39,8 +39,8 @@ This quick start is divided into two parts:
 === "pip"
 
     ```bash
-    git clone https://github.com/ServiceNow/platform-labs-webarena-verified.git
-    cd platform-labs-webarena-verified
+    git clone https://github.com/ServiceNow/webarena-verified.git
+    cd webarena-verified
     python -m venv .venv
     source .venv/bin/activate
     pip install -e ".[examples]"
