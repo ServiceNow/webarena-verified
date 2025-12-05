@@ -29,8 +29,8 @@ WebArena-Verified is the verified release of the WebArena benchmark. It distribu
 ### 1. Set up an environment
 
 ```bash
-git clone https://github.com/ServiceNow/platform-labs-webarena-verified.git
-cd platform-labs-webarena-verified
+git clone https://github.com/ServiceNow/webarena-verified.git
+cd webarena-verified
 uv venv  # or: python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
@@ -115,7 +115,7 @@ result = wa.evaluate_task(
 print(f"Score: {result.score}, Status: {result.status}")
 ```
 
-See the [Quick Start Guide](https://servicenow.github.io/platform-labs-webarena-verified/) for a complete walkthrough using example task logs.
+See the [Quick Start Guide](https://servicenow.github.io/webarena-verified/) for a complete walkthrough using example task logs.
 
 ## 📊 Dataset
 
@@ -133,7 +133,7 @@ See the [documentation](https://servicenow.github.io/webarena-verified/) for mor
 
 ## 🤝 Contributing
 
-We welcome improvements to both the dataset and the evaluation tooling. See the [Contributing Guide](https://servicenow.github.io/platform-labs-webarena-verified/contributing/) for guidelines, local development tips, and dataset update workflows.
+We welcome improvements to both the dataset and the evaluation tooling. See the [Contributing Guide](https://servicenow.github.io/webarena-verified/contributing/) for guidelines, local development tips, and dataset update workflows.
 
 ## 📄 Citation
 
@@ -149,3 +149,7 @@ year={2025},
 url={https://openreview.net/forum?id=94tlGxmqkN}
 }
 ```
+
+## 🙏 Acknowledgements
+
+We thank [Prof. Shuyan Zhou](https://scholars.duke.edu/person/shuyan.zhou) and [Prof. Graham Neubig](https://miis.cs.cmu.edu/people/222215657/graham-neubig) for their valuable guidance and feedback.

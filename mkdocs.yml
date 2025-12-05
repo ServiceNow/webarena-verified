@@ -1,7 +1,7 @@
 site_name: WebArena-Verified
 site_description: A verified version of the WebArena Benchmark with version-controlled dataset management
 site_author: Amine Elhattami
-repo_url: https://github.com/ServiceNow/platform-labs-webarena-verified
+repo_url: https://github.com/ServiceNow/webarena-verified
 repo_name: ServiceNow/webarena-verified
 
 docs_dir: docs
