@@ -1,0 +1,11 @@
+{
+  "environments": {
+    "__GITLAB__": {
+      "urls": ["http://localhost:8012"],
+      "credentials": {
+        "username": "root",
+        "password": "demopass"
+      }
+    }
+  }
+}

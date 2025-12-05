@@ -224,8 +224,11 @@ scratch/
 *.wip.json
 *.json.backup
 *.json.bkp
+*.tmp.json
 .worktrees
 config.json
+*.headers.json
+network.original.har
 
 # Demo stuff
 demo_config.json
@@ -233,3 +236,4 @@ demo_config.json
 *.zip
 .storage_state.json
 tmp/
+eval_log.txt

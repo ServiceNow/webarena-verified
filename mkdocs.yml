@@ -1,0 +1,119 @@
+site_name: WebArena-Verified
+site_description: A verified version of the WebArena Benchmark with version-controlled dataset management
+site_author: Amine Elhattami
+repo_url: https://github.com/ServiceNow/platform-labs-webarena-verified
+repo_name: ServiceNow/webarena-verified
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  logo: assets/logo-light.svg
+  favicon: assets/logo-dark.svg
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_root_full_path: false
+            show_bases: false
+            show_root_heading: false
+            show_root_toc_entry: true
+            allow_inspection: false
+            heading_level: 3
+            show_source: true
+            members_order: source
+            summary: true
+  - redirects:
+      redirect_maps:
+        getting_started/index.md: index.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 2-3
+
+extra_css:
+  - stylesheets/extra.css
+  - stylesheets/default.css
+
+nav:
+  - Getting Started:
+      - Quick Start: index.md
+      - Usage:
+          - Evaluator: getting_started/usage.md
+          - Data Reader: getting_started/data_reader.md
+          - Configuration: getting_started/configuration.md
+          - Subset Manager: getting_started/subset_manager.md
+          - Utilities: getting_started/utilities.md
+          - Environments: getting_started/environments.md
+      - Subsets:
+          - WebArena-Verified Hard: getting_started/hard_subset.md
+  - Evaluation:
+      - Quick Start: evaluation/index.md
+      - Handling of Unachievable Tasks: evaluation/handling_of_unachievable_tasks.md
+      - Removing LLM-Based Evaluation: evaluation/removing_llm_based_evaluation.md
+      - Network Event Based Evaluation: evaluation/network_event_based_evaluation.md
+      - Evaluation Results: evaluation/evaluation_results.md
+  - Changelog:
+      - Quick Start: changelog/index.md
+      - v1.0.0-rc.1: changelog/v1.0.0-rc.1.md
+  - API Reference:
+      - Overview: api_reference/index.md
+      - WebArenaVerified: api_reference/webarena_verified.md
+      - Data Types:
+          - Overview: api_reference/data_types/index.md
+          - Configuration: api_reference/data_types/config.md
+          - Task: api_reference/data_types/task.md
+          - TaskEvalContext: api_reference/data_types/task_eval_context.md
+          - WebArenaSite: api_reference/data_types/web_arena_site.md
+          - Agent Response: api_reference/data_types/agent_response.md
+          - AgentResponseEvaluatorCfg: api_reference/data_types/agent_response_evaluator_cfg.md
+      - Evaluators:
+          - Agent Response: api_reference/evaluators/agent_response_evaluator.md
+          - Network Event: api_reference/evaluators/network_event_evaluator.md
+  - Contributing:
+      - Quick Start: contributing/index.md
+      - Updating Data: contributing/data/index.md
+      - Local Development: contributing/local-development.md
