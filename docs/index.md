@@ -25,15 +25,16 @@ This quick start is divided into two parts:
 
 - Python 3.11+
 
+Clone the repository and install dependencies:
+
 === "uv"
 
     ```bash
     git clone https://github.com/ServiceNow/webarena-verified.git
     cd webarena-verified
-    uv sync --extra examples
+    uv venv
     source .venv/bin/activate
-    playwright install chromium  # Only needed for example agents, not the evaluation framework
-    webarena-verified --help
+    uv pip install "webarena-verified[examples]"
     ```
 
 === "pip"
@@ -43,10 +44,17 @@ This quick start is divided into two parts:
     cd webarena-verified
     python -m venv .venv
     source .venv/bin/activate
-    pip install -e ".[examples]"
-    playwright install chromium  # Only needed for example agents, not the evaluation framework
-    webarena-verified --help
+    pip install "webarena-verified[examples]"
     ```
+
+Verify the CLI is working:
+
+```bash
+webarena-verified --help
+```
+
+!!! note "Why clone the repository?"
+    This tutorial uses example files (pre-run agent logs, configs, and the human agent) from the `examples/` directory. If you're evaluating your own agents, you can simply `pip install webarena-verified` - see the [Usage Guide](getting_started/usage.md).
 
 
 ---
@@ -211,6 +219,14 @@ We'll use a special "human agent" that opens a browser and hands control to you 
 
 !!! info "Why not use a real AI agent implementation?"
     The goal of this exercise is to walk through how to use the benchmark in a straightforward way, without additional complexity. By stepping through the process manually, you'll understand exactly what agents need to produce and how evaluation works.
+
+### 0. Install Playwright
+
+The example agents use Playwright for browser automation. Install the Chromium browser:
+
+```bash
+playwright install chromium
+```
 
 ### 1. Setup GitLab Environment
 

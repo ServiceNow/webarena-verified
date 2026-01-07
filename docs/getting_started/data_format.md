@@ -1,0 +1,124 @@
+# Data Format
+
+## Overview
+
+We use **WebArenaVerifiedTask**, a Pydantic `BaseModel`, to map and interact with task data. Pydantic provides automatic validation, type safety, and seamless JSON serialization/deserialization, ensuring data integrity throughout the benchmark pipeline.
+
+## Changes from WebArena
+
+WebArena-Verified is a verified benchmark introducing a more structured and extensible task format compared to the original WebArena benchmark. This section outlines the key changes.
+
+## High-Level Changes
+
+| Aspect | WebArena | WebArena-Verified |
+|--------|----------|-------------------|
+| **Evaluation Structure** | Single dict with type strings | Array of typed evaluator configs |
+| **Field Organization** | Flat structure with runtime configs | Separation of task data and runtime concerns |
+| **Type Safety** | String-based types | Discriminated unions with Pydantic models |
+| **Extensibility** | Limited evaluator types | Multiple evaluator types with clear interfaces |
+
+## Field-by-Field Mapping
+
+| WebArena Field | WebArena-Verified Field | Rationale |
+|----------------|-------------------------|-----------|
+| `start_url` (string) | `start_urls` (array) | Support multiple starting URLs for complex tasks |
+| `eval` (object) | `eval` (array of objects) | Simplify and flatten evaluator structure for extensibility |
+| `eval.eval_types` | `eval[].evaluator` | More explicit evaluator identification |
+| `eval.reference_answers` | `eval[].expected` | Structured expected values per evaluator type |
+| `eval.reference_url` | `NetworkEventEvaluator` | Replaced string matching with network trace validation |
+| `eval.program_html` | `NetworkEventEvaluator` | Network traces now cover backend checks |
+| `require_login` | *(removed)* | Runtime configuration, not task data |
+| `storage_state` | *(removed)* | Runtime configuration (local file path) |
+| `geolocation` | *(removed)* | Always null in dataset; removed as redundant |
+| `require_reset` | *(removed)* | Always false in dataset; removed as redundant |
+| - | `format_specification` | New: Specifies output format requirements |
+| - | `start_url_context` | New: Provides context about starting page |
+| - | `revision` | New: Integer revision number for task changes (minimum 1) |
+
+## Evaluation System Migration
+
+The evaluation system was restructured to use typed evaluators instead of string-based types:
+
+### WebArena Evaluation Types → WebArena-Verified Evaluators
+
+| WebArena `eval_types` | WebArena-Verified Evaluator(s) | Purpose |
+|-----------------------|--------------------------------|---------|
+| `string_match` | `AgentResponseEvaluator` (action=retrieve) | Validates agent's returned response format, action type, and result values |
+| `program_html` (persisted changes) | `NetworkEventEvaluator` | Validates backend-side mutations via network traces |
+| `program_html` (not persisted changes) | `NetworkEventEvaluator` | Network requests capture transient UI interactions |
+| `url_match` | `NetworkEventEvaluator` + `AgentResponseEvaluator` (action=navigate) | Validates navigation to correct URL using network traces |
+
+## Expected Agent Response Changes
+
+WebArena-Verified introduces a structured agent response format, replacing the plain string format used in WebArena.
+
+### WebArena Agent Response
+
+Agents returned a plain string containing the answer:
+
+```
+Quest Lumaflex™ Band
+```
+
+### WebArena-Verified Agent Response
+
+Agents return a structured JSON object with explicit action type, status, and results:
+
+```json
+{
+  "action": "retrieve",
+  "status": "SUCCESS",
+  "results": ["Quest Lumaflex™ Band"]
+}
+```
+
+### Benefits
+
+- **Reduced false negatives**: Eliminates evaluation failures due to string parsing ambiguities.
+- **Explicit status indication**: Agents clearly report whether they succeeded or encountered errors. This is especially useful when an agent reaches the maximum number of iterations for navigation tasks but fails at the right page. Without explicit status, the evaluation would incorrectly pass.
+- **Action type tracking**: Clear indication of the performed action (`retrieve`, `navigate`, or `mutate`). This is especially beneficial to differentiate between navigate and retrieve tasks. For example, a task might expect the agent to navigate, but the agent thinks it needs to retrieve some value. The agent might fail at retrieving the value but still navigate to the right page. Without the action being explicit, the validation would incorrectly pass.
+
+## Result Format Specification
+
+WebArena-Verified introduces the `format_specification` field to eliminate ambiguity in how agents should format their results.
+
+### Problem in WebArena
+
+Without format specifications, agents had to interpret how to format results, leading to evaluation ambiguities. For example, Task ID 10 asks: "Tell me the full address of all US international airports that are within a driving distance of 60 km to Niagara Falls"
+
+Different agents interpreted "full address" differently, producing varied formats that were difficult to evaluate consistently. One leaderboard agent returned:
+
+```
+There is one US international airport within 60 km driving distance of Niagara Falls: Buffalo-Niagara International Airport, Holtz Drive, Town of Cheektowaga, Erie County, New York, 14225, United States.
+```
+
+### Solution in WebArena-Verified
+
+The `format_specification` field explicitly defines the expected result structure. For Task ID 10, the format specification states: "Use \"name\" for the name, \"state\" for the state, and \"zip_code\" for the zip code."
+
+Agents now return structured data:
+
+```json
+{
+  "action": "retrieve",
+  "status": "SUCCESS",
+  "results": [
+    {
+      "name": "Niagara Falls International Airport",
+      "state": "New York",
+      "zip_code": "14304"
+    },
+    {
+      "name": "Buffalo-Niagara International Airport",
+      "state": "New York",
+      "zip_code": "14225"
+    }
+  ]
+}
+```
+
+### Benefits
+
+- **Eliminates format ambiguity**: Clear specifications for how to structure results
+- **Consistent evaluation**: All agents use the same format, enabling reliable comparisons
+- **Structured data validation**: Results can be validated against JSON schemas
