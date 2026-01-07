@@ -4,6 +4,15 @@ Quick guide for working with this repository.
 
 ## Setup
 
+!!! info "For Contributors"
+    This guide is for contributors who want to develop and modify WebArena-Verified. If you're just using the package to evaluate agents, install from PyPI instead:
+
+    ```bash
+    pip install webarena-verified
+    ```
+
+    See the [Usage Guide](../getting_started/usage.md) for more information.
+
 Install the package with development dependencies:
 
 ```bash

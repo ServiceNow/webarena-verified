@@ -84,10 +84,12 @@ nav:
       - Usage:
           - Evaluator: getting_started/usage.md
           - Data Reader: getting_started/data_reader.md
+          - Data Format: getting_started/data_format.md
           - Configuration: getting_started/configuration.md
           - Subset Manager: getting_started/subset_manager.md
           - Utilities: getting_started/utilities.md
           - Environments: getting_started/environments.md
+          - Changelog: changelog/index.md
       - Subsets:
           - WebArena-Verified Hard: getting_started/hard_subset.md
   - Evaluation:
@@ -96,9 +98,6 @@ nav:
       - Removing LLM-Based Evaluation: evaluation/removing_llm_based_evaluation.md
       - Network Event Based Evaluation: evaluation/network_event_based_evaluation.md
       - Evaluation Results: evaluation/evaluation_results.md
-  - Changelog:
-      - Quick Start: changelog/index.md
-      - v1.0.0-rc.1: changelog/v1.0.0-rc.1.md
   - API Reference:
       - Overview: api_reference/index.md
       - WebArenaVerified: api_reference/webarena_verified.md

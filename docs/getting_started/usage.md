@@ -4,8 +4,25 @@ This guide walks you through using WebArena-Verified to evaluate web agents. You
 
 ## Prerequisites
 
+- Python 3.11+
+- WebArena-Verified installed (see [Installation](#installation))
 - Configuration file set up (see [Configuration](configuration.md))
-- Python 3.11+ with WebArena-Verified installed
+
+## Installation
+
+Install WebArena-Verified from PyPI:
+
+```bash
+pip install webarena-verified
+```
+
+Verify the installation:
+
+```bash
+webarena-verified --help
+```
+
+For development or contributing, see [Local Development](../contributing/local-development.md).
 
 ## Step 1: Set Up Your Configuration
 
