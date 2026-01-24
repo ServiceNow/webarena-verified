@@ -15,6 +15,13 @@ DATASET_FILE = Path("assets/dataset/webarena-verified.json")
 
 
 @task
+def env_init(c):
+    """Initialize development environment: sync all dependencies and install pre-commit hooks."""
+    c.run("uv sync --all-groups --all-extras")
+    c.run("uv run pre-commit install")
+
+
+@task
 def docs_serve(c):
     """Serve the documentation locally with live reload."""
     c.run("uv run mkdocs serve")
