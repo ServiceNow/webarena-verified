@@ -382,8 +382,9 @@ class WebArenaVerifiedConfig(BaseModel):
         urls_to_process = [url_w_template] if was_single else url_w_template
 
         # Process all URLs
-        results = []
+        results: list[str] = []
         for url_template in urls_to_process:
+            assert isinstance(url_template, str)
             rendered = None
 
             # Try each site in order until one matches
@@ -445,8 +446,9 @@ class WebArenaVerifiedConfig(BaseModel):
         urls_to_process = [url] if was_single else url
 
         # Process all URLs
-        results = []
+        results: list[str] = []
         for url_to_derender in urls_to_process:
+            assert isinstance(url_to_derender, str)
             derendered = None
 
             # Try each site (in specificity order) until one matches

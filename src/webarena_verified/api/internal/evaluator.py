@@ -83,6 +83,7 @@ class WebArenaVerifiedEvaluator:
             raise ValueError("Must provide either 'context' or task_id (with agent_response and network_trace).")
 
         if has_context:
+            assert context is not None
             return self._evaluate_with_context(context=context)
 
         assert task_id is not None, "task_id must be provided when using individual parameters"

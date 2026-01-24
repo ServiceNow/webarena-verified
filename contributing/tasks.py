@@ -8,7 +8,7 @@ from compact_json import EolStyle, Formatter
 from invoke.tasks import task
 
 # Paths to check/format
-CODE_PATHS = "src tests"
+CODE_PATHS = "src contributing"
 
 # Dataset path
 DATASET_FILE = Path("assets/dataset/webarena-verified.json")
@@ -77,7 +77,7 @@ def code_format_and_check(c):
     """Format code using ruff and run type checking."""
     c.run(f"uv run ruff check {CODE_PATHS} --fix --unsafe-fixes")
     c.run(f"uv run ruff format {CODE_PATHS}")
-    c.run(f"uv run basedpyright {CODE_PATHS}")
+    c.run(f"uv run ty check {CODE_PATHS}")
 
 
 def load_json(file_path: Path) -> list[dict]:

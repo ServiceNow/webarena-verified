@@ -148,7 +148,7 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
         )
         return _normalized_value
 
-    def _compare_values(
+    def _compare_values(  # type: ignore[override]
         self,
         *,
         actual_normalized: Any,

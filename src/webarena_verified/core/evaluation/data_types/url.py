@@ -68,7 +68,7 @@ class _NormalizedUrlValues(BaseModel):
         query_frozen = frozenset(self.query_params.items()) if self.query_params else frozenset()
         return hash((self.base_url, query_frozen))
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: dict[int, object] | None = None):
         """Custom deepcopy to handle MappingProxyType in query_params.
 
         Converts MappingProxyType query_params to regular dict to avoid pickling errors.
@@ -486,6 +486,7 @@ class URL(NormalizedType[_NormalizedUrlValues]):
         normalized_url = url_normalize(value)
         if normalized_url is None:
             raise ValueError(f"Invalid URL: {value!r}")
+        assert self.derender_url_fct is not None
         parsed = urlparse(self.derender_url_fct(normalized_url))
 
         # Extract and normalize query parameters
@@ -555,6 +556,7 @@ class URL(NormalizedType[_NormalizedUrlValues]):
         if normalized_url is None:
             raise ValueError(f"Invalid URL: {value!r}")
 
+        assert self.derender_url_fct is not None
         normalized_url = self.derender_url_fct(normalized_url)
 
         # Parse URL

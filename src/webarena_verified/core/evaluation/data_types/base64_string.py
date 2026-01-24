@@ -39,7 +39,7 @@ class Base64String(NormalizedType[str]):
     """
 
     # Explicitly use parent's __hash__ since we override __eq__
-    __hash__ = NormalizedType.__hash__  # type: ignore[assignment]
+    __hash__ = NormalizedType.__hash__
 
     def _normalize_string(self, s: str) -> str:
         """Override to skip Unicode/lowercase normalization for base64 content.
