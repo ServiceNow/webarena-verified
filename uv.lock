@@ -6910,7 +6910,7 @@ dev = [
     { name = "rich", specifier = ">=14.2.0" },
     { name = "ruff", specifier = ">=0.14.1" },
     { name = "twine", specifier = ">=6.0.1" },
-    { name = "ty", specifier = ">=0.0.1a17" },
+    { name = "ty", specifier = ">=0.0.13" },
 ]
 
 [[package]]
