@@ -42,7 +42,7 @@ class LocationName(NormalizedType[str]):
     fuzzy_threshold: int = 80
 
     # Explicitly use parent's __hash__ since we override __eq__
-    __hash__ = NormalizedType.__hash__  # type: ignore[assignment]
+    __hash__ = NormalizedType.__hash__
 
     def _type_normalize(self, value: Any) -> str:
         """Normalize string using standard string normalization.

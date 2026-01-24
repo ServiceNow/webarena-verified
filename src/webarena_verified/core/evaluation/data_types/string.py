@@ -19,7 +19,7 @@ class NormalizedString(NormalizedType[str]):
     """
 
     # Explicitly use parent's __hash__ since we override __eq__
-    __hash__ = NormalizedType.__hash__  # type: ignore[assignment]
+    __hash__ = NormalizedType.__hash__
 
     def _type_normalize(self, value: Any) -> str:
         """Basic string normalization.

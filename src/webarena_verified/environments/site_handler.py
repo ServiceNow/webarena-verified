@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Protocol
 from webarena_verified.types.environment import SiteInstanceCommandResult
 
 if TYPE_CHECKING:
-    from playwright.sync_api import BrowserContext
+    from playwright.sync_api import BrowserContext  # type: ignore[import-untyped]
 
 
 class SiteInstanceHandler(Protocol):

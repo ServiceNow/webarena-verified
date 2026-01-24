@@ -165,13 +165,13 @@ class ImmutableObjJSONEncoder(json.JSONEncoder):
         self.lists_to_tuples = lists_to_tuples
         super().__init__(*args, **kwargs)
 
-    def default(self, obj: Any) -> Any:
+    def default(self, o: Any) -> Any:
         """Override default to handle MappingProxyType."""
-        if isinstance(obj, MappingProxyType):
-            return serialize_to_mutable(obj, self.lists_to_tuples)
-        return super().default(obj)
+        if isinstance(o, MappingProxyType):
+            return serialize_to_mutable(o, self.lists_to_tuples)
+        return super().default(o)
 
-    def encode(self, obj: Any) -> str:
+    def encode(self, obj: Any) -> str:  # type: ignore[override]
         """Override encode to recursively handle nested immutable types."""
         return super().encode(serialize_to_mutable(obj, self.lists_to_tuples))
 

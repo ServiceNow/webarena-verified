@@ -403,7 +403,7 @@ class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
             final.append(MappingProxyType(normalized))
 
         if is_list_input:
-            return final  # type: ignore
+            return final
         else:
             assert len(final) == 1
             return final[0]
@@ -412,7 +412,7 @@ class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
     # Event Comparison
     # ========================================================================
 
-    def _compare_values(
+    def _compare_values(  # type: ignore[override]
         self,
         actual_normalized: list[MappingProxyType] | None,
         expected_normalized: MappingProxyType,

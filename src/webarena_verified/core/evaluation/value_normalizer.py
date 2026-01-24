@@ -295,7 +295,7 @@ class ValueNormalizer:
                     value = parsed
             except json.JSONDecodeError:
                 pass
-        elif not isinstance(value, (list, tuple)):
+        if not isinstance(value, (list, tuple)):
             if strict:
                 raise ValueError(f"Property '{value}' schema expects array but got {type(value).__name__}")
             return value  # Return raw value in non-strict mode

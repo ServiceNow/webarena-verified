@@ -7,11 +7,15 @@ from pathlib import Path
 from compact_json import EolStyle, Formatter
 from invoke.tasks import task
 
-# Paths to check/format
-CODE_PATHS = "src tests"
-
 # Dataset path
 DATASET_FILE = Path("assets/dataset/webarena-verified.json")
+
+
+@task
+def env_init(c):
+    """Initialize development environment: sync all dependencies and install pre-commit hooks."""
+    c.run("uv sync --all-groups --all-extras")
+    c.run("uv run pre-commit install")
 
 
 @task
@@ -75,9 +79,9 @@ def data_format(c):
 @task
 def code_format_and_check(c):
     """Format code using ruff and run type checking."""
-    c.run(f"uv run ruff check {CODE_PATHS} --fix --unsafe-fixes")
-    c.run(f"uv run ruff format {CODE_PATHS}")
-    c.run(f"uv run basedpyright {CODE_PATHS}")
+    c.run("uv run ruff check src contributing --fix --unsafe-fixes")
+    c.run("uv run ruff format src contributing")
+    c.run("uv run ty check src contributing")
 
 
 def load_json(file_path: Path) -> list[dict]:
