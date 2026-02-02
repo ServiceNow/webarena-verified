@@ -104,7 +104,7 @@ def _create_handler(ops: type[BaseOps], env_name: str, site_url: Optional[str] =
 
             if path == "/":
                 self._send_html(self._get_dashboard_html())
-            elif path in ("/status", "/is_ready"):
+            elif path == "/status":
                 result = ops.get_health()
                 self._send_json(result.to_dict())
             else:
