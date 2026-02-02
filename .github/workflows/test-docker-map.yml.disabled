@@ -1,0 +1,54 @@
+name: Test Docker Map
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "dev/environments/docker/sites/map/**"
+      - "tests/integration/environments/map/**"
+      - "tests/integration/environments/conftest.py"
+  push:
+    branches: [main]
+    paths:
+      - "dev/environments/docker/sites/map/**"
+      - "tests/integration/environments/map/**"
+      - "tests/integration/environments/conftest.py"
+
+jobs:
+  test:
+    name: Test map
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
+
+      - name: Restore map test data cache
+        id: map-data-cache
+        uses: actions/cache@v4
+        with:
+          path: data/map
+          key: map-monaco-data-v1
+
+      - name: Generate map test data
+        if: steps.map-data-cache.outputs.cache-hit != 'true'
+        run: uv run invoke dev.ci.generate-map-data
+
+      - name: Build Docker image
+        run: uv run invoke envs.docker.build --site=map --tag=test
+
+      - name: Run integration tests
+        run: uv run invoke envs.docker.test --site=map --tag=test --data-dir=data/map

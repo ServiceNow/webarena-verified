@@ -341,6 +341,7 @@ def docker_test(
     tag: str = "latest",
     headed: bool = False,
     remote_img: bool = False,
+    data_dir: str | None = None,
 ) -> None:
     """Run integration tests against a Docker image.
 
@@ -352,6 +353,7 @@ def docker_test(
         tag: Image tag (default: latest).
         headed: Run browser tests in headed mode.
         remote_img: Delete local image first to force pull from registry.
+        data_dir: Directory containing data to mount (for map CI tests).
     """
     settings = sites._get_site_settings(site)
 
@@ -385,6 +387,28 @@ def docker_test(
         if site == "gitlab":
             env_ctrl_path = get_repo_root() / "packages" / "environment_control" / "environment_control"
             extra_args = f"-e WA_ENV_CTRL_SKIP_RECONFIGURE=true -v {env_ctrl_path}:/usr/local/environment_control"
+
+        # Mount data directory if provided (for CI tests with pre-generated data)
+        if data_dir:
+            data_path = Path(data_dir).resolve()
+            logging_utils.print_info(f"Mounting data from: {data_path}")
+
+            if site == "map":
+                extra_args += f" -v {data_path}/database:/data/database"
+                extra_args += f" -v {data_path}/routing/car:/data/routing/car"
+                extra_args += f" -v {data_path}/routing/bike:/data/routing/bike"
+                extra_args += f" -v {data_path}/routing/foot:/data/routing/foot"
+                extra_args += f" -v {data_path}/nominatim/postgres:/data/nominatim/postgres"
+
+            elif site == "wikipedia":
+                # Find ZIM file in data directory
+                zim_files = list(data_path.glob("*.zim"))
+                if not zim_files:
+                    raise ValueError(f"No .zim file found in {data_path}")
+                zim_file = zim_files[0]
+                zim_name = zim_file.name
+                extra_args += f" -v {zim_file}:/data/{zim_name}"
+                extra_args += f" -e WA_ENV_CTRL_ZIM_FILE=/data/{zim_name}"
 
         containers._docker_run(
             ctx, settings, image_name, container_name, port, env_ctrl_port=env_ctrl_port, extra_args=extra_args

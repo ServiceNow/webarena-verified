@@ -1,0 +1,46 @@
+name: Test Docker Wikipedia
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "dev/environments/docker/sites/wikipedia/**"
+      - "tests/integration/environments/wikipedia/**"
+      - "tests/integration/environments/conftest.py"
+  push:
+    branches: [main]
+    paths:
+      - "dev/environments/docker/sites/wikipedia/**"
+      - "tests/integration/environments/wikipedia/**"
+      - "tests/integration/environments/conftest.py"
+
+jobs:
+  test:
+    name: Test wikipedia
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
+
+      - name: Download CI ZIM
+        run: uv run invoke dev.ci.setup-wikipedia
+
+      - name: Build Docker image
+        run: uv run invoke envs.docker.build --site=wikipedia --tag=test
+
+      - name: Run integration tests
+        run: uv run invoke envs.docker.test --site=wikipedia --tag=test --data-dir=data/wikipedia
