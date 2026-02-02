@@ -10,12 +10,13 @@ import urllib.request
 
 import pytest
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_shopping]
+
 # Known URLs in the shopping dataset (One Stop Market)
 TEST_PRODUCT_URL = "toothbrush-head-cover-toothbrush-protective-case-toothbrush-head-cap-for-home-travel-camping-lightweight-safe-protecting-toothbrush-head-light-blue.html"
 TEST_CATEGORY_URL = "beauty-personal-care.html"
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_shopping_homepage_responds(shopping_container, shopping_base_url):
     """Test that homepage responds with 200."""
@@ -24,7 +25,6 @@ def test_shopping_homepage_responds(shopping_container, shopping_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_shopping_product_page_responds(shopping_container, shopping_base_url):
     """Test that a product page responds."""
@@ -34,7 +34,6 @@ def test_shopping_product_page_responds(shopping_container, shopping_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_shopping_category_page_responds(shopping_container, shopping_base_url):
     """Test that a category page responds."""

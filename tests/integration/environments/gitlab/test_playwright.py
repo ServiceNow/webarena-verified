@@ -15,12 +15,13 @@ Usage:
 import pytest
 from playwright.sync_api import expect
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_gitlab]
+
 # =============================================================================
 # User Login Tests
 # =============================================================================
 
 
-@pytest.mark.integration_docker_gitlab
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_user_login(gitlab_container, gitlab_base_url, gitlab_credentials, page, pw_timeout):
     """Test user login flow."""
@@ -41,7 +42,6 @@ def test_gitlab_user_login(gitlab_container, gitlab_base_url, gitlab_credentials
 # =============================================================================
 
 
-@pytest.mark.integration_docker_gitlab
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_create_issue(gitlab_container, gitlab_base_url, gitlab_logged_in_page, pw_timeout):
     """Test creating a new issue."""
@@ -64,7 +64,6 @@ def test_gitlab_create_issue(gitlab_container, gitlab_base_url, gitlab_logged_in
     expect(page.get_by_role("heading", name=issue_title)).to_be_visible(timeout=pw_timeout)
 
 
-@pytest.mark.integration_docker_gitlab
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_update_issue_title(gitlab_container, gitlab_base_url, gitlab_logged_in_page, pw_timeout):
     """Test updating an existing issue's title."""
@@ -102,7 +101,6 @@ def test_gitlab_update_issue_title(gitlab_container, gitlab_base_url, gitlab_log
     page.get_by_role("button", name="Save changes").click()
 
 
-@pytest.mark.integration_docker_gitlab
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_close_and_reopen_issue(gitlab_container, gitlab_base_url, gitlab_logged_in_page, pw_timeout):
     """Test closing and reopening an issue."""
@@ -145,7 +143,6 @@ def test_gitlab_close_and_reopen_issue(gitlab_container, gitlab_base_url, gitlab
 # =============================================================================
 
 
-@pytest.mark.integration_docker_gitlab
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_update_project_description(gitlab_container, gitlab_base_url, gitlab_logged_in_page, pw_timeout):
     """Test updating a project's description."""
@@ -179,7 +176,6 @@ def test_gitlab_update_project_description(gitlab_container, gitlab_base_url, gi
     page.wait_for_load_state("networkidle", timeout=pw_timeout)
 
 
-@pytest.mark.integration_docker_gitlab
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_navigate_project_repository(gitlab_container, gitlab_base_url, gitlab_logged_in_page, pw_timeout):
     """Test navigating to project repository."""

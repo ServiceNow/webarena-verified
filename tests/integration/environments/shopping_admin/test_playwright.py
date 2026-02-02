@@ -18,10 +18,11 @@ import time
 import pytest
 from playwright.sync_api import expect
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_shopping_admin]
+
 # Admin Login Test
 
 
-@pytest.mark.integration_docker_shopping_admin
 @pytest.mark.flaky(reruns=2)
 def test_admin_login(shopping_admin_container, shopping_admin_base_url, shopping_admin_credentials, page, pw_timeout):
     """Test admin login flow."""
@@ -49,7 +50,6 @@ def test_admin_login(shopping_admin_container, shopping_admin_base_url, shopping
 # Admin Navigation Tests
 
 
-@pytest.mark.integration_docker_shopping_admin
 @pytest.mark.flaky(reruns=2)
 def test_deep_link_navigation(
     shopping_admin_container, shopping_admin_base_url, shopping_admin_get_logged_page, pw_timeout
@@ -68,7 +68,6 @@ def test_deep_link_navigation(
     assert "Products" in page.content()
 
 
-@pytest.mark.integration_docker_shopping_admin
 @pytest.mark.flaky(reruns=2)
 def test_navigate_to_customers(
     shopping_admin_container, shopping_admin_base_url, shopping_admin_get_logged_page, pw_timeout
@@ -90,7 +89,6 @@ def test_navigate_to_customers(
 # Admin Reports Tests
 
 
-@pytest.mark.integration_docker_shopping_admin
 @pytest.mark.flaky(reruns=2)
 def test_generate_report(shopping_admin_container, shopping_admin_base_url, shopping_admin_get_logged_page, pw_timeout):
     """Test generating a sales report with date range."""
@@ -124,7 +122,6 @@ def test_generate_report(shopping_admin_container, shopping_admin_base_url, shop
 # Admin Product Modification Tests
 
 
-@pytest.mark.integration_docker_shopping_admin
 @pytest.mark.flaky(reruns=2)
 def test_modify_product(
     shopping_admin_container, shopping_admin_base_url, shopping_admin_get_logged_page, get_test_product, pw_timeout

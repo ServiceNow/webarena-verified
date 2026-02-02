@@ -13,10 +13,11 @@ Usage:
 
 import pytest
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_wikipedia]
+
 # Wikipedia Content Tests
 
 
-@pytest.mark.integration_docker_wikipedia
 @pytest.mark.flaky(reruns=2)
 def test_wikipedia_landing_loads(wikipedia_container, wikipedia_base_url, page, pw_timeout):
     """Test that Wikipedia landing page loads with expected content (auto-redirects)."""
@@ -31,7 +32,6 @@ def test_wikipedia_landing_loads(wikipedia_container, wikipedia_base_url, page, 
     assert "articles" in content.lower()
 
 
-@pytest.mark.integration_docker_wikipedia
 @pytest.mark.flaky(reruns=2)
 def test_wikipedia_article_navigation(wikipedia_container, wikipedia_base_url, page, pw_timeout):
     """Test that we can navigate to a Wikipedia article."""
@@ -48,7 +48,6 @@ def test_wikipedia_article_navigation(wikipedia_container, wikipedia_base_url, p
 # Search Tests
 
 
-@pytest.mark.integration_docker_wikipedia
 @pytest.mark.flaky(reruns=2)
 def test_wikipedia_search_interface(wikipedia_container, wikipedia_base_url, page, pw_timeout):
     """Test that the search interface exists on Wikipedia pages."""
@@ -61,7 +60,6 @@ def test_wikipedia_search_interface(wikipedia_container, wikipedia_base_url, pag
     assert search_input.is_visible(timeout=5000), "Search input should be visible"
 
 
-@pytest.mark.integration_docker_wikipedia
 @pytest.mark.flaky(reruns=2)
 def test_wikipedia_search_returns_results(wikipedia_container, wikipedia_base_url, page, pw_timeout):
     """Test that searching for a term returns results."""

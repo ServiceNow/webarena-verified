@@ -69,7 +69,7 @@ services:
     ports:
       - "${WA_MONITOR_PORT:-8870}:8080"
     volumes:
-      - ./assets/monitoring/config.compose.yaml:/config/config.yaml:ro
+      - ./assets/environments/monitoring/config.compose.yaml:/config/config.yaml:ro
     tmpfs:
       - /data
     environment:

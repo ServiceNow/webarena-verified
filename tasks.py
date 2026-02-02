@@ -2,8 +2,9 @@
 
 from invoke import Collection, Context, task
 
-from dev import contributing_tasks as dev_tasks
+from dev import code_tasks, data_tasks, docs_tasks, env_tasks
 from dev.environments import tasks as envs_tasks
+from dev.utils import git_utils
 from examples import tasks as demo_tasks
 
 # Service config: display name, port env var, default port
@@ -100,6 +101,37 @@ def down(ctx: Context, service: list[str] | None = None) -> None:
         ctx.run("docker compose down")
 
 
+@task
+def docker_build(ctx: Context, tag: str | None = None, publish: bool = False) -> None:
+    """Build the webarena-verified Docker image.
+
+    Always tags with git short SHA. Optionally adds an additional tag.
+
+    Args:
+        tag: Optional additional tag (e.g., "latest", "v1.0.0")
+        publish: Push image to Docker Hub after building
+    """
+    image = "am1n3e/webarena-verified"
+    short_sha = git_utils.get_short_sha()
+
+    image_tags = [f"{image}:{short_sha}"]
+    if tag:
+        image_tags.append(f"{image}:{tag}")
+
+    tags_arg = " ".join(f"-t {t}" for t in image_tags)
+    ctx.run(f"docker build {tags_arg} .")
+
+    if publish:
+        print(f"\nAbout to push: {', '.join(image_tags)}")
+        confirm = input("Push to Docker Hub? [y/N]: ").strip().lower()
+        if confirm == "y":
+            for t in image_tags:
+                ctx.run(f"docker push {t}")
+            print("Done.")
+        else:
+            print("Push cancelled.")
+
+
 # Create compose namespace
 compose_ns = Collection("compose")
 compose_ns.add_task(up)
@@ -108,8 +140,16 @@ compose_ns.add_task(down)
 # Create the namespace
 ns = Collection()
 
+# Add top-level tasks
+ns.add_task(docker_build)
+
 # Add namespaces
-ns.add_collection(Collection.from_module(dev_tasks), name="dev")
+dev_ns = Collection("dev")
+dev_ns.add_collection(Collection.from_module(code_tasks), name="code")
+dev_ns.add_collection(Collection.from_module(data_tasks), name="data")
+dev_ns.add_collection(Collection.from_module(docs_tasks), name="docs")
+dev_ns.add_collection(Collection.from_module(env_tasks), name="env")
+ns.add_collection(dev_ns)
 ns.add_collection(Collection.from_module(demo_tasks), name="demo")
 ns.add_collection(envs_tasks.ns, name="envs")
 ns.add_collection(compose_ns, name="compose")

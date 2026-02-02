@@ -24,10 +24,11 @@ import uuid
 import pytest
 from playwright.sync_api import expect
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_reddit]
+
 # User Login Test
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_user_login(reddit_container, reddit_base_url, reddit_credentials, page, pw_timeout):
     """Test user login flow."""
@@ -55,7 +56,6 @@ def test_reddit_user_login(reddit_container, reddit_base_url, reddit_credentials
 # Forum Navigation Tests
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_navigate_to_askreddit(reddit_container, reddit_base_url, page, pw_timeout):
     """Test navigation to AskReddit forum."""
@@ -71,7 +71,6 @@ def test_reddit_navigate_to_askreddit(reddit_container, reddit_base_url, page, p
     assert "askreddit" in content
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_forums_list_has_content(reddit_container, reddit_base_url, page, pw_timeout):
     """Test that forums list page has forum entries."""
@@ -86,7 +85,6 @@ def test_reddit_forums_list_has_content(reddit_container, reddit_base_url, page,
 # Content Verification Tests
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_has_submissions(reddit_container, reddit_base_url, page, pw_timeout):
     """Test that /all page has submission posts."""
@@ -99,7 +97,6 @@ def test_reddit_has_submissions(reddit_container, reddit_base_url, page, pw_time
     assert submissions.count() > 0, "Expected submissions on /all page"
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_askreddit_has_posts(reddit_container, reddit_base_url, page, pw_timeout):
     """Test that AskReddit forum has posts."""
@@ -114,7 +111,6 @@ def test_reddit_askreddit_has_posts(reddit_container, reddit_base_url, page, pw_
 # Logged-in User Tests
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_logged_in_user_profile(
     reddit_container, reddit_base_url, reddit_credentials, reddit_get_logged_page, pw_timeout
@@ -150,7 +146,6 @@ TEST_POSTS_FOR_IMAGES = [
 ]
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 @pytest.mark.parametrize(("post_url", "forum"), TEST_POSTS_FOR_IMAGES)
 def test_post_images_load(reddit_container, reddit_base_url, page, pw_timeout, post_url, forum):
@@ -193,7 +188,6 @@ def test_post_images_load(reddit_container, reddit_base_url, page, pw_timeout, p
 # dev/environments/docker/sites/reddit/docker_overrides/README.md
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_vote_increments_score(reddit_container, reddit_base_url, reddit_get_logged_page, pw_timeout):
     """Test that voting increments/decrements score correctly.
@@ -254,7 +248,6 @@ def test_reddit_vote_increments_score(reddit_container, reddit_base_url, reddit_
         )
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_no_rate_limit_on_submissions(reddit_container, reddit_base_url, reddit_get_logged_page, pw_timeout):
     """Test that submissions can be created without rate limiting.
@@ -314,7 +307,6 @@ def test_reddit_no_rate_limit_on_submissions(reddit_container, reddit_base_url, 
     assert len(created_submissions) == 2, "Expected 2 submissions to be created without rate limiting"
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_link_submission_with_external_url(
     reddit_container, reddit_base_url, reddit_get_logged_page, pw_timeout

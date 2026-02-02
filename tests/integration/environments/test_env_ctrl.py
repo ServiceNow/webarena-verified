@@ -15,6 +15,8 @@ Usage:
 
 import pytest
 
+pytestmark = pytest.mark.docker
+
 # Site configurations for parametrization
 # Each pytest.param attaches a marker so tests can be filtered by site
 SITES = [

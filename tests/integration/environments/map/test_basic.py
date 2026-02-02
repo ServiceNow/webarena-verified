@@ -13,8 +13,9 @@ import urllib.request
 
 import pytest
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_map]
 
-@pytest.mark.integration_docker_map
+
 @pytest.mark.flaky(reruns=2)
 def test_map_homepage_responds(map_container, map_base_url):
     """Test that OpenStreetMap homepage responds with 200."""
@@ -23,7 +24,6 @@ def test_map_homepage_responds(map_container, map_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_login_page_accessible(map_container, map_base_url):
     """Test that login page is accessible."""
@@ -33,7 +33,6 @@ def test_map_login_page_accessible(map_container, map_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_api_capabilities(map_container, map_base_url):
     """Test that OSM API capabilities endpoint is accessible."""
@@ -45,7 +44,6 @@ def test_map_api_capabilities(map_container, map_base_url):
         assert "api" in content.lower()
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_tile_server_responds(map_container, map_tile_url):
     """Test that tile server responds with 200."""
@@ -54,7 +52,6 @@ def test_tile_server_responds(map_container, map_tile_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_tile_endpoint_accessible(map_container, map_tile_url):
     """Test that tile endpoint returns a tile image.

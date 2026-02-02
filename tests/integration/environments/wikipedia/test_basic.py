@@ -10,8 +10,9 @@ import urllib.request
 
 import pytest
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_wikipedia]
 
-@pytest.mark.integration_docker_wikipedia
+
 @pytest.mark.flaky(reruns=2)
 def test_wikipedia_homepage_responds(wikipedia_container, wikipedia_base_url):
     """Test that Wikipedia homepage responds with 200 (auto-redirects to landing)."""

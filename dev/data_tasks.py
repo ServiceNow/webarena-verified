@@ -1,4 +1,4 @@
-"""Invoke tasks for WebArena-Verified development."""
+"""Dataset formatting tasks."""
 
 from __future__ import annotations
 
@@ -13,73 +13,8 @@ from invoke.tasks import task
 if TYPE_CHECKING:
     from invoke.context import Context
 
-from dev.utils import git_utils
-
 # Dataset path
 DATASET_FILE = Path("assets/dataset/webarena-verified.json")
-
-
-@task
-def env_init(c: Context) -> None:
-    """Initialize development environment: sync all dependencies and install pre-commit hooks."""
-    c.run("uv sync --all-extras")
-    c.run("uv run pre-commit install")
-
-
-@task
-def docs_serve(c: Context) -> None:
-    """Serve the documentation locally with live reload."""
-    c.run("uv run mkdocs serve")
-
-
-@task
-def docs_build(c: Context) -> None:
-    """Build the documentation site."""
-    c.run("uv run mkdocs build")
-
-
-@task
-def docs_deploy(c: Context) -> None:
-    """Deploy documentation to GitHub Pages.
-
-    Safety checks:
-    - Ensures current branch is main
-    - Ensures local main is up-to-date with remote main
-    """
-    # Check current branch
-    result = c.run("git branch --show-current", hide=True)
-    assert result is not None
-    current_branch = result.stdout.strip()
-
-    if current_branch != "main":
-        print(f"ERROR: Cannot deploy docs from branch '{current_branch}'")
-        print("You must be on the 'main' branch to deploy documentation.")
-        raise SystemExit(1)
-
-    # Fetch remote to get latest state
-    print("Fetching remote updates...")
-    c.run("git fetch origin main", hide=True)
-
-    # Check if local main matches remote main
-    local_result = c.run("git rev-parse main", hide=True)
-    remote_result = c.run("git rev-parse origin/main", hide=True)
-    assert local_result is not None
-    assert remote_result is not None
-    local_commit = local_result.stdout.strip()
-    remote_commit = remote_result.stdout.strip()
-
-    if local_commit != remote_commit:
-        print("ERROR: Local 'main' branch does not match remote 'origin/main'")
-        print(f"  Local:  {local_commit}")
-        print(f"  Remote: {remote_commit}")
-        print("\nPlease either:")
-        print("  - Pull latest changes: git pull origin main")
-        print("  - Push your changes: git push origin main")
-        raise SystemExit(1)
-
-    print("✓ Safety checks passed: on main branch and in sync with remote")
-    print("Deploying documentation to GitHub Pages...")
-    c.run("uv run mkdocs gh-deploy")
 
 
 @task
@@ -87,47 +22,6 @@ def data_format(c: Context) -> None:
     """Format dataset JSON file."""
     data = load_json(DATASET_FILE)
     save_json(DATASET_FILE, data)
-
-
-@task
-def code_format_and_check(c: Context) -> None:
-    """Format code using ruff and run type checking."""
-    c.run("uv run ruff check src dev --fix --unsafe-fixes")
-    c.run("uv run ruff format src dev")
-    c.run("uv run ty check src dev")
-    # Verify environment_control package is Python 3.9 compatible
-    c.run("uv run vermin -t=3.9 --eval-annotations --no-tips packages/environment_control/environment_control/")
-
-
-@task
-def docker_build(c: Context, tag: str | None = None, publish: bool = False) -> None:
-    """Build the webarena-verified Docker image.
-
-    Always tags with git short SHA. Optionally adds an additional tag.
-
-    Args:
-        tag: Optional additional tag (e.g., "latest", "v1.0.0")
-        publish: Push image to Docker Hub after building
-    """
-    image = "am1n3e/webarena-verified"
-    short_sha = git_utils.get_short_sha()
-
-    image_tags = [f"{image}:{short_sha}"]
-    if tag:
-        image_tags.append(f"{image}:{tag}")
-
-    tags_arg = " ".join(f"-t {t}" for t in image_tags)
-    c.run(f"docker build {tags_arg} .")
-
-    if publish:
-        print(f"\nAbout to push: {', '.join(image_tags)}")
-        confirm = input("Push to Docker Hub? [y/N]: ").strip().lower()
-        if confirm == "y":
-            for t in image_tags:
-                c.run(f"docker push {t}")
-            print("Done.")
-        else:
-            print("Push cancelled.")
 
 
 def load_json(file_path: Path) -> list[dict]:

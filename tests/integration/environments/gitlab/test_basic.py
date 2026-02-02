@@ -10,8 +10,9 @@ import urllib.request
 
 import pytest
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_gitlab]
 
-@pytest.mark.integration_docker_gitlab
+
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_homepage_responds(gitlab_container, gitlab_base_url):
     """Test that homepage responds with 200."""
@@ -20,7 +21,6 @@ def test_gitlab_homepage_responds(gitlab_container, gitlab_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_gitlab
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_login_page_accessible(gitlab_container, gitlab_base_url):
     """Test that login page is accessible."""
@@ -30,7 +30,6 @@ def test_gitlab_login_page_accessible(gitlab_container, gitlab_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_gitlab
 @pytest.mark.flaky(reruns=2)
 def test_gitlab_api_accessible(gitlab_container, gitlab_base_url):
     """Test that GitLab API endpoint is accessible."""

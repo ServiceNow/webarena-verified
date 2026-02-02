@@ -11,8 +11,9 @@ import urllib.request
 
 import pytest
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_reddit]
 
-@pytest.mark.integration_docker_reddit
+
 @pytest.mark.flaky(reruns=2)
 def test_reddit_homepage_responds(reddit_container, reddit_base_url):
     """Test that homepage responds with 200."""
@@ -21,7 +22,6 @@ def test_reddit_homepage_responds(reddit_container, reddit_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_homepage_contains_postmill(reddit_container, reddit_base_url):
     """Test that homepage contains 'Postmill' branding."""
@@ -31,7 +31,6 @@ def test_reddit_homepage_contains_postmill(reddit_container, reddit_base_url):
         assert "Postmill" in content
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_login_page_accessible(reddit_container, reddit_base_url):
     """Test that login page is accessible."""
@@ -44,7 +43,6 @@ def test_reddit_login_page_accessible(reddit_container, reddit_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_reddit
 @pytest.mark.flaky(reruns=2)
 def test_reddit_forums_page_accessible(reddit_container, reddit_base_url):
     """Test that forums listing page is accessible."""

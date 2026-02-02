@@ -1,14 +1,20 @@
-name: Test
+name: Test Docker Sites
 
 on:
   pull_request:
     branches: [main]
+    paths:
+      - "dev/environments/docker/**"
+      - "tests/integration/environments/**"
   push:
     branches: [main]
+    paths:
+      - "dev/environments/docker/**"
+      - "tests/integration/environments/**"
 
 jobs:
   test:
-    name: Test
+    name: Test Docker Sites
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,5 +37,5 @@ jobs:
       - name: Build Docker image
         run: docker build -t webarena-verified:test .
 
-      - name: Run tests
-        run: uv run pytest --webarena-verified-docker-img webarena-verified:test --ignore=tests/integration/environment_control/ --ignore=tests/integration/environments/
+      - name: Run Docker site integration tests
+        run: uv run pytest tests/integration/environments/ -m docker --webarena-verified-docker-img webarena-verified:test

@@ -15,12 +15,13 @@ Usage:
 import pytest
 from playwright.sync_api import expect
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_map]
+
 # =============================================================================
 # Page Navigation Tests
 # =============================================================================
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_homepage_loads(map_container, map_base_url, page, pw_timeout):
     """Test that the map homepage loads correctly."""
@@ -30,7 +31,6 @@ def test_map_homepage_loads(map_container, map_base_url, page, pw_timeout):
     expect(page.locator("#map")).to_be_visible(timeout=pw_timeout)
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_login_page_loads(map_container, map_base_url, page, pw_timeout):
     """Test that the login page loads correctly."""
@@ -40,7 +40,6 @@ def test_map_login_page_loads(map_container, map_base_url, page, pw_timeout):
     expect(page.get_by_role("heading", name="Log In")).to_be_visible(timeout=pw_timeout)
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_signup_page_loads(map_container, map_base_url, page, pw_timeout):
     """Test that the signup page loads correctly."""
@@ -55,7 +54,6 @@ def test_map_signup_page_loads(map_container, map_base_url, page, pw_timeout):
 # =============================================================================
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_zoom_controls_visible(map_container, map_base_url, page, pw_timeout):
     """Test that map zoom controls are visible."""
@@ -69,7 +67,6 @@ def test_map_zoom_controls_visible(map_container, map_base_url, page, pw_timeout
     expect(page.locator(".leaflet-control-zoom-out")).to_be_visible(timeout=pw_timeout)
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_layers_control_visible(map_container, map_base_url, page, pw_timeout):
     """Test that map layers control is visible."""
@@ -87,7 +84,6 @@ def test_map_layers_control_visible(map_container, map_base_url, page, pw_timeou
 # =============================================================================
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_search_box_visible(map_container, map_base_url, page, pw_timeout):
     """Test that the search box is visible on the map page."""
@@ -106,7 +102,6 @@ def test_map_search_box_visible(map_container, map_base_url, page, pw_timeout):
 # =============================================================================
 
 
-@pytest.mark.integration_docker_map
 @pytest.mark.flaky(reruns=2)
 def test_map_history_page_loads(map_container, map_base_url, page, pw_timeout):
     """Test that the history/changesets page loads."""

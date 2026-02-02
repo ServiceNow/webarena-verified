@@ -19,6 +19,8 @@ import urllib.request
 import pytest
 from playwright.sync_api import expect
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_shopping]
+
 # Magento placeholder image size in bytes (used to detect missing images)
 PLACEHOLDER_IMAGE_SIZE = 1692
 
@@ -32,7 +34,6 @@ TEST_SEARCH_TERM = "toothbrush"
 # Customer Login Tests
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_customer_login(shopping_container, shopping_base_url, shopping_credentials, page, pw_timeout):
     """Test customer login flow on storefront."""
@@ -57,7 +58,6 @@ def test_customer_login(shopping_container, shopping_base_url, shopping_credenti
     assert "My Account" in page.content() or "Account Information" in page.content()
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_customer_account_page(shopping_container, shopping_base_url, shopping_get_logged_page, pw_timeout):
     """Test customer account page shows correct information."""
@@ -74,7 +74,6 @@ def test_customer_account_page(shopping_container, shopping_base_url, shopping_g
 # Storefront Navigation Tests
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_shopping_homepage_loads(shopping_container, shopping_base_url, shopping_get_logged_page, pw_timeout):
     """Test that homepage loads with header (logged in)."""
@@ -87,7 +86,6 @@ def test_shopping_homepage_loads(shopping_container, shopping_base_url, shopping
     expect(header).to_be_visible(timeout=pw_timeout)
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_shopping_category_page_loads(shopping_container, shopping_base_url, shopping_get_logged_page, pw_timeout):
     """Test that category page loads (logged in)."""
@@ -100,7 +98,6 @@ def test_shopping_category_page_loads(shopping_container, shopping_base_url, sho
     expect(heading.first).to_be_visible(timeout=pw_timeout)
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_shopping_product_detail_page(shopping_container, shopping_base_url, shopping_get_logged_page, pw_timeout):
     """Test product detail page loads correctly (logged in)."""
@@ -121,7 +118,6 @@ def test_shopping_product_detail_page(shopping_container, shopping_base_url, sho
 # Search Tests
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_shopping_search_page_loads(shopping_container, shopping_base_url, shopping_get_logged_page, pw_timeout):
     """Test that search page loads (logged in)."""
@@ -137,7 +133,6 @@ def test_shopping_search_page_loads(shopping_container, shopping_base_url, shopp
 # Cart Tests
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 def test_shopping_product_has_add_to_cart(shopping_container, shopping_base_url, shopping_get_logged_page, pw_timeout):
     """Test that in-stock product page has add to cart button (logged in)."""
@@ -202,7 +197,6 @@ TEST_PRODUCTS_FOR_IMAGES = [
 ]
 
 
-@pytest.mark.integration_docker_shopping
 @pytest.mark.flaky(reruns=2)
 @pytest.mark.parametrize(("product_url", "category"), TEST_PRODUCTS_FOR_IMAGES)
 def test_product_images_load(

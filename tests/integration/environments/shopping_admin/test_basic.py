@@ -10,8 +10,9 @@ import urllib.request
 
 import pytest
 
+pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_shopping_admin]
 
-@pytest.mark.integration_docker_shopping_admin
+
 @pytest.mark.flaky(reruns=2)
 def test_homepage_responds(shopping_admin_container, shopping_admin_base_url):
     """Test that homepage responds with 200."""
@@ -20,7 +21,6 @@ def test_homepage_responds(shopping_admin_container, shopping_admin_base_url):
         assert response.status == 200
 
 
-@pytest.mark.integration_docker_shopping_admin
 @pytest.mark.flaky(reruns=2)
 def test_admin_panel_accessible(shopping_admin_container, shopping_admin_base_url):
     """Test that admin panel is accessible."""
