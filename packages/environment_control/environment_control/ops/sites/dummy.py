@@ -28,25 +28,9 @@ class DummyOps(BaseOps):
 
     expected_services: ClassVar[frozenset[str]] = frozenset({"service-a", "service-b", "service-c"})
 
-    # Track running state (class-level for simplicity)
-    _running: ClassVar[bool] = True
-
     @classmethod
     def _get_health(cls, exec_cmd: Optional[CommandExecutor] = None, **kwargs: Any) -> Result:
-        """Return health based on DUMMY_HEALTHY env var and running state."""
-        # If stopped, return unhealthy
-        if not cls._running:
-            services = {
-                "service-a": ServiceState.STOPPED,
-                "service-b": ServiceState.STOPPED,
-                "service-c": ServiceState.STOPPED,
-            }
-            return Result(
-                success=False,
-                value=Health(services=services),
-                exec_logs=[ExecLog("dummy-health-check", 1, "services stopped", "")],
-            )
-
+        """Return health based on DUMMY_HEALTHY env var."""
         healthy = os.environ.get("DUMMY_HEALTHY", "1") == "1"
 
         if healthy:
@@ -97,9 +81,6 @@ class DummyOps(BaseOps):
         """Return start result based on DUMMY_START_FAIL env var."""
         fail = os.environ.get("DUMMY_START_FAIL", "0") == "1"
 
-        if not fail:
-            cls._running = True
-
         return Result(
             success=not fail,
             exec_logs=[ExecLog("dummy-start", 1 if fail else 0, "dummy start output", "")],
@@ -109,9 +90,6 @@ class DummyOps(BaseOps):
     def _stop(cls, exec_cmd: Optional[CommandExecutor] = None, **kwargs: Any) -> Result:
         """Return stop result based on DUMMY_STOP_FAIL env var."""
         fail = os.environ.get("DUMMY_STOP_FAIL", "0") == "1"
-
-        if not fail:
-            cls._running = False
 
         return Result(
             success=not fail,
