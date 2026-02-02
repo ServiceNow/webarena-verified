@@ -1,0 +1,1 @@
+# Shopping Admin integration tests

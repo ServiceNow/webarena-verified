@@ -61,6 +61,7 @@ include = ["src/**", "assets/**"]
 [dependency-groups]
 dev = [
     "click>=8.3.0",
+    "docker-squash>=1.2.2",
     "environment-control",
     "pydantic-settings>=2.11.0",
     "litellm>=1.80.5",
@@ -224,6 +225,12 @@ filterwarnings = [
 ]
 markers = [
     "docker: marks tests that require Docker",
+    "integration_docker_shopping: marks tests for shopping (storefront) container",
+    "integration_docker_shopping_admin: marks tests for shopping admin container",
+    "integration_docker_wikipedia: marks tests for wikipedia container",
+    "integration_docker_reddit: marks tests for reddit container",
+    "integration_docker_gitlab: marks tests for gitlab container",
+    "integration_docker_map: marks tests for map (OpenStreetMap) container",
 ]
 
 [tool.coverage.run]

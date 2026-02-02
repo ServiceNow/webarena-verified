@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+
+    <!-- Plugin to intercept all frontend requests for customer auto-login -->
+    <type name="Magento\Framework\App\FrontController">
+        <plugin name="webarena_customer_autologin_plugin"
+                type="WebArena\CustomerAutoLogin\Plugin\CustomerAutoLoginPlugin"
+                sortOrder="1"/>
+    </type>
+
+</config>

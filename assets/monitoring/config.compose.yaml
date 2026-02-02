@@ -1,0 +1,52 @@
+# Gatus configuration for Docker Compose deployment
+# Uses environment variables from docker-compose.yml for port configuration
+# https://github.com/TwiN/gatus
+
+storage:
+  type: sqlite
+  path: /data/gatus.db
+
+ui:
+  title: WebArena Verified
+  description: Status of local Docker containers for web agent evaluation.
+  header: WebArena Verified Environments Dashboard
+  logo: ""
+  link: https://github.com/ServiceNow/webarena-verified
+  buttons:
+    - name: "${WA_SHOPPING_ADMIN_NAME}"
+      link: "http://localhost:${WA_SHOPPING_ADMIN_PORT}/"
+    - name: "${WA_SHOPPING_NAME}"
+      link: "http://localhost:${WA_SHOPPING_PORT}/"
+    - name: "${WA_GITLAB_NAME}"
+      link: "http://localhost:${WA_GITLAB_PORT}/"
+    - name: "${WA_REDDIT_NAME}"
+      link: "http://localhost:${WA_REDDIT_PORT}/"
+    - name: "${WA_WIKIPEDIA_NAME}"
+      link: "http://localhost:${WA_WIKIPEDIA_PORT}/"
+
+endpoints:
+  - name: "${WA_SHOPPING_ADMIN_NAME}"
+    url: "http://shopping_admin:80/"
+    interval: 60s
+    conditions:
+      - "[STATUS] < 400"
+  - name: "${WA_SHOPPING_NAME}"
+    url: "http://shopping:80/"
+    interval: 60s
+    conditions:
+      - "[STATUS] < 400"
+  - name: "${WA_GITLAB_NAME}"
+    url: "http://gitlab:8023/"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+  - name: "${WA_REDDIT_NAME}"
+    url: "http://reddit:80/"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+  - name: "${WA_WIKIPEDIA_NAME}"
+    url: "http://wikipedia:8080/"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"

@@ -1,0 +1,1 @@
+"""Map (OpenStreetMap) integration tests."""
