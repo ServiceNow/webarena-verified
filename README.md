@@ -92,30 +92,55 @@ uv sync
 
 ## 🌐 Run WebArena Environments
 
-Run any WebArena environment locally using Docker:
+### Using the CLI (Recommended)
+
+Start and manage WebArena environments using the built-in CLI:
+
+```bash
+# Start a site (waits for services to be ready)
+webarena-verified env start --site shopping
+webarena-verified env start --site shopping_admin
+webarena-verified env start --site reddit
+webarena-verified env start --site gitlab
+
+# Check status
+webarena-verified env status --site shopping
+
+# Stop a site
+webarena-verified env stop --site shopping
+
+# Stop all running sites
+webarena-verified env stop-all
+```
+
+For sites requiring data setup (Wikipedia, Map):
+
+```bash
+# Wikipedia - download data first (~100GB)
+webarena-verified env setup init --site wikipedia --data-dir ./downloads
+webarena-verified env start --site wikipedia --data-dir ./downloads
+
+# Map - download data first (~60GB)
+webarena-verified env setup init --site map --data-dir ./downloads
+webarena-verified env start --site map
+```
+
+### Using Docker Directly
+
+You can also run environments directly with Docker:
 
 ```bash
 # Shopping (Magento)
-docker run -d --name webarena-verified-shopping -p 7770:80 am1n3e/webarena-verified-shopping
+docker run -d --name webarena-verified-shopping -p 7770:80 -p 7771:8877 am1n3e/webarena-verified-shopping
 
 # Shopping Admin
-docker run -d --name webarena-verified-shopping_admin -p 7780:80 am1n3e/webarena-verified-shopping_admin
+docker run -d --name webarena-verified-shopping_admin -p 7780:80 -p 7781:8877 am1n3e/webarena-verified-shopping_admin
 
 # Reddit (Postmill)
-docker run -d --name webarena-verified-reddit -p 9999:80 am1n3e/webarena-verified-reddit
+docker run -d --name webarena-verified-reddit -p 9999:80 -p 9998:8877 am1n3e/webarena-verified-reddit
 
 # GitLab
-docker run -d --name webarena-verified-gitlab -p 8023:8023 am1n3e/webarena-verified-gitlab
-
-# Wikipedia (Kiwix) - requires data setup first
-inv envs.docker.data-download --site wikipedia
-inv envs.docker.setup --site wikipedia --data-dir ./downloads
-docker run -d --name webarena-verified-wikipedia -p 8888:8080 -v webarena-verified-wikipedia-data:/data:ro am1n3e/webarena-verified-wikipedia
-
-# Map (OpenStreetMap) - requires data setup first (~60GB download)
-inv envs.docker.data-download --site map
-inv envs.docker.setup --site map --data-dir ./downloads
-docker compose up -d map  # Recommended due to multiple volume mounts
+docker run -d --name webarena-verified-gitlab -p 8023:8023 -p 8024:8877 am1n3e/webarena-verified-gitlab
 ```
 
 See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/) for detailed setup instructions, credentials, and configuration options.
