@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+
+    <!-- Plugin to intercept all admin requests for auto-login -->
+    <type name="Magento\Framework\App\FrontController">
+        <plugin name="webarena_autologin_plugin"
+                type="WebArena\AutoLogin\Plugin\AutoLoginPlugin"
+                sortOrder="1"/>
+    </type>
+
+    <!-- Plugin to disable "Update Attributes" and "Delete" mass actions in product grid -->
+    <type name="Magento\Catalog\Ui\Component\Product\MassAction">
+        <plugin name="webarena_disable_product_mass_actions"
+                type="WebArena\AutoLogin\Plugin\DisableProductMassActionsPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <!-- Plugin to disable "Update Status" and "Delete" mass actions in review grid -->
+    <type name="Magento\Review\Block\Adminhtml\Grid">
+        <plugin name="webarena_disable_review_mass_actions"
+                type="WebArena\AutoLogin\Plugin\DisableReviewMassActionsPlugin"
+                sortOrder="10"/>
+    </type>
+
+</config>

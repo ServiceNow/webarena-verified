@@ -104,7 +104,13 @@ nav:
           - WebArena-Verified Hard: getting_started/hard_subset.md
   - Environments:
       - Overview: environments/index.md
-      - Docker Images: environments/docker_images.md
+      - Sites:
+          - Shopping Admin: environments/shopping_admin.md
+          - Shopping: environments/shopping.md
+          - Reddit: environments/reddit.md
+          - GitLab: environments/gitlab.md
+          - Wikipedia: environments/wikipedia.md
+          - Map: environments/map.md
       - Environment Control: environments/environment_control.md
   - Evaluation:
       - Quick Start: evaluation/index.md

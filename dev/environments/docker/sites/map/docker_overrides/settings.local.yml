@@ -1,0 +1,5 @@
+# Local services via Apache proxy
+# Server-side: Rails makes HTTP requests to these URLs (absolute for internal container)
+# Client-side: JS assets are patched post-compile in Dockerfile to use relative URLs
+fossgis_osrm_url: "http://localhost:8080/osrm/"
+nominatim_url: "http://localhost:8080/nominatim/"

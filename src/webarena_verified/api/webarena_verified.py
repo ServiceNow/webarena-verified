@@ -14,7 +14,6 @@ from webarena_verified.types.tracing import NetworkTrace
 
 from .internal.data_reader import WebArenaVerifiedDataReader
 from .internal.evaluator import WebArenaVerifiedEvaluator
-from .internal.patch_manager import PatchManager
 from .internal.submission_handler import SubmissionHandler
 
 if TYPE_CHECKING:
@@ -239,49 +238,6 @@ class WebArenaVerified:
         if site == WebArenaSite.SHOPPING_ADMIN:
             return MAGENTO_ADMIN_AUTO_LOGIN_HEADER
         return None
-
-    def apply_patches_for_site(self, site: str, exec_patch: Callable[[Callable, str, Any], bool]) -> bool:
-        """Apply all patches for a given site using the provided executor.
-
-        This method discovers and applies all patches for the specified site in order.
-        Patches are organized by site (reddit, shopping, shopping_admin, etc.) and
-        applied based on filename prefix (p01_, p02_, etc.).
-
-        Args:
-            site: Site identifier to apply patches for. Valid values:
-                  - "reddit": Reddit environment patches
-                  - "shopping": Shopping/Magento environment patches
-                  - "shopping_admin": Shopping admin environment patches
-            exec_patch: Function to execute patches with Docker operations.
-                       Should have signature: exec_patch(patch_fn, site, **kwargs) -> bool
-                       The executor is responsible for:
-                       - Resolving the Docker container name for the site
-                       - Calling patch_fn(container_name)
-                       - Handling errors and returning success/failure
-
-        Returns:
-            True if all patches applied successfully, False if any patch failed
-
-        Example:
-            ```python
-            from webarena_verified.api import WebArenaVerified
-
-            def my_exec_patch(patch_fn, site: str, **kwargs) -> bool:
-                try:
-                    container_name = get_container_name(site)
-                    return patch_fn(container_name)
-                except Exception as e:
-                    logger.error(f"Failed to execute patch: {e}")
-                    return False
-
-            wa = WebArenaVerified()
-            success = wa.apply_patches_for_site("reddit", my_exec_patch)
-            if success:
-                print("All Reddit patches applied successfully")
-            ```
-        """
-        patch_manager = PatchManager(exec_patch)
-        return patch_manager.apply_patches_for_site(site)
 
     def create_submission(
         self,

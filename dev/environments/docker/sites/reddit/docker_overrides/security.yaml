@@ -1,0 +1,66 @@
+services:
+  _defaults:
+    autowire: true
+    public: false
+
+  postmill.security.form_login_authentication_failure_handler:
+    stack:
+      - App\Security\FormLoginAuthenticationFailureHandler:
+      - Symfony\Component\Security\Http\Authentication\DefaultAuthenticationFailureHandler:
+
+  # Header-based authenticator for auto-login
+  App\Security\HeaderAutologinAuthenticator:
+    arguments:
+      - "@doctrine.orm.entity_manager"
+
+security:
+  enable_authenticator_manager: true
+
+  password_hashers:
+    App\DataObject\UserData: native
+    App\Entity\User: native
+
+  providers:
+    user_provider:
+      entity:
+        class: App\Entity\User
+
+  firewalls:
+    dev:
+      pattern: ^/(_(profiler|wdt)|css|images|js)/
+      security: false
+
+    main:
+      entry_point: form_login
+
+      # Header-based auth (X-Postmill-Auto-Login header)
+      custom_authenticators:
+        - App\Security\HeaderAutologinAuthenticator
+
+      form_login:
+        enable_csrf: true
+        remember_me: true
+        failure_handler: postmill.security.form_login_authentication_failure_handler
+
+      login_link:
+        check_route: login_url
+        signature_properties: ["id"]
+
+      logout:
+        csrf_parameter: token
+        csrf_token_generator: security.csrf.token_manager
+        delete_cookies: [PHPSESSID]
+        path: log_out
+
+      remember_me:
+        secret: "%env(APP_SECRET)%"
+
+      user_checker: App\Security\UserChecker
+
+      login_throttling:
+        max_attempts: 5
+        limiter: App\Security\RateLimitExemptLimiter
+
+  role_hierarchy:
+    ROLE_ADMIN: [ROLE_WHITELISTED, ROLE_USER]
+    ROLE_WHITELISTED: [ROLE_USER]

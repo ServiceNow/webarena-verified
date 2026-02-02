@@ -1,0 +1,43 @@
+name: Test Docker Shopping
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "dev/environments/docker/sites/shopping/**"
+      - "tests/integration/environments/shopping/**"
+      - "tests/integration/environments/conftest.py"
+  push:
+    branches: [main]
+    paths:
+      - "dev/environments/docker/sites/shopping/**"
+      - "tests/integration/environments/shopping/**"
+      - "tests/integration/environments/conftest.py"
+
+jobs:
+  test:
+    name: Test shopping
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
+
+      - name: Build Docker image
+        run: uv run invoke envs.docker.build --site=shopping --tag=test
+
+      - name: Run integration tests
+        run: uv run invoke envs.docker.test --site=shopping --tag=test

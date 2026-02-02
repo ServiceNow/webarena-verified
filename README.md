@@ -16,6 +16,7 @@ WebArena-Verified is the verified release of the WebArena benchmark. It distribu
 
 ## 📢 Announcements
 
+- **February 2, 2026**: Optimized Docker images for all WebArena environments are now available on [Docker Hub](https://hub.docker.com/u/am1n3e)! Images are up to 92% smaller than originals, include auto-login headers, plus a single container for Map (beta) (previously 5 separate containers). See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/).
 - **February 2, 2026**: WebArena-Verified is now available via Docker and uvx! Run `uvx webarena-verified --help` or `docker run am1n3e/webarena-verified:latest --help` to get started.
 - **January 7, 2026**: WebArena-Verified is now available on PyPI! Install it easily with `pip install webarena-verified`.
 - **December 2, 2025**: We are presenting WebArena-Verified at the [Scaling Environments for Agents (SEA) Workshop](https://sea-workshop.github.io/) at NeurIPS 2025 on December 7th in San Diego. Come see us!
@@ -30,31 +31,25 @@ WebArena-Verified is the verified release of the WebArena benchmark. It distribu
 
 ## 🚀 Quick Start
 
-### Installation
+### Using uvx (Recommended)
 
-Install from PyPI:
-
-```bash
-pip install webarena-verified
-```
-
-Or for development, clone and install from source:
+The fastest way to try WebArena-Verified without installing anything:
 
 ```bash
-git clone https://github.com/ServiceNow/webarena-verified.git
-cd webarena-verified
-uv sync
+uvx webarena-verified --help
 ```
 
-Verify the CLI is working:
+Run evaluation directly:
 
 ```bash
-webarena-verified --help
+uvx webarena-verified eval-tasks \
+  --task-ids 108 \
+  --output-dir examples/agent_logs/demo
 ```
 
-### Evaluate with Docker
+### Using Docker
 
-You can run evaluation directly using the Docker image by mounting your output directory:
+Run evaluation using the Docker image by mounting your output directory:
 
 ```bash
 docker run --rm \
@@ -72,6 +67,83 @@ output/
 ├── 2/
 │   └── ...
 ```
+
+### Using pip
+
+Install from PyPI:
+
+```bash
+pip install webarena-verified
+```
+
+Verify the CLI is working:
+
+```bash
+webarena-verified --help
+```
+
+For development, clone and install from source:
+
+```bash
+git clone https://github.com/ServiceNow/webarena-verified.git
+cd webarena-verified
+uv sync
+```
+
+## 🌐 Run WebArena Environments
+
+### Using the CLI (Recommended)
+
+Start and manage WebArena environments using the built-in CLI:
+
+```bash
+# Start a site (waits for services to be ready)
+webarena-verified env start --site shopping
+webarena-verified env start --site shopping_admin
+webarena-verified env start --site reddit
+webarena-verified env start --site gitlab
+
+# Check status
+webarena-verified env status --site shopping
+
+# Stop a site
+webarena-verified env stop --site shopping
+
+# Stop all running sites
+webarena-verified env stop-all
+```
+
+For sites requiring data setup (Wikipedia, Map):
+
+```bash
+# Wikipedia - download data first (~100GB)
+webarena-verified env setup init --site wikipedia --data-dir ./downloads
+webarena-verified env start --site wikipedia --data-dir ./downloads
+
+# Map - download data first (~60GB)
+webarena-verified env setup init --site map --data-dir ./downloads
+webarena-verified env start --site map
+```
+
+### Using Docker Directly
+
+You can also run environments directly with Docker:
+
+```bash
+# Shopping (Magento)
+docker run -d --name webarena-verified-shopping -p 7770:80 -p 7771:8877 am1n3e/webarena-verified-shopping
+
+# Shopping Admin
+docker run -d --name webarena-verified-shopping_admin -p 7780:80 -p 7781:8877 am1n3e/webarena-verified-shopping_admin
+
+# Reddit (Postmill)
+docker run -d --name webarena-verified-reddit -p 9999:80 -p 9998:8877 am1n3e/webarena-verified-reddit
+
+# GitLab
+docker run -d --name webarena-verified-gitlab -p 8023:8023 -p 8024:8877 am1n3e/webarena-verified-gitlab
+```
+
+See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/) for detailed setup instructions, credentials, and configuration options.
 
 ## 🧪 Evaluate A Task
 

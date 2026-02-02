@@ -1,0 +1,1 @@
+# Shopping (storefront) integration tests

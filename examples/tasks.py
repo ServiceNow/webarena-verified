@@ -6,7 +6,7 @@ from invoke.tasks import task
 
 
 @task
-def demo_gitlab_start(c, password="demopass", port="8012"):
+def gitlab_start(c, password="demopass", port="8012"):
     """Start GitLab container for development and print root password when ready.
 
     Args:
@@ -97,7 +97,7 @@ def demo_gitlab_start(c, password="demopass", port="8012"):
 
 
 @task
-def demo_gitlab_stop(c):
+def gitlab_stop(c):
     """Stop and remove the GitLab container."""
     container_name = "wa-demo-gitlab"
 

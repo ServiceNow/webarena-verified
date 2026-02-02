@@ -1,0 +1,76 @@
+name: webarena-verified-envs
+
+services:
+  shopping_admin:
+    image: am1n3e/webarena-verified-shopping_admin:latest
+    container_name: webarena-verified-shopping_admin
+    ports:
+      - "${WA_SHOPPING_ADMIN_PORT:-7780}:80"
+      - "${WA_SHOPPING_ADMIN_ENV_CTRL_PORT:-7781}:8877"
+    restart: unless-stopped
+
+  shopping:
+    image: am1n3e/webarena-verified-shopping:latest
+    container_name: webarena-verified-shopping
+    ports:
+      - "${WA_SHOPPING_PORT:-7770}:80"
+      - "${WA_SHOPPING_ENV_CTRL_PORT:-7771}:8877"
+    restart: unless-stopped
+
+  gitlab:
+    image: am1n3e/webarena-verified-gitlab:latest
+    container_name: webarena-verified-gitlab
+    ports:
+      - "${WA_GITLAB_PORT:-8023}:8023"
+      - "${WA_GITLAB_ENV_CTRL_PORT:-8024}:8877"
+    restart: unless-stopped
+    shm_size: '2gb'
+
+  reddit:
+    image: am1n3e/webarena-verified-reddit:latest
+    container_name: webarena-verified-reddit
+    ports:
+      - "${WA_REDDIT_PORT:-9999}:80"
+      - "${WA_REDDIT_ENV_CTRL_PORT:-9998}:8877"
+    restart: unless-stopped
+
+  wikipedia:
+    image: am1n3e/webarena-verified-wikipedia:latest
+    container_name: webarena-verified-wikipedia
+    ports:
+      - "${WA_WIKIPEDIA_PORT:-8888}:8080"
+      - "${WA_WIKIPEDIA_ENV_CTRL_PORT:-8889}:8877"
+    volumes:
+      - webarena-verified-wikipedia-data:/data:ro
+    restart: unless-stopped
+
+  map:
+    image: am1n3e/webarena-verified-map:latest
+    container_name: webarena-verified-map
+    platform: linux/amd64
+    ports:
+      - "${WA_MAP_PORT:-3030}:8080"           # Apache (Rails + tiles + OSRM/Nominatim)
+      - "${WA_MAP_ENV_CTRL_PORT:-3031}:8877"
+    volumes:
+      - webarena-verified-map-tile-db:/data/database
+      - webarena-verified-map-routing-car:/data/routing/car
+      - webarena-verified-map-routing-bike:/data/routing/bike
+      - webarena-verified-map-routing-foot:/data/routing/foot
+      - webarena-verified-map-nominatim-db:/data/nominatim/postgres
+      - webarena-verified-map-nominatim-flatnode:/data/nominatim/flatnode
+      - webarena-verified-map-website-db:/var/lib/postgresql/14/main
+      - webarena-verified-map-tiles:/data/tiles
+      - webarena-verified-map-style:/data/style
+    restart: unless-stopped
+
+volumes:
+  webarena-verified-wikipedia-data:
+  webarena-verified-map-tile-db:
+  webarena-verified-map-routing-car:
+  webarena-verified-map-routing-bike:
+  webarena-verified-map-routing-foot:
+  webarena-verified-map-nominatim-db:
+  webarena-verified-map-nominatim-flatnode:
+  webarena-verified-map-website-db:
+  webarena-verified-map-tiles:
+  webarena-verified-map-style:

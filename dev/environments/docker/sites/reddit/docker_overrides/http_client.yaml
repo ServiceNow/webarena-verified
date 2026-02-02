@@ -1,0 +1,33 @@
+parameters:
+  postmill.http_client.default_user_agent: "Postmill/%env(APP_VERSION)% (https://postmill.xyz)"
+  postmill.http_client.external_client_options:
+    headers:
+      User-Agent: "%postmill.http_client.default_user_agent%"
+    base_uri: null
+
+services:
+  _defaults:
+    public: false
+
+  Symfony\Contracts\HttpClient\HttpClientInterface $externalClient: "@postmill.http_client.external_client"
+
+  postmill.http_client.default:
+    class: Symfony\Contracts\HttpClient\HttpClientInterface
+    factory: ['@Symfony\Contracts\HttpClient\HttpClientInterface', withOptions]
+    arguments:
+      - "%postmill.http_client.external_client_options%"
+
+  # Decorator to rewrite any external URLs to internal localhost address
+  postmill.http_client.url_rewriter:
+    class: App\HttpClient\UrlRewritingHttpClient
+    arguments: ["@.inner"]
+    decorates: postmill.http_client.default
+    decoration_priority: 10
+
+  # Use the default client directly without NoPrivateNetworkHttpClient wrapper
+  postmill.http_client.external_client:
+    alias: postmill.http_client.default
+
+  postmill.http_client.external_client.psr18:
+    class: Symfony\Component\HttpClient\Psr18Client
+    arguments: ["@postmill.http_client.external_client"]

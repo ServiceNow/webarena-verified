@@ -32,4 +32,4 @@ jobs:
         run: docker build -t webarena-verified:test .
 
       - name: Run tests
-        run: uv run pytest --webarena-verified-docker-img webarena-verified:test --ignore=tests/integration/environment_control/
+        run: uv run pytest --webarena-verified-docker-img webarena-verified:test --ignore=tests/integration/environment_control/ --ignore=tests/integration/environments/
