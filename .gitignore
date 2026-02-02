@@ -243,3 +243,6 @@ eval_log.txt
 
 # Generated Gatus config
 dev/environments/docker/monitoring/gatus/config.yaml
+
+# CI Wikipedia ZIM files (downloaded by inv dev.ci.setup-wikipedia)
+dev/environments/docker/sites/wikipedia/data/

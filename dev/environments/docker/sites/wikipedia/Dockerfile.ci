@@ -1,0 +1,53 @@
+# CI Dockerfile for Wikipedia - uses tiny Ray Charles ZIM (~1MB)
+# For fast CI testing only. For production, use the main Dockerfile.
+#
+# Usage:
+#   inv ci.setup-wikipedia   # Download the ZIM file first
+#   inv ci.build-wikipedia   # Build this image
+
+FROM ghcr.io/kiwix/kiwix-serve:3.3.0
+
+ARG ENV_CTRL_PORT=8877
+ARG ZIM_FILE=wikipedia_en_ray-charles_maxi_2024-10.zim
+
+# Install Python and supervisor
+RUN apk add --no-cache python3 supervisor
+
+# Create data directory
+RUN mkdir -p /data
+
+# Copy the pre-downloaded ZIM file
+COPY dev/environments/docker/sites/wikipedia/data/${ZIM_FILE} /data/${ZIM_FILE}
+
+# Copy environment_control package and env-ctrl CLI
+COPY packages/environment_control/environment_control /usr/local/environment_control
+COPY --chmod=755 packages/environment_control/environment_control/env-ctrl /usr/local/bin/env-ctrl
+
+# Copy redirect index.html
+COPY dev/environments/docker/sites/wikipedia/index.html /srv/index.html
+
+# Copy supervisord config
+COPY dev/environments/docker/sites/wikipedia/supervisord.conf /etc/supervisord.conf
+
+# Set environment type for env-ctrl
+ENV WA_ENV_CTRL_TYPE=wikipedia
+
+# ZIM file path for CI
+ENV WA_ENV_CTRL_ZIM_FILE=/data/${ZIM_FILE}
+
+# Default ports (can be overridden)
+ENV WA_CONTAINER_PORT=8080
+ENV WA_ENV_CTRL_KIWIX_PORT=${WA_CONTAINER_PORT}
+ENV WA_ENV_CTRL_PORT=${ENV_CTRL_PORT}
+
+# Site URL for the dashboard link (can be overridden)
+ENV WA_ENV_CTRL_EXTERNAL_SITE_URL=http://localhost:8888
+
+# Expose ports (kiwix: 8080, env-ctrl)
+EXPOSE 8080 ${ENV_CTRL_PORT}
+
+# Copy entrypoint script
+COPY dev/environments/docker/sites/wikipedia/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

@@ -14,8 +14,12 @@ on:
 
 jobs:
   test:
-    name: Test Docker Sites
+    name: Test ${{ matrix.site }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        site: [shopping_admin, shopping, reddit, gitlab, wikipedia, map]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,8 +38,13 @@ jobs:
       - name: Install Playwright browsers
         run: uv run playwright install chromium --with-deps
 
-      - name: Build Docker image
-        run: docker build -t webarena-verified:test .
+      - name: Build Docker image (standard)
+        if: matrix.site != 'wikipedia'
+        run: uv run invoke envs.docker.build --site=${{ matrix.site }} --tag=test
+
+      - name: Build Docker image (wikipedia CI)
+        if: matrix.site == 'wikipedia'
+        run: uv run invoke dev.ci.build-wikipedia --tag=test
 
       - name: Run Docker site integration tests
-        run: uv run pytest tests/integration/environments/ -m docker --webarena-verified-docker-img webarena-verified:test
+        run: uv run invoke envs.docker.test --site=${{ matrix.site }} --tag=test

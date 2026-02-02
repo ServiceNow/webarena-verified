@@ -2,7 +2,7 @@
 
 from invoke import Collection, Context, task
 
-from dev import code_tasks, data_tasks, docs_tasks, env_tasks
+from dev import ci_tasks, code_tasks, data_tasks, docs_tasks, env_tasks
 from dev.environments import tasks as envs_tasks
 from dev.utils import git_utils
 from examples import tasks as demo_tasks
@@ -145,6 +145,7 @@ ns.add_task(docker_build)
 
 # Add namespaces
 dev_ns = Collection("dev")
+dev_ns.add_collection(Collection.from_module(ci_tasks), name="ci")
 dev_ns.add_collection(Collection.from_module(code_tasks), name="code")
 dev_ns.add_collection(Collection.from_module(data_tasks), name="data")
 dev_ns.add_collection(Collection.from_module(docs_tasks), name="docs")
