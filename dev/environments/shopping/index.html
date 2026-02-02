@@ -12,13 +12,13 @@
         <meta name="author" content="Amine Elhattami">
       
       
-        <link rel="canonical" href="https://servicenow.github.io/webarena-verified/dev/environments/docker_images/">
+        <link rel="canonical" href="https://servicenow.github.io/webarena-verified/dev/environments/shopping/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../shopping_admin/">
       
       
-        <link rel="next" href="../environment_control/">
+        <link rel="next" href="../reddit/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>Docker Images - WebArena-Verified</title>
+        <title>Shopping - WebArena-Verified</title>
       
     
     
@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#size-improvements" class="md-skip">
+        <a href="#quick-start" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Docker Images
+              Shopping
             
           </span>
         </div>
@@ -880,6 +880,91 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sites
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sites
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shopping_admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shopping Admin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
@@ -893,7 +978,7 @@
   <span class="md-ellipsis">
     
   
-    Docker Images
+    Shopping
   
 
     
@@ -911,7 +996,7 @@
   <span class="md-ellipsis">
     
   
-    Docker Images
+    Shopping
   
 
     
@@ -935,10 +1020,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#size-improvements" class="md-nav__link">
+  <a href="#quick-start" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Size Improvements
+        Quick Start
       
     </span>
   </a>
@@ -946,127 +1031,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#shopping-admin" class="md-nav__link">
+  <a href="#auto-login" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Shopping Admin
+        Auto-Login
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Shopping Admin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-create-the-slim-image" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Create the slim image
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-run-the-container-with-auto-initialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Run the container with auto-initialization
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#access-the-admin-auto-login-via-header-in-playwright" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Access the admin (auto-login via header in Playwright)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#manual-initialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Initialization
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#reddit" class="md-nav__link">
+  <a href="#optimizations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reddit
+        Optimizations
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Reddit">
+    <nav class="md-nav" aria-label="Optimizations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-create-the-slim-image_1" class="md-nav__link">
+  <a href="#header-authentication" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Create the slim image
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-run-the-container" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Run the container
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#manual-initialization_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Initialization
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#troubleshooting_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
+        Header Authentication
       
     </span>
   </a>
@@ -1081,6 +1072,126 @@
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reddit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reddit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitlab/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitLab
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikipedia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikipedia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -1833,10 +1944,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#size-improvements" class="md-nav__link">
+  <a href="#quick-start" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Size Improvements
+        Quick Start
       
     </span>
   </a>
@@ -1844,127 +1955,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#shopping-admin" class="md-nav__link">
+  <a href="#auto-login" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Shopping Admin
+        Auto-Login
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Shopping Admin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-create-the-slim-image" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Create the slim image
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-run-the-container-with-auto-initialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Run the container with auto-initialization
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#access-the-admin-auto-login-via-header-in-playwright" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Access the admin (auto-login via header in Playwright)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#manual-initialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Initialization
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#reddit" class="md-nav__link">
+  <a href="#optimizations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reddit
+        Optimizations
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Reddit">
+    <nav class="md-nav" aria-label="Optimizations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-create-the-slim-image_1" class="md-nav__link">
+  <a href="#header-authentication" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Create the slim image
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-run-the-container" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Run the container
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#manual-initialization_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Manual Initialization
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#troubleshooting_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
+        Header Authentication
       
     </span>
   </a>
@@ -1996,189 +2013,63 @@
   
 
 
-<h1 id="docker-images">Docker Images<a class="headerlink" href="#docker-images" title="Permanent link">&para;</a></h1>
-<p>To improve reset time and reduce storage requirements, we provide recipes to create <strong>slim images</strong> - optimized versions of the original environments while keeping the exact content and functionality.</p>
-<h2 id="size-improvements">Size Improvements<a class="headerlink" href="#size-improvements" title="Permanent link">&para;</a></h2>
-<p>Slim images are significantly smaller than their original counterparts:</p>
+<h1 id="shopping">Shopping<a class="headerlink" href="#shopping" title="Permanent link">&para;</a></h1>
+<p>Magento 2 storefront for e-commerce browsing and purchasing.</p>
 <table>
 <thead>
 <tr>
-<th>Environment</th>
-<th>Original Size</th>
-<th>Slim Size</th>
-<th>Reduction</th>
+<th>Property</th>
+<th>Value</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Shopping Admin</td>
-<td>19.9 GB</td>
-<td>4.98 GB</td>
-<td><strong>~70% smaller</strong></td>
+<td>Port</td>
+<td>7770</td>
 </tr>
 <tr>
-<td>Shopping</td>
-<td>117 GB</td>
-<td>17.8 GB</td>
-<td><strong>~85% smaller</strong></td>
+<td>Env-Ctrl Port</td>
+<td>7771</td>
 </tr>
 <tr>
-<td>Reddit</td>
-<td>107 GB</td>
-<td>19 GB</td>
-<td><strong>~82% smaller</strong></td>
+<td>Image</td>
+<td><code>am1n3e/webarena-verified-shopping</code></td>
 </tr>
 <tr>
-<td>GitLab</td>
-<td>155 GB</td>
-<td>34 GB</td>
-<td><strong>~78% smaller</strong></td>
+<td>Container</td>
+<td><code>webarena-verified-shopping</code></td>
 </tr>
 </tbody>
 </table>
-<p><strong>Benefits:</strong></p>
-<ul>
-<li>Smaller storage and memory footprint</li>
-<li>HTTP header-based authentication bypassing UI login</li>
-<li>All functionality preserved</li>
-</ul>
-<h2 id="shopping-admin">Shopping Admin<a class="headerlink" href="#shopping-admin" title="Permanent link">&para;</a></h2>
-<h3 id="1-create-the-slim-image">1. Create the slim image<a class="headerlink" href="#1-create-the-slim-image" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>scripts/environments/shopping_admin
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>bash<span class="w"> </span>create_slim_image.sh
+<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Using CLI (recommended)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>webarena-verified<span class="w"> </span>env<span class="w"> </span>start<span class="w"> </span>--site<span class="w"> </span>shopping
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Using Docker directly</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>webarena-verified-shopping<span class="w"> </span>-p<span class="w"> </span><span class="m">7770</span>:80<span class="w"> </span>-p<span class="w"> </span><span class="m">7771</span>:8877<span class="w"> </span>am1n3e/webarena-verified-shopping
 </code></pre></div>
-<h3 id="2-run-the-container-with-auto-initialization">2. Run the container with auto-initialization<a class="headerlink" href="#2-run-the-container-with-auto-initialization" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>admin-slim<span class="w"> </span>-p<span class="w"> </span><span class="m">7780</span>:80<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">MAGENTO_BASE_URL</span><span class="o">=</span>http://localhost:7780<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>shopping_admin_final_0719:slim
+<p>Access at: http://localhost:7770</p>
+<h2 id="auto-login">Auto-Login<a class="headerlink" href="#auto-login" title="Permanent link">&para;</a></h2>
+<p>The optimized image supports HTTP header-based authentication for customer accounts, bypassing UI login.</p>
+<p><strong>Header:</strong> <code>X-M2-Customer-Auto-Login: email:password</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.async_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_playwright</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">async</span> <span class="k">with</span> <span class="n">async_playwright</span><span class="p">()</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">browser</span> <span class="o">=</span> <span class="k">await</span> <span class="n">p</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">()</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">context</span> <span class="o">=</span> <span class="k">await</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_context</span><span class="p">(</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        <span class="n">extra_http_headers</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>            <span class="s2">&quot;X-M2-Customer-Auto-Login&quot;</span><span class="p">:</span> <span class="s2">&quot;emma.lopez@gmail.com:Password.123&quot;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>        <span class="p">}</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="p">)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">page</span> <span class="o">=</span> <span class="k">await</span> <span class="n">context</span><span class="o">.</span><span class="n">new_page</span><span class="p">()</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">&quot;http://localhost:7770&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="c1"># You&#39;re now logged in as a customer</span>
 </code></pre></div>
-<h3 id="access-the-admin-auto-login-via-header-in-playwright">Access the admin (auto-login via header in Playwright)<a class="headerlink" href="#access-the-admin-auto-login-via-header-in-playwright" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.async_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_playwright</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">async</span> <span class="k">with</span> <span class="n">async_playwright</span><span class="p">()</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">browser</span> <span class="o">=</span> <span class="k">await</span> <span class="n">p</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">()</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">context</span> <span class="o">=</span> <span class="k">await</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_context</span><span class="p">()</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="c1"># Set auto-login header</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="k">await</span> <span class="n">context</span><span class="o">.</span><span class="n">set_extra_http_headers</span><span class="p">({</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="s2">&quot;X-M2-Admin-Auto-Login&quot;</span><span class="p">:</span> <span class="s2">&quot;admin:admin1234&quot;</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="p">})</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">page</span> <span class="o">=</span> <span class="k">await</span> <span class="n">context</span><span class="o">.</span><span class="n">new_page</span><span class="p">()</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">&quot;http://localhost:7780/admin&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="c1"># You&#39;re now logged in as admin</span>
-</code></pre></div>
-<h3 id="manual-initialization">Manual Initialization<a class="headerlink" href="#manual-initialization" title="Permanent link">&para;</a></h3>
-<p>If you want to manually initialize the environment (e.g., after stopping the container), run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Start container</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>admin-slim<span class="w"> </span>-p<span class="w"> </span><span class="m">7780</span>:80<span class="w"> </span>shopping_admin_final_0719:slim
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Initialize Magento</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>admin-slim<span class="w"> </span>magento-init<span class="w"> </span>http://localhost:7780
-</code></pre></div>
-<h3 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h3>
-<p><strong>Auto-login not working:</strong></p>
-<ol>
-<li>
-<p>Test with curl:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Should redirect to dashboard and set cookies</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>curl<span class="w"> </span>-I<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-M2-Admin-Auto-Login: admin:admin1234&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>http://localhost:7780/admin
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Without header - should redirect to login page</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>curl<span class="w"> </span>-I<span class="w"> </span>http://localhost:7780/admin
-</code></pre></div></p>
-</li>
-<li>
-<p>Check module is enabled:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>admin-slim<span class="w"> </span>/var/www/magento2/bin/magento<span class="w"> </span>module:status<span class="w"> </span>WebArena_AutoLogin
-</code></pre></div>
-   Should show "Module is enabled"</p>
-</li>
-<li>
-<p>Check DI is compiled:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>admin-slim<span class="w"> </span>ls<span class="w"> </span>-la<span class="w"> </span>/var/www/magento2/generated/code/
-</code></pre></div>
-   Should contain compiled classes</p>
-</li>
-<li>
-<p>Check logs:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>admin-slim<span class="w"> </span>tail<span class="w"> </span>-f<span class="w"> </span>/var/www/magento2/var/log/system.log
-</code></pre></div>
-   Look for "Auto-login successful" or error messages</p>
-</li>
-<li>
-<p>Recompile if needed:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>admin-slim<span class="w"> </span>/var/www/magento2/bin/magento<span class="w"> </span>setup:di:compile
-</code></pre></div></p>
-</li>
-</ol>
-<p><strong>Container not initializing:</strong></p>
-<ul>
-<li>Check container logs: <code>docker logs admin-slim</code></li>
-<li>Verify MAGENTO_BASE_URL is set correctly</li>
-<li>Wait ~30 seconds for initialization to complete</li>
-</ul>
-<p><strong>Database reset not working:</strong></p>
-<ul>
-<li>Ensure archive exists: <code>docker exec admin-slim ls -lh /var/backups/mysql/data.tar.gz</code></li>
-<li>Check services status: <code>docker exec admin-slim supervisorctl status</code></li>
-</ul>
-<h2 id="reddit">Reddit<a class="headerlink" href="#reddit" title="Permanent link">&para;</a></h2>
-<h3 id="1-create-the-slim-image_1">1. Create the slim image<a class="headerlink" href="#1-create-the-slim-image_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">cd</span><span class="w"> </span>scripts/environments/reddit
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>bash<span class="w"> </span>create_slim_image.sh
-</code></pre></div>
-<p><strong>Note:</strong> The script reuses existing data if available:</p>
-<ul>
-<li>PostgreSQL archive (~1.6GB)</li>
-<li>Optimized submission images (~6GB)</li>
-<li>This saves ~30-60 minutes on subsequent runs</li>
-</ul>
-<h3 id="2-run-the-container">2. Run the container<a class="headerlink" href="#2-run-the-container" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>reddit-slim<span class="w"> </span>-p<span class="w"> </span><span class="m">9999</span>:80<span class="w"> </span>postmill-populated-exposed-withimg:slim
-</code></pre></div>
-<p>The container is self-contained (no volume mounts needed) and auto-initializes on first start (~2-3 minutes).</p>
-<h3 id="manual-initialization_1">Manual Initialization<a class="headerlink" href="#manual-initialization_1" title="Permanent link">&para;</a></h3>
-<p>Not typically needed (container auto-initializes), but can be run manually if needed:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Start container</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>reddit-slim<span class="w"> </span>-p<span class="w"> </span><span class="m">9999</span>:80<span class="w"> </span>postmill-populated-exposed-withimg:slim
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Check initialization status</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>reddit-slim<span class="w"> </span>postmill-init
-</code></pre></div>
-<h3 id="troubleshooting_1">Troubleshooting<a class="headerlink" href="#troubleshooting_1" title="Permanent link">&para;</a></h3>
-<p><strong>Container not initializing:</strong></p>
-<ul>
-<li>Check container logs: <code>docker logs reddit-slim</code></li>
-<li>Wait ~2-3 minutes for initial data extraction</li>
-<li>Check initialization status: <code>docker exec reddit-slim cat /run/postmill.env</code></li>
-</ul>
-<p><strong>Database reset not working:</strong></p>
-<ul>
-<li>Ensure archives exist:
-  <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>reddit-slim<span class="w"> </span>ls<span class="w"> </span>-lh<span class="w"> </span>/var/backups/pgsql/data.tar.gz
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>reddit-slim<span class="w"> </span>ls<span class="w"> </span>-lh<span class="w"> </span>/var/backups/images/submission_images.tar.gz
-</code></pre></div></li>
-<li>Check services status: <code>docker exec reddit-slim supervisorctl status</code></li>
-<li>Verify database integrity: <code>docker exec reddit-slim postmill-init</code> (shows validation output)</li>
-</ul>
-<p><strong>Patches not applied:</strong></p>
-<ol>
-<li>
-<p>Check rate limits removed:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>reddit-slim<span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;@RateLimit&#39;</span><span class="w"> </span>/var/www/html/src/DataObject/SubmissionData.php
-</code></pre></div>
-   Should return <code>0</code></p>
-</li>
-<li>
-<p>Check HTTP client configured:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>reddit-slim<span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;alias: postmill.http_client.default&#39;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>/var/www/html/config/packages/http_client.yaml
-</code></pre></div>
-   Should show the configuration line</p>
-</li>
-</ol>
+<h2 id="optimizations">Optimizations<a class="headerlink" href="#optimizations" title="Permanent link">&para;</a></h2>
+<h3 id="header-authentication">Header Authentication<a class="headerlink" href="#header-authentication" title="Permanent link">&para;</a></h3>
+<p><strong>Problem:</strong> UI login via Playwright is slow and requires maintaining test credentials.</p>
+<p><strong>Fix:</strong> Magento plugin intercepts frontend requests and authenticates customers via <code>X-M2-Customer-Auto-Login: email:password</code> header.</p>
+<p><strong>Files:</strong> <code>CustomerAutoLogin/Plugin/CustomerAutoLoginPlugin.php</code>, <code>CustomerAutoLogin/etc/di.xml</code>, <code>CustomerAutoLogin/etc/module.xml</code>, <code>CustomerAutoLogin/registration.php</code></p>
 
 
 

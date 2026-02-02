@@ -61,11 +61,31 @@
          <lastmod>2026-02-02</lastmod>
     </url>
     <url>
-         <loc>https://servicenow.github.io/webarena-verified/dev/environments/docker_images/</loc>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/environment_control/</loc>
          <lastmod>2026-02-02</lastmod>
     </url>
     <url>
-         <loc>https://servicenow.github.io/webarena-verified/dev/environments/environment_control/</loc>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/gitlab/</loc>
+         <lastmod>2026-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/map/</loc>
+         <lastmod>2026-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/reddit/</loc>
+         <lastmod>2026-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/shopping/</loc>
+         <lastmod>2026-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/shopping_admin/</loc>
+         <lastmod>2026-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/wikipedia/</loc>
          <lastmod>2026-02-02</lastmod>
     </url>
     <url>
