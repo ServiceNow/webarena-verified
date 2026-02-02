@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from invoke.context import Context
 
 
-@task
-def code_format_and_check(c: Context) -> None:
+@task(name="format")
+def format_and_check(c: Context) -> None:
     """Format code using ruff and run type checking."""
     c.run("uv run ruff check src dev --fix --unsafe-fixes")
     c.run("uv run ruff format src dev")

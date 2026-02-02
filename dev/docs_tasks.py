@@ -11,19 +11,19 @@ if TYPE_CHECKING:
 
 
 @task
-def docs_serve(c: Context) -> None:
+def serve(c: Context) -> None:
     """Serve the documentation locally with live reload."""
     c.run("uv run mkdocs serve")
 
 
 @task
-def docs_build(c: Context) -> None:
+def build(c: Context) -> None:
     """Build the documentation site."""
     c.run("uv run mkdocs build")
 
 
 @task
-def docs_deploy(c: Context) -> None:
+def deploy(c: Context) -> None:
     """Deploy documentation to GitHub Pages.
 
     Safety checks:

@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 DATASET_FILE = Path("assets/dataset/webarena-verified.json")
 
 
-@task
-def data_format(c: Context) -> None:
+@task(name="format")
+def format_json(c: Context) -> None:
     """Format dataset JSON file."""
     data = load_json(DATASET_FILE)
     save_json(DATASET_FILE, data)

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @task
-def env_init(c: Context) -> None:
+def init(c: Context) -> None:
     """Initialize development environment: sync all dependencies and install pre-commit hooks."""
     c.run("uv sync --all-extras")
     c.run("uv run pre-commit install")
