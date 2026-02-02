@@ -63,33 +63,6 @@ services:
       - webarena-verified-map-style:/data/style
     restart: unless-stopped
 
-  monitor:
-    image: twinproduction/gatus:v5.34.0
-    container_name: webarena-verified-monitor
-    ports:
-      - "${WA_MONITOR_PORT:-8870}:8080"
-    volumes:
-      - ./assets/environments/monitoring/config.compose.yaml:/config/config.yaml:ro
-    tmpfs:
-      - /data
-    environment:
-      - GATUS_CONFIG_PATH=/config/config.yaml
-      # Ports for UI buttons
-      - WA_SHOPPING_ADMIN_PORT=${WA_SHOPPING_ADMIN_PORT:-7780}
-      - WA_SHOPPING_PORT=${WA_SHOPPING_PORT:-7770}
-      - WA_GITLAB_PORT=${WA_GITLAB_PORT:-8023}
-      - WA_REDDIT_PORT=${WA_REDDIT_PORT:-9999}
-      - WA_WIKIPEDIA_PORT=${WA_WIKIPEDIA_PORT:-8888}
-      # Display names (set to [N/A] prefix by tasks.py when service not started)
-      - WA_SHOPPING_ADMIN_NAME=${WA_SHOPPING_ADMIN_NAME:-Shopping Admin}
-      - WA_SHOPPING_NAME=${WA_SHOPPING_NAME:-Shopping}
-      - WA_GITLAB_NAME=${WA_GITLAB_NAME:-GitLab}
-      - WA_REDDIT_NAME=${WA_REDDIT_NAME:-Reddit}
-      - WA_WIKIPEDIA_NAME=${WA_WIKIPEDIA_NAME:-Wikipedia}
-      - WA_MAP_PORT=${WA_MAP_PORT:-3030}
-      - WA_MAP_NAME=${WA_MAP_NAME:-Map}
-    restart: unless-stopped
-
 volumes:
   webarena-verified-wikipedia-data:
   webarena-verified-map-tile-db:
