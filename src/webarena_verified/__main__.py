@@ -24,6 +24,7 @@ from webarena_verified.core.utils.logging import (
     setup_webarena_verified_logging,
 )
 from webarena_verified.core.utils.trim_network_logs import trim_har_file
+from webarena_verified.environments.env_ctrl_client import EnvCtrlClient
 from webarena_verified.types.agent_response import MainObjectiveType
 from webarena_verified.types.config import WebArenaVerifiedConfig
 from webarena_verified.types.eval import EvalStatus, TaskEvalResult, TasksEvalResults, TransformedAgentResponse
@@ -330,6 +331,50 @@ def create_parser() -> argparse.ArgumentParser:
     )
     trim_logs_parser.add_argument("--input", type=str, required=True, help="Input HAR file path")
     trim_logs_parser.add_argument("--output", type=str, required=True, help="Output HAR file path")
+
+    # env subcommand group - control Docker container environments
+    env_parser = subparsers.add_parser(
+        "env",
+        help="Control Docker container environments",
+        description="Control and monitor Docker container environments via the environment control REST API",
+        epilog=textwrap.dedent("""
+            examples:
+              # Check environment status
+              webarena-verified env status --url http://localhost:8877
+
+              # Start environment (wait for ready)
+              webarena-verified env start --url http://localhost:8877 --wait
+
+              # Stop environment
+              webarena-verified env stop --url http://localhost:8877
+
+              # Initialize environment
+              webarena-verified env init --url http://localhost:8877
+            """),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    env_subparsers = env_parser.add_subparsers(dest="env_command", required=True)
+
+    # env status subcommand
+    env_status_parser = env_subparsers.add_parser("status", help="Get environment status")
+    env_status_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_status_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+    # env start subcommand
+    env_start_parser = env_subparsers.add_parser("start", help="Start the environment")
+    env_start_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_start_parser.add_argument("--wait", action="store_true", help="Wait until environment is ready")
+    env_start_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+    # env stop subcommand
+    env_stop_parser = env_subparsers.add_parser("stop", help="Stop the environment")
+    env_stop_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_stop_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+    # env init subcommand
+    env_init_parser = env_subparsers.add_parser("init", help="Initialize the environment")
+    env_init_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_init_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
 
     return parser
 
@@ -1163,9 +1208,38 @@ def trim_network_logs(args: argparse.Namespace) -> int:
         return 1
 
 
+def env_command(args: argparse.Namespace) -> int | None:
+    """Execute env subcommands (status, start, stop, init)."""
+    client = EnvCtrlClient(base_url=args.url, timeout=args.timeout)
+
+    try:
+        if args.env_command == "status":
+            result = client.status()
+        elif args.env_command == "start":
+            result = client.start(wait=args.wait)
+        elif args.env_command == "stop":
+            result = client.stop()
+        elif args.env_command == "init":
+            result = client.init()
+        else:
+            logger.error(f"Unknown env command: {args.env_command}")
+            return 1
+
+        # Print result as JSON
+        print(json.dumps(result, indent=2))
+
+        return 0 if result.get("success") else 1
+
+    except ConnectionError as e:
+        logger.error(f"Connection error: {e}")
+        return 1
+    except RuntimeError as e:
+        logger.error(f"Server error: {e}")
+        return 1
+
+
 def create_submission_pkg(args: argparse.Namespace) -> int:
     """Execute create-submission-pkg command"""
-
     # Display command info
     command_info = {
         "Command": "create-submission-pkg",
@@ -1281,6 +1355,8 @@ def main() -> None:
         sys.exit(dataset_get(args))
     elif args.command == "agent-input-get":
         sys.exit(agent_input_get(args))
+    elif args.command == "env":
+        sys.exit(env_command(args))
     else:
         parser.print_help()
         sys.exit(1)

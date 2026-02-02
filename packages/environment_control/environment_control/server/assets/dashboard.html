@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebArena Verified - Environment Control</title>
+    <style>
+        * {{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }}
+        html, body {{
+            height: 100%;
+        }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+        }}
+        header {{
+            text-align: center;
+            padding: 16px 0;
+        }}
+        header h1 {{
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: #666;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }}
+        header h2 {{
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #222;
+            margin-top: 4px;
+        }}
+        header p {{
+            color: #666;
+            font-size: 0.95rem;
+            margin-top: 8px;
+        }}
+        .info-bar {{
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            padding: 14px 24px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }}
+        .info-item {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+        .info-label {{
+            color: #666;
+        }}
+        .info-value {{
+            color: #222;
+            font-weight: 500;
+        }}
+        .site-link {{
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 4px 12px;
+            border: 1px solid #2563eb;
+            border-radius: 4px;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }}
+        .site-link:hover {{
+            background: #2563eb;
+            color: white;
+        }}
+        .site-link.hidden {{
+            display: none;
+        }}
+        .status-badge {{
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }}
+        .status-badge.ready {{
+            background: #d1fae5;
+            color: #065f46;
+        }}
+        .status-badge.not-ready {{
+            background: #fee2e2;
+            color: #991b1b;
+        }}
+        .actions {{
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }}
+        button {{
+            padding: 10px 24px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+        button:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }}
+        button:active {{
+            transform: translateY(0);
+        }}
+        .btn-init,
+        .btn-start,
+        .btn-stop,
+        .btn-restart {{
+            background: #374151;
+            color: white;
+        }}
+        .btn-refresh {{
+            background: #fff;
+            color: #374151;
+            border: 1px solid #374151;
+        }}
+        .console-container {{
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }}
+        .console-header {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: #e5e7eb;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.85rem;
+            color: #666;
+        }}
+        .console-dot {{
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }}
+        .console {{
+            flex: 1;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 16px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            overflow-y: scroll;
+            color: #444;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }}
+        .console::-webkit-scrollbar {{
+            width: 8px;
+        }}
+        .console::-webkit-scrollbar-track {{
+            background: #f1f1f1;
+            border-radius: 4px;
+        }}
+        .console::-webkit-scrollbar-thumb {{
+            background: #ccc;
+            border-radius: 4px;
+        }}
+        .console::-webkit-scrollbar-thumb:hover {{
+            background: #aaa;
+        }}
+        .console .timestamp {{
+            color: #999;
+        }}
+        .console .success {{
+            color: #059669;
+        }}
+        .console .error {{
+            color: #dc2626;
+        }}
+        .console .info {{
+            color: #4f46e5;
+        }}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>WebArena Verified</h1>
+        <h2>Environment Control</h2>
+        <p>Control and monitor WebArena Docker containers.</p>
+    </header>
+
+    <div class="info-bar">
+        <div class="info-item">
+            <span class="info-label">Environment:</span>
+            <span class="info-value">{env_name}</span>
+            <a href="{site_url}" target="_blank" class="site-link" id="site-link">Open Site</a>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Status:</span>
+            <span class="status-badge {status_class}">{status_text}</span>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn-init" onclick="doAction('init')">Initialize</button>
+        <button class="btn-start" onclick="doAction('start')">Start</button>
+        <button class="btn-stop" onclick="doAction('stop')">Stop</button>
+        <button class="btn-restart" onclick="doAction('restart')">Restart</button>
+        <button class="btn-refresh" onclick="refreshStatus()">Refresh Status</button>
+    </div>
+
+    <div class="console-container">
+        <div class="console-header">
+            <span class="console-dot"></span>
+            <span>Console Output</span>
+        </div>
+        <div id="console" class="console"><span class="info">[Ready]</span> Waiting for commands...</div>
+    </div>
+
+    <script>
+        const consoleEl = document.getElementById('console');
+        const MAX_LINES = 500;
+
+        // Hide site link if URL is empty
+        const siteLink = document.getElementById('site-link');
+        if (!siteLink.href || siteLink.href === window.location.href || siteLink.getAttribute('href') === '') {{
+            siteLink.classList.add('hidden');
+        }}
+
+        function trimConsole() {{
+            const lines = consoleEl.innerHTML.split('\n');
+            if (lines.length > MAX_LINES) {{
+                consoleEl.innerHTML = lines.slice(-MAX_LINES).join('\n');
+            }}
+        }}
+
+        function log(message, type = 'info') {{
+            const time = new Date().toLocaleTimeString();
+            const typeClass = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            consoleEl.innerHTML += `\n<span class="timestamp">[${{time}}]</span> <span class="${{typeClass}}">${{message}}</span>`;
+            trimConsole();
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }}
+
+        function formatResponse(data) {{
+            // Format response, only showing stdout/stderr for failed commands
+            const result = {{
+                success: data.success,
+                value: data.value
+            }};
+
+            if (data.exec_logs && data.exec_logs.length > 0) {{
+                result.exec_logs = data.exec_logs.map(log => {{
+                    const entry = {{
+                        command: log.command,
+                        returncode: log.returncode
+                    }};
+                    // Only include stdout/stderr if command failed
+                    if (log.returncode !== 0) {{
+                        if (log.stdout) entry.stdout = log.stdout;
+                        if (log.stderr) entry.stderr = log.stderr;
+                    }}
+                    return entry;
+                }});
+            }}
+
+            if (data.envctrl_config) {{
+                result.envctrl_config = data.envctrl_config;
+            }}
+
+            return result;
+        }}
+
+        async function doAction(action) {{
+            log('──────────────────────────────────', 'info');
+            log(action.toUpperCase(), 'info');
+            log('──────────────────────────────────', 'info');
+
+            try {{
+                const response = await fetch('/' + action, {{ method: 'POST' }});
+                const data = await response.json();
+
+                if (data.success) {{
+                    log(`${{action}} completed successfully`, 'success');
+                }} else {{
+                    log(`${{action}} failed`, 'error');
+                }}
+
+                log(JSON.stringify(formatResponse(data), null, 2), data.success ? 'success' : 'error');
+            }} catch (error) {{
+                log(`Error: ${{error.message}}`, 'error');
+            }}
+        }}
+
+        async function refreshStatus() {{
+            log('──────────────────────────────────', 'info');
+            log('REFRESH STATUS', 'info');
+            log('──────────────────────────────────', 'info');
+
+            try {{
+                const response = await fetch('/is_ready');
+                const data = await response.json();
+
+                const badge = document.querySelector('.status-badge');
+                if (data.success) {{
+                    badge.className = 'status-badge ready';
+                    badge.textContent = 'Ready';
+                }} else {{
+                    badge.className = 'status-badge not-ready';
+                    badge.textContent = 'Not Ready';
+                }}
+
+                log(JSON.stringify(formatResponse(data), null, 2), data.success ? 'success' : 'error');
+            }} catch (error) {{
+                log(`Error refreshing status: ${{error.message}}`, 'error');
+            }}
+        }}
+    </script>
+</body>
+</html>
