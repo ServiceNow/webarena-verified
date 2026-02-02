@@ -3,7 +3,7 @@
 # ============================================================
 # Stage 1: Builder
 # ============================================================
-FROM ghcr.io/astral-sh/uv:0.9-python3.12-bookworm-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.9-python3.11-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # ============================================================
 # Stage 2: Runtime (minimal)
 # ============================================================
-FROM python:3.12-slim-bookworm AS runtime
+FROM python:3.11-slim-bookworm AS runtime
 
 WORKDIR /app
 

@@ -28,11 +28,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "click>=8.3.0",
-    "pydantic-settings>=2.11.0",
-    "litellm>=1.80.5",
-]
 examples = [
     "playwright>=1.55.0",
     "browser-use>=0.8.1",
@@ -65,6 +60,10 @@ include = ["src/**", "assets/**"]
 
 [dependency-groups]
 dev = [
+    "click>=8.3.0",
+    "environment-control",
+    "pydantic-settings>=2.11.0",
+    "litellm>=1.80.5",
     "invoke>=2.2.0",
     "semver>=3.0.0",
     "mkdocs>=1.6.1",
@@ -76,6 +75,8 @@ dev = [
     "pre-commit>=4.0.0",
     "pytest>=8.4.2",
     "pytest-cov>=6.0.0",
+    "pytest-playwright>=0.7.0",
+    "pytest-rerunfailures>=15.0",
     "rich>=14.2.0",
     "ruff>=0.14.1",
     "twine>=6.0.1",
@@ -84,6 +85,9 @@ dev = [
 
 [tool.uv]
 default-groups = "all"
+
+[tool.uv.sources]
+environment-control = { path = "packages/environment_control", editable = true }
 
 [tool.ty.environment]
 python-version = "3.11"
@@ -196,6 +200,9 @@ convention = "google"
     "ANN",     # invoke tasks use dynamic typing from CLI
     "D101",    # settings classes don't need docstrings
     "PLR0913", # CLI tasks naturally have many arguments (flags)
+]
+"packages/**/*.py" = [
+    "ANN401",  # Any type allowed for kwargs and generic functions
 ]
 "**/patches/**/*.py" = [
     "E501",    # embedded JavaScript code has long lines

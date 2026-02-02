@@ -1,5 +1,7 @@
 """Environment-related type definitions for WebArena Verified."""
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -22,6 +24,21 @@ class SiteInstanceCommandResult(BaseModel):
         return self.returncode == 0
 
 
+class EnvCtrlResult(BaseModel):
+    """Result from env-ctrl CLI commands.
+
+    Attributes:
+        success: Whether the command succeeded.
+        message: Human-readable message describing the result.
+        details: Additional details (varies by command).
+    """
+
+    success: bool = Field(description="Whether the command succeeded")
+    message: str = Field(default="", description="Human-readable message describing the result")
+    details: dict[str, Any] = Field(default_factory=dict, description="Additional details (varies by command)")
+
+
 __all__ = [
+    "EnvCtrlResult",
     "SiteInstanceCommandResult",
 ]

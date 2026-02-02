@@ -13,15 +13,6 @@ def webarena_verified_docker_img(request):
 
 
 @pytest.fixture
-def docker():
-    """Check that docker is available and return the CLI name."""
-    docker_path = shutil.which("docker")
-    if docker_path is None:
-        raise RuntimeError("'docker' is missing or not available in PATH.")
-    return "docker"
-
-
-@pytest.fixture
 def uvx():
     """Check that uvx is available and return the CLI name."""
     uvx_path = shutil.which("uvx")

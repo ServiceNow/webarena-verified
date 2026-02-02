@@ -1,14 +1,22 @@
-name: Test
+name: Test Environment Control
 
 on:
   pull_request:
     branches: [main]
+    paths:
+      - "packages/environment_control/**"
+      - "tests/integration/environment_control/**"
+      - "src/webarena_verified/environments/env_ctrl_client/**"
   push:
     branches: [main]
+    paths:
+      - "packages/environment_control/**"
+      - "tests/integration/environment_control/**"
+      - "src/webarena_verified/environments/env_ctrl_client/**"
 
 jobs:
   test:
-    name: Test
+    name: Test Environment Control
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,5 +39,5 @@ jobs:
       - name: Build Docker image
         run: docker build -t webarena-verified:test .
 
-      - name: Run tests
-        run: uv run pytest --webarena-verified-docker-img webarena-verified:test --ignore=tests/integration/environment_control/
+      - name: Run environment control tests
+        run: uv run pytest tests/integration/environment_control/ -m docker --webarena-verified-docker-img webarena-verified:test
