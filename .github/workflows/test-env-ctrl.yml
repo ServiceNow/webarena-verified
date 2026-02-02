@@ -1,0 +1,40 @@
+name: Test Environment Control
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/environment_control/**"
+      - "tests/integration/environment_control/**"
+      - "src/webarena_verified/environments/env_ctrl_client/**"
+  push:
+    branches: [main]
+    paths:
+      - "packages/environment_control/**"
+      - "tests/integration/environment_control/**"
+      - "src/webarena_verified/environments/env_ctrl_client/**"
+
+jobs:
+  test:
+    name: Test Environment Control
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Build Docker image
+        run: docker build -t webarena-verified:test .
+
+      - name: Run environment control tests
+        run: uv run pytest tests/integration/environment_control/ -m docker --webarena-verified-docker-img webarena-verified:test
