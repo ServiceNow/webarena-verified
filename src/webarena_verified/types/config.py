@@ -4,12 +4,86 @@ from pathlib import Path
 from typing import Any, Self
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from webarena_verified.core.utils import logger
 from webarena_verified.utils import get_package_assets_path
 
 from .task import WebArenaSite
+
+# ============================================================================
+# Container Configuration Models
+# ============================================================================
+
+
+class ContainerVolumeSpec(BaseModel):
+    """Specification for a Docker volume setup.
+
+    Defines how to set up a single Docker volume, including where to get data
+    (from a tar file or empty), and how to mount it in the container.
+
+    Attributes:
+        suffix: Volume name suffix (e.g., "data", "tile-db"). Full volume name is
+            constructed as: {prefix}-{site}-{suffix}
+        mount_path: Path inside container where volume is mounted (e.g., "/data/database")
+        source_tar: Optional tar filename to extract data from (e.g., "osm_tile_server.tar")
+        tar_extract_path: Path inside tar to extract (e.g., "data/database"). If None,
+            extracts entire tar to volume root.
+        strip_components: Number of leading path components to strip when extracting
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    suffix: str
+    mount_path: str
+    source_tar: str | None = None
+    tar_extract_path: str | None = None
+    strip_components: int = 0
+
+
+class ContainerSetupConfig(BaseModel):
+    """Configuration for setting up Docker volumes before running a container.
+
+    Used by sites that require external data files to be downloaded and
+    extracted into Docker volumes before the container can run.
+
+    Attributes:
+        data_urls: URLs to download data files from (e.g., tar files, ZIM files)
+        volumes: Volume specifications defining how to set up each volume
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    data_urls: tuple[str, ...] = ()
+    volumes: tuple[ContainerVolumeSpec, ...] = ()
+
+
+class ContainerConfig(BaseModel):
+    """Container configuration for running a site.
+
+    Defines Docker image, port mappings, and volume mounts for running
+    a WebArena site container.
+
+    Attributes:
+        docker_img: Docker image name (e.g., "am1n3e/webarena-verified-shopping")
+        container_port: Port inside container where the web service listens (default: 80)
+        env_ctrl_port: Port inside container where env-ctrl API listens (default: 8877)
+        volumes: Named Docker volumes to mount. Maps volume name to mount path.
+        setup: Optional setup configuration for sites needing data volume preparation
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    docker_img: str
+    container_port: int = 80
+    env_ctrl_port: int = 8877
+    volumes: dict[str, str] = Field(default_factory=dict)
+    setup: ContainerSetupConfig | None = None
+
+
+# ============================================================================
+# Environment Configuration
+# ============================================================================
 
 
 class EnvironmentConfig(BaseModel):
@@ -55,6 +129,13 @@ class EnvironmentConfig(BaseModel):
     credentials: dict[str, str] | None = None
 
     extra: dict[str, Any] = Field(default_factory=dict)
+
+    container: ContainerConfig | None = None
+    """Optional container configuration for running this site via Docker.
+
+    If provided, overrides the default container configuration for the site.
+    When None, the default container config from DEFAULT_CONTAINER_CONFIGS is used.
+    """
 
     @model_validator(mode="after")
     def set_default_active_url_idx(self) -> Self:

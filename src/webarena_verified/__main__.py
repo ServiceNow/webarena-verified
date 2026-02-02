@@ -24,7 +24,9 @@ from webarena_verified.core.utils.logging import (
     setup_webarena_verified_logging,
 )
 from webarena_verified.core.utils.trim_network_logs import trim_har_file
+from webarena_verified.environments.container import ContainerManager, ContainerStatus
 from webarena_verified.environments.env_ctrl_client import EnvCtrlClient
+from webarena_verified.environments.setup import setup_clean, setup_init
 from webarena_verified.types.agent_response import MainObjectiveType
 from webarena_verified.types.config import WebArenaVerifiedConfig
 from webarena_verified.types.eval import EvalStatus, TaskEvalResult, TasksEvalResults, TransformedAgentResponse
@@ -38,23 +40,40 @@ from webarena_verified.utils import (
 
 def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
     """Add the env subcommand group for Docker container control."""
+    # Valid site choices (exclude homepage)
+    site_choices = [s.value for s in WebArenaSite if s != WebArenaSite.HOMEPAGE]
+    # Sites that require setup (have data files)
+    setup_site_choices = ["wikipedia", "map"]
+
     env_parser = subparsers.add_parser(
         "env",
         help="Control Docker container environments",
-        description="Control and monitor Docker container environments via the environment control REST API",
+        description="Control and monitor Docker container environments",
         epilog=textwrap.dedent("""
             examples:
-              # Check environment status
-              webarena-verified env status --url http://localhost:8877
+              # Start a site container (auto-assign ports)
+              webarena-verified env start --site shopping
 
-              # Start environment (wait for ready)
+              # Start on specific ports
+              webarena-verified env start --site shopping --port 8080 --env-ctrl-port 9000
+
+              # Check container status
+              webarena-verified env status --site shopping
+
+              # Stop container
+              webarena-verified env stop --site shopping
+
+              # Communicate with running container via HTTP
+              webarena-verified env status --url http://localhost:8877
               webarena-verified env start --url http://localhost:8877 --wait
 
-              # Stop environment
-              webarena-verified env stop --url http://localhost:8877
+              # Set up data volumes (download data, create volumes)
+              webarena-verified env setup init --site wikipedia --data-dir ./data
+              webarena-verified env setup init --data-dir ./data --dry-run
 
-              # Initialize environment
-              webarena-verified env init --url http://localhost:8877
+              # Clean up volumes
+              webarena-verified env setup clean --site wikipedia
+              webarena-verified env setup clean --force
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -62,24 +81,76 @@ def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
 
     # env status subcommand
     env_status_parser = env_subparsers.add_parser("status", help="Get environment status")
-    env_status_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_status_group = env_status_parser.add_mutually_exclusive_group(required=True)
+    env_status_group.add_argument("--site", type=str, choices=site_choices, help="Site name (manages Docker container)")
+    env_status_group.add_argument("--url", type=str, help="Environment control server URL (HTTP client)")
     env_status_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
 
     # env start subcommand
     env_start_parser = env_subparsers.add_parser("start", help="Start the environment")
-    env_start_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_start_group = env_start_parser.add_mutually_exclusive_group(required=True)
+    env_start_group.add_argument("--site", type=str, choices=site_choices, help="Site name (manages Docker container)")
+    env_start_group.add_argument("--url", type=str, help="Environment control server URL (HTTP client)")
+    env_start_parser.add_argument("--port", type=int, help="Host port for site (with --site, default: auto)")
+    env_start_parser.add_argument(
+        "--env-ctrl-port", type=int, help="Host port for env-ctrl (with --site, default: auto)"
+    )
     env_start_parser.add_argument("--wait", action="store_true", help="Wait until environment is ready")
-    env_start_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+    env_start_parser.add_argument("--timeout", type=int, default=120, help="Wait timeout in seconds (default: 120)")
 
     # env stop subcommand
     env_stop_parser = env_subparsers.add_parser("stop", help="Stop the environment")
-    env_stop_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_stop_group = env_stop_parser.add_mutually_exclusive_group(required=True)
+    env_stop_group.add_argument("--site", type=str, choices=site_choices, help="Site name (manages Docker container)")
+    env_stop_group.add_argument("--url", type=str, help="Environment control server URL (HTTP client)")
     env_stop_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
 
-    # env init subcommand
-    env_init_parser = env_subparsers.add_parser("init", help="Initialize the environment")
+    # env init subcommand (HTTP client only)
+    env_init_parser = env_subparsers.add_parser("init", help="Initialize the environment (HTTP client)")
     env_init_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
     env_init_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+    # env setup subcommand group
+    env_setup_parser = env_subparsers.add_parser(
+        "setup",
+        help="Manage Docker data volumes for sites that require setup",
+        description="Download data files and set up Docker volumes for sites (wikipedia, map)",
+    )
+    setup_subparsers = env_setup_parser.add_subparsers(dest="setup_command", required=True)
+
+    # env setup init
+    setup_init_parser = setup_subparsers.add_parser("init", help="Initialize volumes (download data, create volumes)")
+    setup_init_parser.add_argument(
+        "--site",
+        type=str,
+        choices=setup_site_choices,
+        help="Site to set up (default: all sites)",
+    )
+    setup_init_parser.add_argument(
+        "--data-dir",
+        type=str,
+        required=True,
+        help="Directory to store downloaded data files",
+    )
+    setup_init_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without making changes",
+    )
+
+    # env setup clean
+    setup_clean_parser = setup_subparsers.add_parser("clean", help="Remove volumes")
+    setup_clean_parser.add_argument(
+        "--site",
+        type=str,
+        choices=setup_site_choices,
+        help="Site to clean (default: all sites)",
+    )
+    setup_clean_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Skip confirmation prompt",
+    )
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -1214,7 +1285,62 @@ def trim_network_logs(args: argparse.Namespace) -> int:
 
 
 def env_command(args: argparse.Namespace) -> int | None:
-    """Execute env subcommands (status, start, stop, init)."""
+    """Execute env subcommands (status, start, stop, init, setup)."""
+    # Handle setup subcommand
+    if args.env_command == "setup":
+        return _env_setup_command(args)
+
+    # Handle --site mode (Docker container management)
+    if hasattr(args, "site") and args.site:
+        return _env_container_command(args)
+
+    # Handle --url mode (HTTP client)
+    return _env_http_command(args)
+
+
+def _env_container_command(args: argparse.Namespace) -> int:
+    """Execute env subcommands using Docker container management."""
+    site = WebArenaSite(args.site)
+    manager = ContainerManager(site)
+
+    try:
+        if args.env_command == "status":
+            result = manager.status()
+            print(f"Container: {result.container_name}")
+            print(f"Status: {result.status.value}")
+            if result.url:
+                print(f"URL: {result.url}")
+            if result.env_ctrl_url:
+                print(f"Env-ctrl: {result.env_ctrl_url}")
+            return 0 if result.status == ContainerStatus.RUNNING else 1
+
+        if args.env_command == "start":
+            result = manager.start(
+                port=getattr(args, "port", None),
+                env_ctrl_port=getattr(args, "env_ctrl_port", None),
+                wait=args.wait,
+                timeout=args.timeout,
+            )
+            print(f"Container started: {result.container_name}")
+            print(f"  URL: {result.url}")
+            print(f"  Env-ctrl: {result.env_ctrl_url}")
+            return 0
+
+        if args.env_command == "stop":
+            manager.stop()
+            print(f"Container stopped: {manager.container_name}")
+            return 0
+
+        logger.error(f"Unknown env command: {args.env_command}")
+        return 1
+
+    except RuntimeError as e:
+        logger.error(f"Container error: {e}")
+        return 1
+
+
+def _env_http_command(args: argparse.Namespace) -> int:
+    """Execute env subcommands using HTTP client."""
     client = EnvCtrlClient(base_url=args.url, timeout=args.timeout)
 
     try:
@@ -1241,6 +1367,34 @@ def env_command(args: argparse.Namespace) -> int | None:
     except RuntimeError as e:
         logger.error(f"Server error: {e}")
         return 1
+
+
+def _env_setup_command(args: argparse.Namespace) -> int:
+    """Execute env setup subcommands (init, clean)."""
+    try:
+        site = WebArenaSite(args.site) if args.site else None
+
+        if args.setup_command == "init":
+            data_dir = Path(args.data_dir)
+            setup_init(site, data_dir, dry_run=args.dry_run)
+            return 0
+
+        if args.setup_command == "clean":
+            setup_clean(site, force=args.force)
+            return 0
+
+        logger.error(f"Unknown setup command: {args.setup_command}")
+        return 1
+
+    except ValueError as e:
+        logger.error(f"Setup error: {e}")
+        return 1
+    except RuntimeError as e:
+        logger.error(f"Setup error: {e}")
+        return 1
+    except SystemExit:
+        # User aborted
+        return 0
 
 
 def create_submission_pkg(args: argparse.Namespace) -> int:
