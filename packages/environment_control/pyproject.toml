@@ -3,6 +3,7 @@ name = "environment_control"
 version = "0.1.0"
 description = "Environment control for WebArena Docker containers"
 readme = "README.md"
+# Python 3.9 is the minimum to support older site Docker images (e.g., GitLab)
 requires-python = ">=3.9"
 dependencies = []
 

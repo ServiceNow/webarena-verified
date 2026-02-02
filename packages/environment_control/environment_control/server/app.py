@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 import logging
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -87,9 +88,10 @@ def _create_handler(ops: type[BaseOps], env_name: str, site_url: Optional[str] =
             ready_message = "All services healthy" if ready.success else "Services not ready"
 
             template = _get_dashboard_template()
+            # Escape user-controlled values to prevent HTML injection
             return template.format(
-                env_name=env_name,
-                site_url=site_url or "",
+                env_name=html.escape(env_name),
+                site_url=html.escape(site_url or ""),
                 status_class=status_class,
                 status_text=status_text,
                 ready_message=ready_message,
@@ -102,7 +104,7 @@ def _create_handler(ops: type[BaseOps], env_name: str, site_url: Optional[str] =
 
             if path == "/":
                 self._send_html(self._get_dashboard_html())
-            elif path == "/status":
+            elif path in ("/status", "/is_ready"):
                 result = ops.get_health()
                 self._send_json(result.to_dict())
             else:
@@ -126,6 +128,8 @@ def _create_handler(ops: type[BaseOps], env_name: str, site_url: Optional[str] =
                 result = ops.stop()
             elif path == "/start":
                 result = ops.start(wait=wait)
+            elif path == "/restart":
+                result = ops.restart(wait=wait)
             else:
                 self._send_json(
                     {"success": False, "error": "Not found"},

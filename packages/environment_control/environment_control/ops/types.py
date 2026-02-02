@@ -106,6 +106,8 @@ class Result:
         # Extract message from value if it's a dict with a message key
         message = ""
         if isinstance(value, dict) and "message" in value:
+            # Copy dict to avoid mutating self.value
+            value = dict(value)
             message = value.pop("message", "")
 
         return {

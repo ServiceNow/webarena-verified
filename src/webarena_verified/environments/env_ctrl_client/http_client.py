@@ -109,6 +109,18 @@ class HttpClient:
         """
         return self._request("POST", "/stop")
 
+    def restart(self, wait: bool = False) -> dict[str, Any]:
+        """Restart the environment.
+
+        Args:
+            wait: If True, wait until environment is ready.
+
+        Returns:
+            Dict with 'success', 'message', and 'details'.
+        """
+        params = {"wait": "1"} if wait else None
+        return self._request("POST", "/restart", params=params)
+
     def wait_until_ready(
         self,
         timeout: float = 60.0,

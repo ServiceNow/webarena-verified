@@ -256,13 +256,18 @@
 
         function formatResponse(data) {{
             // Format response, only showing stdout/stderr for failed commands
+            const details = data.details || {{}};
             const result = {{
                 success: data.success,
-                value: data.value
+                message: data.message || ''
             }};
 
-            if (data.exec_logs && data.exec_logs.length > 0) {{
-                result.exec_logs = data.exec_logs.map(log => {{
+            if (details.value) {{
+                result.value = details.value;
+            }}
+
+            if (details.exec_logs && details.exec_logs.length > 0) {{
+                result.exec_logs = details.exec_logs.map(log => {{
                     const entry = {{
                         command: log.command,
                         returncode: log.returncode
@@ -274,10 +279,6 @@
                     }}
                     return entry;
                 }});
-            }}
-
-            if (data.envctrl_config) {{
-                result.envctrl_config = data.envctrl_config;
             }}
 
             return result;
@@ -310,7 +311,7 @@
             log('──────────────────────────────────', 'info');
 
             try {{
-                const response = await fetch('/is_ready');
+                const response = await fetch('/status');
                 const data = await response.json();
 
                 const badge = document.querySelector('.status-badge');

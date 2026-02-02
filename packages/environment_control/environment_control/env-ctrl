@@ -1,5 +1,0 @@
-#!/bin/sh
-# env-ctrl wrapper (for local development)
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-export PYTHONPATH="${SCRIPT_DIR%/*}"
-exec python3 -m environment_control.cli "$@"

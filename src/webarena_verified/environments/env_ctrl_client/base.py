@@ -27,14 +27,6 @@ class EnvCtrlClientProtocol(Protocol):
         """
         ...
 
-    def is_ready(self) -> dict[str, Any]:
-        """Check if environment is ready.
-
-        Returns:
-            Dict with 'success', 'message', and 'details'.
-        """
-        ...
-
     def start(self, wait: bool = False) -> dict[str, Any]:
         """Start the environment.
 
@@ -78,37 +70,5 @@ class EnvCtrlClientProtocol(Protocol):
 
         Returns:
             Dict with 'success', 'message', and 'details'.
-        """
-        ...
-
-    def cleanup(self) -> dict[str, Any]:
-        """Run cleanup to remove logs, caches, temp files.
-
-        Returns:
-            Dict with 'success', 'message', and 'details'.
-        """
-        ...
-
-    def patch(self) -> dict[str, Any]:
-        """Apply patches from staging directory.
-
-        Returns:
-            Dict with 'success', 'message', and 'details'.
-        """
-        ...
-
-    def optimize(self) -> dict[str, Any]:
-        """Optimize assets (compress images, etc.).
-
-        Returns:
-            Dict with 'success', 'message', and 'details'.
-        """
-        ...
-
-    def config(self) -> dict[str, Any]:
-        """Get build config (commit_env, cleanup_paths, etc.).
-
-        Returns:
-            Dict with build configuration.
         """
         ...

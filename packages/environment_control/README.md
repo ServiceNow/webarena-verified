@@ -69,18 +69,11 @@ docker exec <container> env-ctrl serve --port 8877
 When the server is running, interact with it over HTTP:
 
 ```bash
-curl http://localhost:8877/health
-curl -X POST http://localhost:8877/reset
+curl http://localhost:8877/status
+curl -X POST http://localhost:8877/init
+curl -X POST http://localhost:8877/start
+curl -X POST http://localhost:8877/stop
+curl -X POST http://localhost:8877/restart
 ```
 
-For programmatic access, use the client classes from the main `webarena` library (see `webarena.environments`).
-
-### Direct Python Usage (inside container)
-
-```python
-from environment_control import get_ops_class
-
-ops = get_ops_class("shopping")
-result = ops.get_health()
-print(result.success)
-```
+For programmatic access, use the client classes from the main `webarena_verified` library (see `webarena_verified.environments.env_ctrl_client`).

@@ -77,6 +77,19 @@ def cmd_stop(args: argparse.Namespace) -> int:
     return 0 if result.success else 1
 
 
+def cmd_restart(args: argparse.Namespace) -> int:
+    """Handle the restart command."""
+    ops = get_ops_class(args.env_type)
+
+    if args.wait:
+        print("Restarting environment and waiting for ready state...")
+
+    config = OpsConfig(timeout_sec=int(args.timeout))
+    result = ops.restart(wait=args.wait, config=config)
+    print(_format_result(result, args.verbose))
+    return 0 if result.success else 1
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     """Handle the serve command."""
     run_server(env_type=args.env_type, port=args.port)
@@ -173,6 +186,26 @@ def create_parser() -> argparse.ArgumentParser:
         help="Stop the environment",
     )
     stop_parser.set_defaults(func=cmd_stop)
+
+    # restart command
+    restart_parser = subparsers.add_parser(
+        "restart",
+        help="Restart the environment",
+    )
+    restart_parser.add_argument(
+        "-w",
+        "--wait",
+        action="store_true",
+        help="Wait until environment is ready",
+    )
+    restart_parser.add_argument(
+        "-t",
+        "--timeout",
+        type=float,
+        default=60.0,
+        help="Timeout for waiting (default: 60s)",
+    )
+    restart_parser.set_defaults(func=cmd_restart)
 
     # serve command
     serve_parser = subparsers.add_parser(

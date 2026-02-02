@@ -5,6 +5,7 @@ and installed, running the env-ctrl server with the dummy ops.
 """
 
 import os
+import shutil
 import subprocess
 import time
 
@@ -16,6 +17,21 @@ from webarena_verified.environments.env_ctrl_client import EnvCtrlClient
 CONTAINER_NAME = "env-ctrl-test"
 CONTAINER_IMAGE = "python:3.10-slim"
 SERVER_PORT = 8877
+
+
+def _docker_available() -> bool:
+    """Check if Docker is available and running."""
+    if not shutil.which("docker"):
+        return False
+    try:
+        result = subprocess.run(
+            ["docker", "info"],
+            capture_output=True,
+            timeout=10,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, OSError):
+        return False
 
 
 def _image_exists(image: str) -> bool:
@@ -43,6 +59,9 @@ def env_control_container(request, docker):
     - Removes the container
     - If the image was pulled by this test (didn't exist before), removes it too
     """
+    if not _docker_available():
+        pytest.skip("Docker is not available or not running")
+
     # Check if image existed before we start
     image_existed_before = _image_exists(CONTAINER_IMAGE)
 

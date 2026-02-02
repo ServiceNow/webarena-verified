@@ -186,6 +186,23 @@ class EnvCtrlDockerClient:
         """
         return self._run_cli("stop")
 
+    def restart(self, wait: bool = False, timeout: int | None = None) -> EnvCtrlResult:
+        """Restart the environment.
+
+        Args:
+            wait: If True, wait until environment is ready.
+            timeout: Timeout in seconds for waiting (only used with wait=True).
+
+        Returns:
+            EnvCtrlResult with success, message, and details.
+        """
+        args = []
+        if wait:
+            args.append("--wait")
+            if timeout is not None:
+                args.extend(["--timeout", str(timeout)])
+        return self._run_cli("restart", *args)
+
     def wait_until_ready(
         self,
         timeout: float = 60.0,
@@ -277,14 +294,27 @@ class EnvCtrlDockerClient:
 
         try:
             tar_proc = subprocess.Popen(tar_cmd, stdout=subprocess.PIPE)
-            result = subprocess.run(
-                stage_cmd,
-                stdin=tar_proc.stdout,
-                capture_output=True,
-                text=True,
-                timeout=self._timeout,
-            )
-            tar_proc.wait()
+            try:
+                result = subprocess.run(
+                    stage_cmd,
+                    stdin=tar_proc.stdout,
+                    capture_output=True,
+                    text=True,
+                    timeout=self._timeout,
+                )
+            finally:
+                # Close the pipe in parent to avoid resource leaks
+                if tar_proc.stdout:
+                    tar_proc.stdout.close()
+                tar_proc.wait()
+
+            # Check tar exit code
+            if tar_proc.returncode != 0:
+                return EnvCtrlResult(
+                    success=False,
+                    message=f"tar failed with exit code {tar_proc.returncode}",
+                    details={"source": source_dir},
+                )
 
             if result.returncode == 0:
                 try:
