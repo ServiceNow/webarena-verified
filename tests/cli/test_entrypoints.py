@@ -39,7 +39,7 @@ def run_cli(request, uvx, docker, webarena_verified_docker_img, tmp_path):
             cmd = [uvx, "webarena-verified", *resolved_args]
             return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=tmp_path)
 
-        elif runner == "docker":
+        if runner == "docker":
             # Build volume mounts and replace placeholders with container paths
             volumes = []
             container_paths = {}
@@ -57,8 +57,7 @@ def run_cli(request, uvx, docker, webarena_verified_docker_img, tmp_path):
             cmd = [docker, "run", "--rm", *volumes, webarena_verified_docker_img, *resolved_args]
             return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
 
-        else:
-            raise ValueError(f"Unknown runner: {runner}")
+        raise ValueError(f"Unknown runner: {runner}")
 
     return _run
 

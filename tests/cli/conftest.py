@@ -6,16 +6,6 @@ from pathlib import Path
 import pytest
 
 
-def pytest_addoption(parser):
-    """Add custom CLI options."""
-    parser.addoption(
-        "--webarena-verified-docker-img",
-        action="store",
-        default="am1n3e/webarena-verified:latest",
-        help="Docker image to test (default: am1n3e/webarena-verified:latest)",
-    )
-
-
 @pytest.fixture
 def webarena_verified_docker_img(request):
     """Return the Docker image to test."""
@@ -27,7 +17,7 @@ def docker():
     """Check that docker is available and return the CLI name."""
     docker_path = shutil.which("docker")
     if docker_path is None:
-        raise RuntimeError("docker is not installed. See https://docs.docker.com/get-docker/")
+        raise RuntimeError("'docker' is missing or not available in PATH.")
     return "docker"
 
 
@@ -36,7 +26,7 @@ def uvx():
     """Check that uvx is available and return the CLI name."""
     uvx_path = shutil.which("uvx")
     if uvx_path is None:
-        raise RuntimeError("uvx is not installed. Install it with: curl -LsSf https://astral.sh/uv/install.sh | sh")
+        raise RuntimeError("'uvx' is missing or not available in PATH.")
     return "uvx"
 
 
