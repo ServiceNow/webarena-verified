@@ -16,7 +16,7 @@ WebArena-Verified is the verified release of the WebArena benchmark. It distribu
 
 ## 📢 Announcements
 
-- **February 2, 2026**: Optimized Docker images for all WebArena environments are now available on [Docker Hub](https://hub.docker.com/u/am1n3e)! Images are up to 92% smaller than originals, include auto-login headers, plus a single container for Map (previously 5 separate containers). See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/).
+- **February 2, 2026**: Optimized Docker images for all WebArena environments are now available on [Docker Hub](https://hub.docker.com/u/am1n3e)! Images are up to 92% smaller than originals, include auto-login headers, plus a single container for Map (beta) (previously 5 separate containers). See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/).
 - **February 2, 2026**: WebArena-Verified is now available via Docker and uvx! Run `uvx webarena-verified --help` or `docker run am1n3e/webarena-verified:latest --help` to get started.
 - **January 7, 2026**: WebArena-Verified is now available on PyPI! Install it easily with `pip install webarena-verified`.
 - **December 2, 2025**: We are presenting WebArena-Verified at the [Scaling Environments for Agents (SEA) Workshop](https://sea-workshop.github.io/) at NeurIPS 2025 on December 7th in San Diego. Come see us!
