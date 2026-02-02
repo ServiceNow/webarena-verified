@@ -72,15 +72,12 @@ def check_repo_clean_at_tag(version: str) -> None:
         check=False,
     )
     if result.returncode != 0:
-        raise RuntimeError(
-            f"HEAD is not at any tag. Please checkout tag '{tag}' before building."
-        )
+        raise RuntimeError(f"HEAD is not at any tag. Please checkout tag '{tag}' before building.")
 
     current_tag = result.stdout.strip()
     if current_tag != tag:
         raise RuntimeError(
-            f"HEAD is at tag '{current_tag}', but expected '{tag}'. "
-            f"Please checkout tag '{tag}' before building."
+            f"HEAD is at tag '{current_tag}', but expected '{tag}'. Please checkout tag '{tag}' before building."
         )
 
 
