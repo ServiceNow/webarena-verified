@@ -1,13 +1,57 @@
 # Docker Images
 
-To improve reset time and reduce storage requirements, we provide recipes to create **slim images** - optimized versions of the original environments while keeping the exact content and functionality.
+WebArena-Verified provides optimized Docker images for all test environments. These images are significantly smaller than the originals while preserving exact content and functionality.
+
+## Quick Start
+
+The easiest way to run environments is using Docker Compose:
+
+```bash
+# Start all environments
+docker compose up -d
+
+# Or start specific services
+docker compose up -d shopping_admin shopping
+
+# Check status
+docker compose ps
+
+# Stop all
+docker compose down
+```
+
+Alternatively, use the Invoke tasks for more control:
+
+```bash
+# List available sites
+inv envs.sites
+
+# Pull and start a site
+inv envs.docker.pull --site shopping_admin
+inv envs.docker.start --site shopping_admin
+inv envs.docker.check --site shopping_admin
+
+# Stop when done
+inv envs.docker.stop --site shopping_admin
+```
+
+## Available Images
+
+| Site | Default Port | Env-Ctrl Port | Image |
+|------|--------------|---------------|-------|
+| `shopping_admin` | 7780 | 7781 | `am1n3e/webarena-verified-shopping_admin` |
+| `shopping` | 7770 | 7771 | `am1n3e/webarena-verified-shopping` |
+| `gitlab` | 8023 | 8024 | `am1n3e/webarena-verified-gitlab` |
+| `reddit` | 9999 | 9998 | `am1n3e/webarena-verified-reddit` |
+| `wikipedia` | 8888 | 8889 | `am1n3e/webarena-verified-wikipedia` |
+| `map` | 3030 | 3031 | `am1n3e/webarena-verified-map` |
 
 ## Size Improvements
 
-Slim images are significantly smaller than their original counterparts:
+Optimized images are significantly smaller than their original counterparts:
 
-| Environment | Original Size | Slim Size | Reduction |
-|------------|---------------|-----------|-----------|
+| Environment | Original Size | Optimized Size | Reduction |
+|------------|---------------|----------------|-----------|
 | Shopping Admin | 19.9 GB | 4.98 GB | **~70% smaller** |
 | Shopping | 117 GB | 17.8 GB | **~85% smaller** |
 | Reddit | 107 GB | 19 GB | **~82% smaller** |
@@ -17,26 +61,51 @@ Slim images are significantly smaller than their original counterparts:
 
 - Smaller storage and memory footprint
 - HTTP header-based authentication bypassing UI login
+- Environment control (env-ctrl) for management via CLI or HTTP
 - All functionality preserved
 
-## Shopping Admin
+## Command Reference
 
-### 1. Create the slim image
-
-```bash
-cd scripts/environments/shopping_admin
-bash create_slim_image.sh
-```
-
-### 2. Run the container with auto-initialization
+### Container Lifecycle
 
 ```bash
-docker run -d --name admin-slim -p 7780:80 \
-  -e MAGENTO_BASE_URL=http://localhost:7780 \
-  shopping_admin_final_0719:slim
+inv envs.docker.start --site <site>              # Start container
+inv envs.docker.start --site <site> --original   # Start with original image
+inv envs.docker.start --site <site> --port 8080  # Custom port
+inv envs.docker.stop --site <site>               # Stop and remove container
+inv envs.docker.check --site <site>              # Health check
 ```
 
-### Access the admin (auto-login via header in Playwright)
+### Image Management
+
+```bash
+inv envs.docker.pull --site <site>               # Pull from Docker Hub
+inv envs.docker.pull --site <site> --original    # Download original tar file
+inv envs.docker.build --site <site>              # Build from Dockerfile
+inv envs.docker.create-base-img --site <site>    # Create optimized base image
+inv envs.docker.publish --site <site> --tag 1.0.0  # Push to Docker Hub
+```
+
+### Data Management
+
+```bash
+inv envs.docker.data-download                    # Download all data files
+inv envs.docker.data-download --site wikipedia   # Download specific site data
+inv envs.docker.setup --site map --data-dir ./data  # Set up volumes for a site
+```
+
+### Testing
+
+```bash
+inv envs.docker.test --site <site>               # Run integration tests
+inv envs.docker.test --site <site> --headed      # Run with visible browser
+```
+
+## Auto-Login Headers
+
+Optimized images support HTTP header-based authentication, bypassing UI login.
+
+### Shopping Admin
 
 ```python
 from playwright.async_api import async_playwright
@@ -55,21 +124,53 @@ async with async_playwright() as p:
     # You're now logged in as admin
 ```
 
-### Manual Initialization
+### Reddit
 
-If you want to manually initialize the environment (e.g., after stopping the container), run:
-
-```bash
-# Start container
-docker run -d --name admin-slim -p 7780:80 shopping_admin_final_0719:slim
-
-# Initialize Magento
-docker exec admin-slim magento-init http://localhost:7780
+```python
+# Reddit uses a similar header mechanism
+await context.set_extra_http_headers({
+    "X-Auto-Login": "admin:password"
+})
 ```
 
-### Troubleshooting
+## Environment Variables
 
-**Auto-login not working:**
+Docker Compose uses environment variables for port configuration:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WA_SHOPPING_ADMIN_PORT` | 7780 | Shopping Admin main port |
+| `WA_SHOPPING_PORT` | 7770 | Shopping main port |
+| `WA_GITLAB_PORT` | 8023 | GitLab main port |
+| `WA_REDDIT_PORT` | 9999 | Reddit main port |
+| `WA_WIKIPEDIA_PORT` | 8888 | Wikipedia main port |
+| `WA_MAP_PORT` | 3030 | Map main port |
+
+Each site also has an `_ENV_CTRL_PORT` variable (e.g., `WA_SHOPPING_ADMIN_ENV_CTRL_PORT`).
+
+## Troubleshooting
+
+### Container not starting
+
+```bash
+# Check container logs
+docker logs webarena-verified-<site>
+
+# Check services inside container
+docker exec webarena-verified-<site> supervisorctl status
+```
+
+### Health check failing
+
+```bash
+# Use env-ctrl to check status
+inv envs.docker.check --site <site>
+
+# Or directly via HTTP
+curl http://localhost:<env-ctrl-port>/health
+```
+
+### Auto-login not working (Shopping Admin)
 
 1. Test with curl:
    ```bash
@@ -83,102 +184,6 @@ docker exec admin-slim magento-init http://localhost:7780
 
 2. Check module is enabled:
    ```bash
-   docker exec admin-slim /var/www/magento2/bin/magento module:status WebArena_AutoLogin
+   docker exec webarena-verified-shopping_admin \
+     /var/www/magento2/bin/magento module:status WebArena_AutoLogin
    ```
-   Should show "Module is enabled"
-
-3. Check DI is compiled:
-   ```bash
-   docker exec admin-slim ls -la /var/www/magento2/generated/code/
-   ```
-   Should contain compiled classes
-
-4. Check logs:
-   ```bash
-   docker exec admin-slim tail -f /var/www/magento2/var/log/system.log
-   ```
-   Look for "Auto-login successful" or error messages
-
-5. Recompile if needed:
-   ```bash
-   docker exec admin-slim /var/www/magento2/bin/magento setup:di:compile
-   ```
-
-**Container not initializing:**
-
-- Check container logs: `docker logs admin-slim`
-- Verify MAGENTO_BASE_URL is set correctly
-- Wait ~30 seconds for initialization to complete
-
-**Database reset not working:**
-
-- Ensure archive exists: `docker exec admin-slim ls -lh /var/backups/mysql/data.tar.gz`
-- Check services status: `docker exec admin-slim supervisorctl status`
-
-## Reddit
-
-### 1. Create the slim image
-
-```bash
-cd scripts/environments/reddit
-bash create_slim_image.sh
-```
-
-**Note:** The script reuses existing data if available:
-
-- PostgreSQL archive (~1.6GB)
-- Optimized submission images (~6GB)
-- This saves ~30-60 minutes on subsequent runs
-
-### 2. Run the container
-
-```bash
-docker run -d --name reddit-slim -p 9999:80 postmill-populated-exposed-withimg:slim
-```
-
-The container is self-contained (no volume mounts needed) and auto-initializes on first start (~2-3 minutes).
-
-### Manual Initialization
-
-Not typically needed (container auto-initializes), but can be run manually if needed:
-
-```bash
-# Start container
-docker run -d --name reddit-slim -p 9999:80 postmill-populated-exposed-withimg:slim
-
-# Check initialization status
-docker exec reddit-slim postmill-init
-```
-
-### Troubleshooting
-
-**Container not initializing:**
-
-- Check container logs: `docker logs reddit-slim`
-- Wait ~2-3 minutes for initial data extraction
-- Check initialization status: `docker exec reddit-slim cat /run/postmill.env`
-
-**Database reset not working:**
-
-- Ensure archives exist:
-  ```bash
-  docker exec reddit-slim ls -lh /var/backups/pgsql/data.tar.gz
-  docker exec reddit-slim ls -lh /var/backups/images/submission_images.tar.gz
-  ```
-- Check services status: `docker exec reddit-slim supervisorctl status`
-- Verify database integrity: `docker exec reddit-slim postmill-init` (shows validation output)
-
-**Patches not applied:**
-
-1. Check rate limits removed:
-   ```bash
-   docker exec reddit-slim grep -c '@RateLimit' /var/www/html/src/DataObject/SubmissionData.php
-   ```
-   Should return `0`
-
-2. Check HTTP client configured:
-   ```bash
-   docker exec reddit-slim grep 'alias: postmill.http_client.default' \
-     /var/www/html/config/packages/http_client.yaml
-   ```
-   Should show the configuration line

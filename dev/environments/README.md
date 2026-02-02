@@ -9,12 +9,12 @@ Tools for creating and managing optimized Docker images for WebArena sites.
 inv envs.sites
 
 # Pull and start a site
-inv envs.docker.pull --site shopping-admin
-inv envs.docker.start --site shopping-admin
-inv envs.docker.check --site shopping-admin
+inv envs.docker.pull --site shopping_admin
+inv envs.docker.start --site shopping_admin
+inv envs.docker.check --site shopping_admin
 
 # Stop when done
-inv envs.docker.stop --site shopping-admin
+inv envs.docker.stop --site shopping_admin
 ```
 
 ## Creating Base Images
@@ -24,15 +24,15 @@ Build optimized base images for sites. This applies patches, runs cleanup, and s
 ### Shopping Admin
 
 ```bash
-inv envs.docker.pull --site shopping-admin --original
-inv envs.docker.create-base-img --site shopping-admin
+inv envs.docker.pull --site shopping_admin --original
+inv envs.docker.create-base-img --site shopping_admin
 
 # Test locally
-inv envs.docker.start --site shopping-admin
-inv envs.docker.check --site shopping-admin
+inv envs.docker.start --site shopping_admin
+inv envs.docker.check --site shopping_admin
 
 # Publish (tag must be semver, e.g., 1.0.0)
-inv envs.docker.publish --site shopping-admin --tag 1.0.0
+inv envs.docker.publish --site shopping_admin --tag 1.0.0
 ```
 
 ### Reddit
@@ -67,13 +67,14 @@ inv envs.docker.publish --site gitlab --tag 1.0.0
 
 ## Available Sites
 
-| Site | Port | Image |
-|------|------|-------|
-| `wikipedia` | 8888 | `am1n3e/webarena-verified:wikipedia` |
-| `shopping-admin` | 6680 | `am1n3e/webarena-verified:shopping_admin` |
-| `shopping` | 7770 | `am1n3e/webarena-verified:shopping` |
-| `reddit` | 9999 | `am1n3e/webarena-verified:reddit` |
-| `gitlab` | 8023 | `am1n3e/webarena-verified:gitlab` |
+| Site | Default Port | Env-Ctrl Port | Image |
+|------|--------------|---------------|-------|
+| `shopping_admin` | 7780 | 7781 | `am1n3e/webarena-verified-shopping_admin` |
+| `shopping` | 7770 | 7771 | `am1n3e/webarena-verified-shopping` |
+| `gitlab` | 8023 | 8024 | `am1n3e/webarena-verified-gitlab` |
+| `reddit` | 9999 | 9998 | `am1n3e/webarena-verified-reddit` |
+| `wikipedia` | 8888 | 8889 | `am1n3e/webarena-verified-wikipedia` |
+| `map` | 3030 | 3031 | `am1n3e/webarena-verified-map` |
 
 ## Command Reference
 
@@ -112,34 +113,42 @@ The `create-base-img` command creates optimized images:
 Original Image → Start Container → Run Setup Scripts → Squash → Base Image
 ```
 
-Setup scripts in `sites/<site>/scripts/` run in order:
-1. `00_apply_patches.sh` - Bootstrap env-ctrl, copy entrypoint, apply patches
-2. `10_cleanup.sh` - Remove logs, caches, temp files
-3. `20_optimize.sh` - Site-specific optimizations (optional)
+Setup scripts in `sites/<site>/scripts/` run in numeric order:
+
+| Script | Purpose |
+|--------|---------|
+| `00_apply_patches.sh` | Bootstrap env-ctrl, copy entrypoint, apply patches |
+| `10_post_patch.sh` | Post-patch configuration (optional) |
+| `20_optimize.sh` | Site-specific optimizations (optional) |
+| `60_cleanup.sh` | Remove logs, caches, temp files |
+| `90_verify.sh` | Verify setup completed correctly |
 
 All patching is done via shell scripts with explicit `cp` commands - no Python patching at runtime.
 
 ## Directory Structure
 
 ```
-contributing/environments/
+dev/environments/
 ├── settings.py              # Site registry (ports, images, paths)
 ├── tasks.py                 # Top-level tasks (envs.sites)
 └── docker/
     ├── tasks.py             # Docker tasks (envs.docker.*)
     ├── sites/               # Site-specific configs
     │   ├── shopping_admin/
-    │   │   ├── entrypoint.sh
+    │   │   ├── Dockerfile
     │   │   ├── docker_overrides/   # Patch files
     │   │   └── scripts/            # Setup scripts
+    │   ├── shopping/
     │   ├── reddit/
     │   ├── gitlab/
-    │   └── ...
-    ├── utils/               # Shared utilities
-    │   ├── containers.py    # Container operations
-    │   ├── create_base_img.py
-    │   └── downloads.py
-    └── monitoring/          # Gatus health monitoring
+    │   ├── wikipedia/
+    │   └── map/
+    └── utils/               # Shared utilities
+        ├── containers.py    # Container operations
+        ├── create_base_img.py
+        ├── downloads.py
+        ├── dockerfile.py
+        └── sites.py
 ```
 
 ## In-Container Operations (env-ctrl)
@@ -147,7 +156,7 @@ contributing/environments/
 The `env-ctrl` CLI runs inside containers for runtime operations:
 
 ```bash
-env-ctrl init --base-url http://localhost:6680/  # Set base URL
+env-ctrl init --base-url http://localhost:7780/  # Set base URL
 env-ctrl start --wait                            # Start services
 env-ctrl stop                                    # Stop services
 env-ctrl status                                  # Health check
@@ -169,7 +178,8 @@ packages/environment_control/
         ├── shopping.py        # ShoppingOps
         ├── reddit.py          # RedditOps
         ├── gitlab.py          # GitlabOps
-        └── wikipedia.py       # WikipediaOps
+        ├── wikipedia.py       # WikipediaOps
+        └── map.py             # MapOps
 ```
 
 Site ops classes inherit from `BaseOps` and optionally `SupervisorMixin`:
