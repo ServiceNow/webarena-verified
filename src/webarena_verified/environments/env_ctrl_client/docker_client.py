@@ -7,7 +7,6 @@ docker exec, allowing control of environments without requiring network access.
 import json
 import subprocess
 import time
-from pathlib import Path
 
 from webarena_verified.types.environment import EnvCtrlResult
 
@@ -249,95 +248,6 @@ class EnvCtrlDockerClient:
                 "elapsed": elapsed,
             },
         )
-
-    def patch(self) -> EnvCtrlResult:
-        """Apply patches from /tmp/patches/.
-
-        Returns:
-            EnvCtrlResult with success, message, and details.
-        """
-        return self._run_setup_cli("patch")
-
-    def stage_files(self, source_dir: str, target_dir: str = "/tmp/patches") -> EnvCtrlResult:
-        """Stage files from host directory to container.
-
-        Creates a tarball of source_dir and pipes it to env-ctrl setup stage.
-
-        Args:
-            source_dir: Local directory containing files to stage.
-            target_dir: Target directory inside container (default: /tmp/patches).
-
-        Returns:
-            EnvCtrlResult with success, message, and details.
-        """
-        source = Path(source_dir)
-        if not source.is_dir():
-            return EnvCtrlResult(
-                success=False,
-                message=f"Source directory does not exist: {source_dir}",
-                details={},
-            )
-
-        # Create tar and pipe to env-ctrl setup stage
-        tar_cmd = ["tar", "-C", str(source), "-cf", "-", "."]
-        stage_cmd = [
-            "docker",
-            "exec",
-            "-i",
-            self._container_name,
-            "env-ctrl",
-            "setup",
-            "stage",
-            "--target",
-            target_dir,
-        ]
-
-        try:
-            tar_proc = subprocess.Popen(tar_cmd, stdout=subprocess.PIPE)
-            try:
-                result = subprocess.run(
-                    stage_cmd,
-                    stdin=tar_proc.stdout,
-                    capture_output=True,
-                    text=True,
-                    timeout=self._timeout,
-                )
-            finally:
-                # Close the pipe in parent to avoid resource leaks
-                if tar_proc.stdout:
-                    tar_proc.stdout.close()
-                tar_proc.wait()
-
-            # Check tar exit code
-            if tar_proc.returncode != 0:
-                return EnvCtrlResult(
-                    success=False,
-                    message=f"tar failed with exit code {tar_proc.returncode}",
-                    details={"source": source_dir},
-                )
-
-            if result.returncode == 0:
-                try:
-                    parsed = json.loads(result.stdout.strip())
-                    return EnvCtrlResult.model_validate(parsed)
-                except json.JSONDecodeError:
-                    return EnvCtrlResult(
-                        success=True,
-                        message=f"Staged files to {target_dir}",
-                        details={"source": source_dir, "target": target_dir},
-                    )
-            else:
-                return EnvCtrlResult(
-                    success=False,
-                    message=result.stderr or f"Stage failed with exit code {result.returncode}",
-                    details={"exit_code": result.returncode},
-                )
-        except subprocess.TimeoutExpired:
-            return EnvCtrlResult(
-                success=False,
-                message=f"Stage timed out after {self._timeout}s",
-                details={},
-            )
 
     def analyze_disk(self, top: int = 20) -> EnvCtrlResult:
         """Analyze disk usage in container.

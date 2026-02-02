@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class SiteInstanceHandler(Protocol):
     """Protocol for handling command execution and site operations.
 
-    This abstraction allows patches to execute commands without knowing
+    This abstraction allows site operations to execute commands without knowing
     the underlying implementation (Docker, SSH, Kubernetes, etc.).
 
     Implementations should provide:
@@ -64,8 +64,8 @@ class SiteInstanceHandler(Protocol):
         """Start the site container and initialize it.
 
         Creates and starts the container, then calls init() to apply
-        configuration and patches. For containers that are already
-        running, this will recreate them.
+        configuration. For containers that are already running, this
+        will recreate them.
 
         Returns:
             The URL where the site is running
@@ -78,7 +78,7 @@ class SiteInstanceHandler(Protocol):
     def init(self, *, url: str | None = None) -> None:
         """Initialize the site container.
 
-        Applies patches, configuration, and any site-specific setup.
+        Applies configuration and any site-specific setup.
         Called automatically by start() after container creation.
 
         Args:

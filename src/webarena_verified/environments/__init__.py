@@ -1,4 +1,4 @@
-"""WebArena environment management utilities and patches."""
+"""WebArena environment management utilities."""
 
 from .site_handler import SiteInstanceHandler
 
