@@ -8,11 +8,32 @@ Network log files (HAR format) can become large due to static resources like CSS
 
 The `trim-network-logs` command removes entries for skipped resource types while preserving all evaluation-relevant events:
 
-```bash
-webarena-verified trim-network-logs \
-  --input logs/task_123.har \
-  --output logs/task_123_trimmed.har
-```
+=== "uvx"
+
+    ```bash
+    uvx webarena-verified trim-network-logs \
+      --input logs/task_123.har \
+      --output logs/task_123_trimmed.har
+    ```
+
+=== "Docker"
+
+    ```bash
+    docker run --rm \
+      -v ./logs:/logs \
+      am1n3e/webarena-verified:latest \
+      trim-network-logs \
+        --input /logs/task_123.har \
+        --output /logs/task_123_trimmed.har
+    ```
+
+=== "CLI"
+
+    ```bash
+    webarena-verified trim-network-logs \
+      --input logs/task_123.har \
+      --output logs/task_123_trimmed.har
+    ```
 
 ### What Gets Removed
 
@@ -49,14 +70,41 @@ All evaluation-relevant network events are preserved:
 
 You can trim multiple files in a loop:
 
-```bash
-for task_dir in output/*/; do
-  task_id=$(basename "$task_dir")
-  webarena-verified trim-network-logs \
-    --input "$task_dir/network.har" \
-    --output "$task_dir/network_trimmed.har"
-done
-```
+=== "uvx"
+
+    ```bash
+    for task_dir in output/*/; do
+      task_id=$(basename "$task_dir")
+      uvx webarena-verified trim-network-logs \
+        --input "$task_dir/network.har" \
+        --output "$task_dir/network_trimmed.har"
+    done
+    ```
+
+=== "Docker"
+
+    ```bash
+    for task_dir in output/*/; do
+      task_id=$(basename "$task_dir")
+      docker run --rm \
+        -v ./"$task_dir":/data \
+        am1n3e/webarena-verified:latest \
+        trim-network-logs \
+          --input /data/network.har \
+          --output /data/network_trimmed.har
+    done
+    ```
+
+=== "CLI"
+
+    ```bash
+    for task_dir in output/*/; do
+      task_id=$(basename "$task_dir")
+      webarena-verified trim-network-logs \
+        --input "$task_dir/network.har" \
+        --output "$task_dir/network_trimmed.har"
+    done
+    ```
 
 ### Technical Details
 

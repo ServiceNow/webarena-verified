@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/webarena-verified/"><img src="https://img.shields.io/pypi/v/webarena-verified.svg" alt="PyPI version"></a>
-  <a href="https://hub.docker.com/repository/docker/am1n3e/webarena-verified/general"><img src="https://img.shields.io/docker/pulls/am1n3e/webarena-verified.svg" alt="Docker Hub"></a>
+  <a href="https://hub.docker.com/r/am1n3e/webarena-verified"><img src="https://img.shields.io/docker/pulls/am1n3e/webarena-verified.svg" alt="Docker Hub"></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg" alt="Python 3.11+"></a>
   <a href="tests"><img src="https://img.shields.io/badge/Tests-Pytest-6B2F8.svg" alt="Tests: Pytest"></a>
   <a href="https://servicenow.github.io/webarena-verified/"><img src="https://img.shields.io/badge/Docs-MkDocs-0288D1.svg" alt="Docs: MkDocs"></a>
@@ -50,25 +50,6 @@ Verify the CLI is working:
 ```bash
 webarena-verified --help
 ```
-
-### Docker Setup (Optional)
-
-Pre-built Docker images are available for all WebArena environments:
-
-```bash
-# Start all environments
-docker-compose up -d
-
-# Or start individual services
-docker-compose up -d shopping_admin  # http://localhost:6680
-docker-compose up -d shopping        # http://localhost:7770
-docker-compose up -d gitlab          # http://localhost:8012
-docker-compose up -d reddit          # http://localhost:9999
-docker-compose up -d wikipedia       # http://localhost:8888
-docker-compose up -d map             # http://localhost:3000
-```
-
-Images are available at [Docker Hub](https://hub.docker.com/repository/docker/am1n3e/webarena-verified/general).
 
 ### Evaluate with Docker
 
@@ -176,7 +157,7 @@ See the [documentation](https://servicenow.github.io/webarena-verified/) for mor
 
 ## 🤝 Contributing
 
-We welcome improvements to both the dataset and the evaluation tooling. See the [Contributing Guide](https://servicenow.github.io/webarena-verified/contributing/) for guidelines, local development tips, and dataset update workflows.
+We welcome improvements to both the dataset and the evaluation tooling. See the [Contributing Guide](CONTRIBUTING.md) for guidelines, local development tips, and dataset update workflows.
 
 ## 📄 Citation
 

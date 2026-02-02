@@ -21,13 +21,45 @@ This quick start is divided into two parts:
 
 ## Setup
 
-**Prerequisites**
-
-- Python 3.11+
-
 Clone the repository and install dependencies:
 
+=== "uvx"
+
+    **Prerequisites:** [uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+    !!! info "What is uvx?"
+        `uvx` runs Python CLI tools in isolated, ephemeral environments without installation. It doesn't pollute your environment and automatically handles dependencies and cleanup.
+
+    ```bash
+    git clone https://github.com/ServiceNow/webarena-verified.git
+    cd webarena-verified
+    ```
+
+    Verify the CLI is working:
+
+    ```bash
+    uvx webarena-verified --help
+    ```
+
+=== "Docker"
+
+    **Prerequisites:** Docker
+
+    ```bash
+    git clone https://github.com/ServiceNow/webarena-verified.git
+    cd webarena-verified
+    docker pull am1n3e/webarena-verified:latest
+    ```
+
+    Verify the CLI is working:
+
+    ```bash
+    docker run --rm am1n3e/webarena-verified:latest --help
+    ```
+
 === "uv"
+
+    **Prerequisites:** Python 3.11+
 
     ```bash
     git clone https://github.com/ServiceNow/webarena-verified.git
@@ -37,7 +69,15 @@ Clone the repository and install dependencies:
     uv pip install "webarena-verified[examples]"
     ```
 
+    Verify the CLI is working:
+
+    ```bash
+    webarena-verified --help
+    ```
+
 === "pip"
+
+    **Prerequisites:** Python 3.11+
 
     ```bash
     git clone https://github.com/ServiceNow/webarena-verified.git
@@ -47,14 +87,14 @@ Clone the repository and install dependencies:
     pip install "webarena-verified[examples]"
     ```
 
-Verify the CLI is working:
+    Verify the CLI is working:
 
-```bash
-webarena-verified --help
-```
+    ```bash
+    webarena-verified --help
+    ```
 
 !!! note "Why clone the repository?"
-    This tutorial uses example files (pre-run agent logs, configs, and the human agent) from the `examples/` directory. If you're evaluating your own agents, you can simply `pip install webarena-verified` - see the [Usage Guide](getting_started/usage.md).
+    This tutorial uses example files (pre-run agent logs, configs, and the human agent) from the `examples/` directory. If you're evaluating your own agents, you can simply `pip install webarena-verified` or use the Docker image which contains the self-contained evaluator - see the [Usage Guide](getting_started/usage.md).
 
 
 ---
@@ -151,12 +191,35 @@ Captures all network activity between the browser frontend and the backend in [H
 
 ### 2. Run the evaluator
 
-```bash
-webarena-verified eval-tasks \
-  --task-ids 108 \
-  --output-dir examples/agent_logs/demo \
-  --config examples/configs/config.demo.json
-```
+=== "uvx"
+
+    ```bash
+    uvx webarena-verified eval-tasks \
+      --task-ids 108 \
+      --output-dir examples/agent_logs/demo \
+      --config examples/configs/config.demo.json
+    ```
+
+=== "Docker"
+
+    ```bash
+    docker run --rm \
+      -v ./examples:/examples \
+      am1n3e/webarena-verified:latest \
+      eval-tasks \
+        --task-ids 108 \
+        --output-dir /examples/agent_logs/demo \
+        --config /examples/configs/config.demo.json
+    ```
+
+=== "CLI"
+
+    ```bash
+    webarena-verified eval-tasks \
+      --task-ids 108 \
+      --output-dir examples/agent_logs/demo \
+      --config examples/configs/config.demo.json
+    ```
 
 ??? tip "Troubleshooting"
     - If the `webarena-verified` command is not available, make sure you have activated the virtual environment correctly. See the [Setup](#setup) section.
@@ -224,9 +287,35 @@ We'll use a special "human agent" that opens a browser and hands control to you 
 
 The example agents use Playwright for browser automation. Install the Chromium browser:
 
-```bash
-playwright install chromium
-```
+=== "uvx"
+
+    !!! note "Playwright runs locally"
+        `uvx` is used for evaluation only. To run the human agent example, you need Playwright installed locally.
+
+    ```bash
+    uv venv
+    source .venv/bin/activate
+    uv pip install "webarena-verified[examples]"
+    playwright install chromium
+    ```
+
+=== "Docker"
+
+    !!! note "Playwright runs locally"
+        The Docker image is used for evaluation only. To run the human agent example, you need Playwright installed locally.
+
+    ```bash
+    uv venv
+    source .venv/bin/activate
+    uv pip install "webarena-verified[examples]"
+    playwright install chromium
+    ```
+
+=== "uv / pip"
+
+    ```bash
+    playwright install chromium
+    ```
 
 ### 1. Setup GitLab Environment
 
@@ -281,12 +370,36 @@ First, you need a GitLab instance to work with. Choose one option:
 
 Export the task information that the agent needs:
 
-```bash
-webarena-verified agent-input-get \
-  --task-ids 44 \
-  --config examples/configs/config.demo.json \
-  --output output/tasks.demo.json
-```
+=== "uvx"
+
+    ```bash
+    uvx webarena-verified agent-input-get \
+      --task-ids 44 \
+      --config examples/configs/config.demo.json \
+      --output output/tasks.demo.json
+    ```
+
+=== "Docker"
+
+    ```bash
+    docker run --rm \
+      -v ./examples:/examples \
+      -v ./output:/output \
+      am1n3e/webarena-verified:latest \
+      agent-input-get \
+        --task-ids 44 \
+        --config /examples/configs/config.demo.json \
+        --output /output/tasks.demo.json
+    ```
+
+=== "CLI"
+
+    ```bash
+    webarena-verified agent-input-get \
+      --task-ids 44 \
+      --config examples/configs/config.demo.json \
+      --output output/tasks.demo.json
+    ```
 
 This exports only the fields that the agent needs to perform the task (`intent`, `start_urls`) and the IDs (`task_id`, `intent_template_id`, and `sites`). Since the `--config` argument is provided, URL templates like `__GITLAB__` are rendered to actual URLs (e.g., `http://localhost:8012`).
 
@@ -374,12 +487,36 @@ uv run python examples/agents/human/agent.py \
 
 Now let's evaluate your performance:
 
-```bash
-webarena-verified eval-tasks \
-  --config examples/configs/config.demo.json \
-  --task-ids 44 \
-  --output-dir output/demo-run
-```
+=== "uvx"
+
+    ```bash
+    uvx webarena-verified eval-tasks \
+      --config examples/configs/config.demo.json \
+      --task-ids 44 \
+      --output-dir output/demo-run
+    ```
+
+=== "Docker"
+
+    ```bash
+    docker run --rm \
+      -v ./examples:/examples \
+      -v ./output:/output \
+      am1n3e/webarena-verified:latest \
+      eval-tasks \
+        --config /examples/configs/config.demo.json \
+        --task-ids 44 \
+        --output-dir /output/demo-run
+    ```
+
+=== "CLI"
+
+    ```bash
+    webarena-verified eval-tasks \
+      --config examples/configs/config.demo.json \
+      --task-ids 44 \
+      --output-dir output/demo-run
+    ```
 
 This creates `output/demo-run/44/eval_result.json` with your evaluation results.
 

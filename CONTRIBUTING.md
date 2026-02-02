@@ -86,23 +86,11 @@ pre-commit run --all-files
 6. Commit with a clear message
 7. Push and open a pull request
 
-### Commit Messages
-
-- Use present tense ("Add feature" not "Added feature")
-- Keep the first line under 72 characters
-- Reference issues when applicable (`Fixes #123`)
-
 ## Updating the Dataset
 
 The dataset uses git for version control.
 
 **Dataset Location:** `assets/dataset/webarena-verified.json`
-
-### How to Update
-
-1. Edit the dataset file directly
-2. Format the dataset: `inv -r contributing data-format`
-3. Submit a pull request
 
 **Example:** Fix a typo in task ID 94:
 
@@ -143,10 +131,9 @@ inv -r contributing docs-serve
 
 # Build static site
 inv -r contributing docs-build
-
-# Deploy to GitHub Pages (main branch only)
-inv -r contributing docs-deploy
 ```
+
+Documentation is automatically deployed to GitHub Pages by CI when changes are merged to main.
 
 ## License
 

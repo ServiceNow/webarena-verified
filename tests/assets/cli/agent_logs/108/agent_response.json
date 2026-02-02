@@ -1,0 +1,12 @@
+{
+  "task_type": "RETRIEVE",
+  "status": "SUCCESS",
+  "retrieved_data": [
+    { "month": "Jan", "count": 12 },
+    { "month": "Feb", "count": 7 },
+    { "month": "March", "count": 5 },
+    { "month": "April", "count": 9 },
+    { "month": "May", "count": 5 }
+  ],
+  "error_details": null
+}

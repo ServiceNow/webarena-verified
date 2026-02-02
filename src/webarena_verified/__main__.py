@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import textwrap
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +41,11 @@ def create_parser() -> argparse.ArgumentParser:
         prog="webarena-verified",
         description="WebArena Verified CLI for running and evaluating tasks",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {version('webarena-verified')}",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands", required=True)

@@ -4,25 +4,64 @@ This guide walks you through using WebArena-Verified to evaluate web agents. You
 
 ## Prerequisites
 
-- Python 3.11+
+- **Docker** or **Python 3.11+** (Python only required when installing as a library)
 - WebArena-Verified installed (see [Installation](#installation))
 - Configuration file set up (see [Configuration](configuration.md))
 
 ## Installation
 
-Install WebArena-Verified from PyPI:
+=== "uvx"
 
-```bash
-pip install webarena-verified
-```
+    **Prerequisites:** [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
-Verify the installation:
+    !!! info "What is uvx?"
+        `uvx` runs Python CLI tools in isolated, ephemeral environments without installation. It doesn't pollute your environment and automatically handles dependencies and cleanup.
 
-```bash
-webarena-verified --help
-```
+    No installation needed! Verify the CLI is working:
 
-For development or contributing, see [Local Development](../contributing/local-development.md).
+    ```bash
+    uvx webarena-verified --help
+    ```
+
+=== "Docker"
+
+    Pull the Docker image:
+
+    ```bash
+    docker pull am1n3e/webarena-verified:latest
+    ```
+
+    Verify the installation:
+
+    ```bash
+    docker run --rm am1n3e/webarena-verified:latest --help
+    ```
+
+=== "uv"
+
+    ```bash
+    uv pip install webarena-verified
+    ```
+
+    Verify the installation:
+
+    ```bash
+    webarena-verified --help
+    ```
+
+=== "pip"
+
+    ```bash
+    pip install webarena-verified
+    ```
+
+    Verify the installation:
+
+    ```bash
+    webarena-verified --help
+    ```
+
+For development or contributing, see the [Contributing Guide](https://github.com/ServiceNow/webarena-verified/blob/main/CONTRIBUTING.md).
 
 ## Step 1: Set Up Your Configuration
 
@@ -139,10 +178,10 @@ Use the `eval-tasks` command to score your agent's outputs:
 
 Score one or more runs. When no filters are provided, the CLI discovers every task directory under `--output-dir` that contains the required files.
 
-=== "CLI"
+=== "uvx"
 
     ```bash
-    webarena-verified eval-tasks --output-dir output
+    uvx webarena-verified eval-tasks --output-dir output
     ```
 
 === "Docker"
@@ -154,68 +193,158 @@ Score one or more runs. When no filters are provided, the CLI discovers every ta
       eval-tasks --output-dir /data
     ```
 
+=== "CLI"
+
+    ```bash
+    webarena-verified eval-tasks --output-dir output
+    ```
+
 ### Filtering Tasks
 
 You can filter which tasks to evaluate:
 
-=== "Specific task IDs"
+=== "uvx"
 
     ```bash
+    # Specific task IDs
+    uvx webarena-verified eval-tasks \
+      --config config.json \
+      --output-dir output \
+      --task-ids 1,2,3
+
+    # Single task
+    uvx webarena-verified eval-tasks \
+      --config config.json \
+      --output-dir output \
+      --task-ids 42
+
+    # By site
+    uvx webarena-verified eval-tasks \
+      --config config.json \
+      --output-dir output \
+      --sites shopping
+
+    # By task type
+    uvx webarena-verified eval-tasks \
+      --config config.json \
+      --output-dir output \
+      --task-type mutate
+
+    # By template ID
+    uvx webarena-verified eval-tasks \
+      --config config.json \
+      --output-dir output \
+      --template-id 5
+
+    # Combined filters
+    uvx webarena-verified eval-tasks \
+      --config config.json \
+      --output-dir output \
+      --sites shopping,reddit \
+      --task-type mutate
+
+    # Dry run (no scoring)
+    uvx webarena-verified eval-tasks \
+      --config config.json \
+      --output-dir output \
+      --sites reddit \
+      --dry-run
+    ```
+
+=== "Docker"
+
+    ```bash
+    # Specific task IDs
+    docker run --rm \
+      -v /path/to/output:/data \
+      -v /path/to/config.json:/config.json \
+      am1n3e/webarena-verified:latest \
+      eval-tasks --config /config.json --output-dir /data --task-ids 1,2,3
+
+    # Single task
+    docker run --rm \
+      -v /path/to/output:/data \
+      -v /path/to/config.json:/config.json \
+      am1n3e/webarena-verified:latest \
+      eval-tasks --config /config.json --output-dir /data --task-ids 42
+
+    # By site
+    docker run --rm \
+      -v /path/to/output:/data \
+      -v /path/to/config.json:/config.json \
+      am1n3e/webarena-verified:latest \
+      eval-tasks --config /config.json --output-dir /data --sites shopping
+
+    # By task type
+    docker run --rm \
+      -v /path/to/output:/data \
+      -v /path/to/config.json:/config.json \
+      am1n3e/webarena-verified:latest \
+      eval-tasks --config /config.json --output-dir /data --task-type mutate
+
+    # By template ID
+    docker run --rm \
+      -v /path/to/output:/data \
+      -v /path/to/config.json:/config.json \
+      am1n3e/webarena-verified:latest \
+      eval-tasks --config /config.json --output-dir /data --template-id 5
+
+    # Combined filters
+    docker run --rm \
+      -v /path/to/output:/data \
+      -v /path/to/config.json:/config.json \
+      am1n3e/webarena-verified:latest \
+      eval-tasks --config /config.json --output-dir /data --sites shopping,reddit --task-type mutate
+
+    # Dry run (no scoring)
+    docker run --rm \
+      -v /path/to/output:/data \
+      -v /path/to/config.json:/config.json \
+      am1n3e/webarena-verified:latest \
+      eval-tasks --config /config.json --output-dir /data --sites reddit --dry-run
+    ```
+
+=== "CLI"
+
+    ```bash
+    # Specific task IDs
     webarena-verified eval-tasks \
       --config config.json \
       --output-dir output \
       --task-ids 1,2,3
-    ```
 
-=== "Single task"
-
-    ```bash
+    # Single task
     webarena-verified eval-tasks \
       --config config.json \
       --output-dir output \
       --task-ids 42
-    ```
 
-=== "By site"
-
-    ```bash
+    # By site
     webarena-verified eval-tasks \
       --config config.json \
       --output-dir output \
       --sites shopping
-    ```
 
-=== "By task type"
-
-    ```bash
+    # By task type
     webarena-verified eval-tasks \
       --config config.json \
       --output-dir output \
       --task-type mutate
-    ```
 
-=== "By template ID"
-
-    ```bash
+    # By template ID
     webarena-verified eval-tasks \
       --config config.json \
       --output-dir output \
       --template-id 5
-    ```
 
-=== "Combined filters"
-
-    ```bash
+    # Combined filters
     webarena-verified eval-tasks \
       --config config.json \
       --output-dir output \
       --sites shopping,reddit \
       --task-type mutate
-    ```
 
-=== "Dry run (no scoring)"
-
-    ```bash
+    # Dry run (no scoring)
     webarena-verified eval-tasks \
       --config config.json \
       --output-dir output \

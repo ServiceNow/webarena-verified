@@ -79,7 +79,7 @@ def demo_gitlab_start(c, password="demopass", port="8012"):
         time.sleep(1)
     else:
         print("\n⚠ Timeout waiting for GitLab to start. It may still be initializing.")
-        print("You can check logs with: docker logs -f dummy-gitlab")
+        print("You can check logs with: docker logs -f wa-demo-gitlab")
         print(f"Try accessing: http://localhost:{port}")
         return
 

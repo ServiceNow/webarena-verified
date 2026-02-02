@@ -49,11 +49,32 @@ The hardest categories involve multi-step state-changing interactions (forms, da
 
 Export the hard subset tasks to a JSON file:
 
-```bash
-webarena-verified subset-export \
-  --name webarena-verified-hard \
-  --output webarena-verified-hard.json
-```
+=== "uvx"
+
+    ```bash
+    uvx webarena-verified subset-export \
+      --name webarena-verified-hard \
+      --output webarena-verified-hard.json
+    ```
+
+=== "Docker"
+
+    ```bash
+    docker run --rm \
+      -v ./:/output \
+      am1n3e/webarena-verified:latest \
+      subset-export \
+        --name webarena-verified-hard \
+        --output /output/webarena-verified-hard.json
+    ```
+
+=== "CLI"
+
+    ```bash
+    webarena-verified subset-export \
+      --name webarena-verified-hard \
+      --output webarena-verified-hard.json
+    ```
 
 The exported file contains the full task definitions for all 258 tasks in the subset.
 
