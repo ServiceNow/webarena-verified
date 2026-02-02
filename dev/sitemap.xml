@@ -57,6 +57,18 @@
          <lastmod>2026-02-02</lastmod>
     </url>
     <url>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/</loc>
+         <lastmod>2026-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/docker_images/</loc>
+         <lastmod>2026-02-02</lastmod>
+    </url>
+    <url>
+         <loc>https://servicenow.github.io/webarena-verified/dev/environments/environment_control/</loc>
+         <lastmod>2026-02-02</lastmod>
+    </url>
+    <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/evaluation/</loc>
          <lastmod>2026-02-02</lastmod>
     </url>
@@ -86,10 +98,6 @@
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/data_reader/</loc>
-         <lastmod>2026-02-02</lastmod>
-    </url>
-    <url>
-         <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/environments/</loc>
          <lastmod>2026-02-02</lastmod>
     </url>
     <url>
