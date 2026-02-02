@@ -1,93 +1,12 @@
-"""Container backend abstraction for WebArena environments.
+"""Docker backend implementation.
 
-This module provides a Protocol for container backends and a Docker implementation.
-This allows for future support of other container runtimes (e.g., Podman).
+Uses the docker CLI to manage containers.
 """
 
 from __future__ import annotations
 
 import socket
 import subprocess
-from typing import Protocol
-
-
-class ContainerBackend(Protocol):
-    """Protocol for container backend implementations.
-
-    Defines the interface for container operations that can be implemented
-    by different container runtimes (Docker, Podman, etc.).
-    """
-
-    def container_exists(self, *, name: str) -> bool:
-        """Check if a container exists (running or stopped).
-
-        Args:
-            name: Container name to check.
-
-        Returns:
-            True if container exists, False otherwise.
-        """
-        ...
-
-    def container_running(self, *, name: str) -> bool:
-        """Check if a container is currently running.
-
-        Args:
-            name: Container name to check.
-
-        Returns:
-            True if container is running, False otherwise.
-        """
-        ...
-
-    def container_remove(self, *, name: str) -> None:
-        """Remove a container if it exists.
-
-        Args:
-            name: Container name to remove.
-        """
-        ...
-
-    def container_run(
-        self,
-        *,
-        name: str,
-        image: str,
-        port_mappings: dict[int, int],
-        volume_mappings: dict[str, str],
-    ) -> None:
-        """Run a container with the given configuration.
-
-        Args:
-            name: Container name.
-            image: Docker image to run.
-            port_mappings: Host port -> container port mappings.
-            volume_mappings: Volume name -> container path mappings.
-
-        Raises:
-            RuntimeError: If container fails to start.
-        """
-        ...
-
-    def get_container_ports(self, *, name: str) -> dict[int, int]:
-        """Get the published port mappings for a running container.
-
-        Args:
-            name: Container name.
-
-        Returns:
-            Dict mapping container port to host port.
-            Returns empty dict if container not found or not running.
-        """
-        ...
-
-    def find_free_port(self) -> int:
-        """Find and return an available TCP port.
-
-        Returns:
-            An available port number.
-        """
-        ...
 
 
 class DockerBackend:
@@ -182,17 +101,4 @@ class DockerBackend:
             return s.getsockname()[1]
 
 
-# Default backend instance
-_default_backend: ContainerBackend = DockerBackend()
-
-
-def get_default_backend() -> ContainerBackend:
-    """Get the default container backend (Docker)."""
-    return _default_backend
-
-
-__all__ = [
-    "ContainerBackend",
-    "DockerBackend",
-    "get_default_backend",
-]
+__all__ = ["DockerBackend"]

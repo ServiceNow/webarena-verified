@@ -12,7 +12,7 @@ from webarena_verified.environments.env_ctrl_client import EnvCtrlDockerClient, 
 from webarena_verified.types.container import ContainerStartResult, ContainerStatus, ContainerStatusResult
 
 from .backend import ContainerBackend, get_default_backend
-from .defaults import get_container_config
+from .config import get_container_config
 
 if TYPE_CHECKING:
     from webarena_verified.types.config import ContainerConfig

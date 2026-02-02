@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from webarena_verified.types.task import WebArenaSite
 
-from ..container.defaults import get_container_config, get_sites_with_setup
+from ..container.config import get_container_config, get_sites_with_setup
 from .docker_ops import (
     copy_file_to_volume,
     create_volume,
