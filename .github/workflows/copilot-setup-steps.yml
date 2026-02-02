@@ -21,3 +21,6 @@ jobs:
 
       - name: Install all dependencies
         run: uv sync --all-extras
+
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
