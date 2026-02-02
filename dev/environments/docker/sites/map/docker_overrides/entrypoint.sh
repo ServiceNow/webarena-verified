@@ -242,9 +242,11 @@ init_nominatim() {
     fi
     chown -R nominatim: $NOMINATIM_PROJECT
 
-    # Refresh Nominatim website
+    # Only refresh if website files are missing
     cd $NOMINATIM_PROJECT
-    sudo -E -u nominatim nominatim refresh --website --functions 2>&1 || echo "WARNING: Nominatim refresh failed (may need manual setup)"
+    if [ ! -f "$NOMINATIM_PROJECT/website/search.php" ]; then
+        sudo -E -u nominatim nominatim refresh --website --functions 2>&1 || echo "WARNING: Nominatim refresh failed"
+    fi
 
     # Stop after init (supervisor will restart)
     su - postgres -c "/usr/lib/postgresql/14/bin/pg_ctl -D $NOMINATIM_PG_DATA stop -m fast"
