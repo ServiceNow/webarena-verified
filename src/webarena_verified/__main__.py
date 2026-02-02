@@ -95,11 +95,14 @@ def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
     env_start_group = env_start_parser.add_mutually_exclusive_group(required=True)
     env_start_group.add_argument("--site", type=str, choices=site_choices, help="Site name (manages Docker container)")
     env_start_group.add_argument("--url", type=str, help="Environment control server URL (HTTP client)")
-    env_start_parser.add_argument("--port", type=int, help="Host port for site (with --site, default: auto)")
+    env_start_parser.add_argument("--port", type=int, help="Host port for site (default: container's default port)")
     env_start_parser.add_argument(
-        "--env-ctrl-port", type=int, help="Host port for env-ctrl (with --site, default: auto)"
+        "--env-ctrl-port", type=int, help="Host port for env-ctrl (default: container's default port)"
     )
-    env_start_parser.add_argument("--wait", action="store_true", help="Wait until environment is ready")
+    env_start_parser.add_argument(
+        "--no-wait", dest="wait", action="store_false", help="Don't wait for environment to be ready"
+    )
+    env_start_parser.set_defaults(wait=True)
     env_start_parser.add_argument("--timeout", type=int, default=120, help="Wait timeout in seconds (default: 120)")
     env_start_parser.add_argument("--data-dir", type=str, help="Data directory to bind-mount (required for wikipedia)")
 
@@ -109,6 +112,9 @@ def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
     env_stop_group.add_argument("--site", type=str, choices=site_choices, help="Site name (manages Docker container)")
     env_stop_group.add_argument("--url", type=str, help="Environment control server URL (HTTP client)")
     env_stop_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+    # env stop-all subcommand
+    env_subparsers.add_parser("stop-all", help="Stop all running webarena containers")
 
     # env init subcommand (HTTP client only)
     env_init_parser = env_subparsers.add_parser("init", help="Initialize the environment (HTTP client)")
@@ -1290,10 +1296,14 @@ def trim_network_logs(args: argparse.Namespace) -> int:
 
 
 def env_command(args: argparse.Namespace) -> int | None:
-    """Execute env subcommands (status, start, stop, init, setup)."""
+    """Execute env subcommands (status, start, stop, stop-all, init, setup)."""
     # Handle setup subcommand
     if args.env_command == "setup":
         return _env_setup_command(args)
+
+    # Handle stop-all subcommand
+    if args.env_command == "stop-all":
+        return _env_stop_all_command()
 
     # Handle --site mode (Docker container management)
     if hasattr(args, "site") and args.site:
@@ -1303,7 +1313,7 @@ def env_command(args: argparse.Namespace) -> int | None:
     return _env_http_command(args)
 
 
-def _env_container_command(args: argparse.Namespace) -> int:
+def _env_container_command(args: argparse.Namespace) -> int:  # noqa: PLR0911
     """Execute env subcommands using Docker container management."""
     site = WebArenaSite(args.site)
     manager = ContainerManager(site=site)
@@ -1323,9 +1333,17 @@ def _env_container_command(args: argparse.Namespace) -> int:
 
         if args.env_command == "start":
             data_dir = Path(args.data_dir) if getattr(args, "data_dir", None) else None
+            port = getattr(args, "port", None) or manager.config.host_port
+            env_ctrl_port = getattr(args, "env_ctrl_port", None) or manager.config.host_env_ctrl_port
+            if not port:
+                logger.error(f"Site {args.site} requires --port to be specified")
+                return 1
+            if not env_ctrl_port:
+                logger.error(f"Site {args.site} requires --env-ctrl-port to be specified")
+                return 1
             result = manager.start(
-                port=getattr(args, "port", None),
-                env_ctrl_port=getattr(args, "env_ctrl_port", None),
+                port=port,
+                env_ctrl_port=env_ctrl_port,
                 wait=args.wait,
                 timeout=args.timeout,
                 data_dir=data_dir,
@@ -1349,6 +1367,31 @@ def _env_container_command(args: argparse.Namespace) -> int:
     except RuntimeError as e:
         logger.error(f"Container error: {e}")
         return 1
+
+
+def _env_stop_all_command() -> int:
+    """Stop all running webarena containers."""
+    stopped = []
+    not_running = []
+
+    # Iterate over all sites (except HOMEPAGE)
+    for site in WebArenaSite:
+        if site == WebArenaSite.HOMEPAGE:
+            continue
+
+        manager = ContainerManager(site=site)
+        if manager.is_running():
+            manager.stop()
+            stopped.append(site.value)
+        else:
+            not_running.append(site.value)
+
+    if stopped:
+        logger.info(f"Stopped containers: {', '.join(stopped)}")
+    else:
+        logger.info("No running containers found")
+
+    return 0
 
 
 def _env_http_command(args: argparse.Namespace) -> int:

@@ -49,6 +49,7 @@ class DockerBackend:
         image: str,
         port_mappings: dict[int, int],
         volume_mappings: dict[str, str],
+        env_vars: dict[str, str] | None = None,
     ) -> None:
         """Run a Docker container with the given configuration."""
         cmd = [
@@ -66,6 +67,11 @@ class DockerBackend:
         # Add volume mappings (volume_name:container_path)
         for volume_name, container_path in volume_mappings.items():
             cmd.extend(["-v", f"{volume_name}:{container_path}"])
+
+        # Add environment variables
+        if env_vars:
+            for key, value in env_vars.items():
+                cmd.extend(["-e", f"{key}={value}"])
 
         cmd.append(image)
 

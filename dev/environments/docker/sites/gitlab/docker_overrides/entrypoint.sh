@@ -66,6 +66,12 @@ fi
 
 # Start env-ctrl with auto-restart (if enabled)
 if [ "${WA_ENV_CTRL_ENABLE:-}" = "true" ]; then
+    echo "Running env-ctrl init..."
+    if ! /usr/local/bin/env-ctrl init; then
+        echo "ERROR: env-ctrl init failed"
+        exit 1
+    fi
+
     echo "Starting env-ctrl on port ${WA_ENV_CTRL_PORT:-8877}..."
     (
         while true; do

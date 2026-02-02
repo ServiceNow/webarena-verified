@@ -6,6 +6,9 @@ and managing Docker containers for WebArena sites.
 
 from __future__ import annotations
 
+import time
+import urllib.error
+import urllib.request
 from typing import TYPE_CHECKING
 
 from webarena_verified.core.utils import logger
@@ -59,8 +62,8 @@ class ContainerManager:
     def start(
         self,
         *,
-        port: int | None = None,
-        env_ctrl_port: int | None = None,
+        port: int,
+        env_ctrl_port: int,
         wait: bool = True,
         timeout: int = 120,
         data_dir: Path | None = None,
@@ -71,8 +74,8 @@ class ContainerManager:
         before starting a new one.
 
         Args:
-            port: Host port for the site. If None, auto-assigns a free port.
-            env_ctrl_port: Host port for env-ctrl API. If None, auto-assigns a free port.
+            port: Host port for the site.
+            env_ctrl_port: Host port for env-ctrl API.
             wait: If True, wait for services to be ready before returning.
             timeout: Timeout in seconds for waiting (only used with wait=True).
             data_dir: Path to data directory for bind-mount (required for sites with data_dir_mount).
@@ -95,9 +98,9 @@ class ContainerManager:
         logger.info(f"Removing existing container if present: {self.container_name}")
         self.backend.container_remove(name=self.container_name)
 
-        # Determine ports
-        host_port = port if port is not None else self.backend.find_free_port()
-        host_env_ctrl_port = env_ctrl_port if env_ctrl_port is not None else self.backend.find_free_port()
+        host_port = port
+        host_env_ctrl_port = env_ctrl_port
+
         logger.info(f"Using ports - site: {host_port}, env-ctrl: {host_env_ctrl_port}")
 
         # Build port and volume mappings
@@ -113,6 +116,10 @@ class ContainerManager:
         else:
             volume_mappings = self.config.volumes
 
+        # Set env vars for env-ctrl init (runs automatically in entrypoint)
+        url = f"http://{self.hostname}:{host_port}"
+        env_vars = {"WA_ENV_CTRL_EXTERNAL_SITE_URL": url}
+
         # Run container
         logger.info(f"Starting container: {self.container_name} (image: {self.config.docker_img})")
         self.backend.container_run(
@@ -120,16 +127,17 @@ class ContainerManager:
             image=self.config.docker_img,
             port_mappings=port_mappings,
             volume_mappings=volume_mappings,
+            env_vars=env_vars,
         )
         logger.info("Container started successfully")
 
-        url = f"http://{self.hostname}:{host_port}"
         env_ctrl_url = f"http://{self.hostname}:{host_env_ctrl_port}"
 
         # Wait for services if requested
         if wait:
             logger.info(f"Waiting for services to be ready (timeout: {timeout}s)")
-            self._wait_and_configure(port=host_port, timeout=timeout)
+            health_check_url = f"{url}{self.config.health_check_path}"
+            self._wait_for_ready(timeout=timeout, health_check_url=health_check_url)
 
         return ContainerStartResult(
             container_name=self.container_name,
@@ -213,29 +221,43 @@ class ContainerManager:
         """
         return self.backend.container_running(name=self.container_name)
 
-    def _wait_and_configure(self, *, port: int, timeout: int) -> None:
-        """Wait for services and configure the container.
+    def _wait_for_ready(self, *, timeout: int, health_check_url: str) -> None:
+        """Wait for services to become ready.
 
         Args:
-            port: Host port for the site.
             timeout: Timeout in seconds.
+            health_check_url: External URL to poll for health check.
 
         Raises:
             RuntimeError: If services don't become ready within timeout.
         """
-        # Client timeout should be longer than wait timeout
         logger.info("Connecting to env-ctrl service inside container")
         client = EnvCtrlDockerClient.create(self.container_name, timeout=timeout + 60)
 
-        # Wait for services to be ready
-        logger.info("Waiting for services to be ready...")
-        result = client.start(wait=True, timeout=timeout)
+        logger.info("Waiting for internal services to be ready...")
+        result = client.wait_until_ready(timeout=timeout)
         if not result.success:
-            raise RuntimeError(f"Services failed to start: {result.message}")
-        logger.info("Services are ready")
+            raise RuntimeError(f"Services failed to become ready: {result.message}")
+        logger.info("Internal services are ready")
 
-        # Configure base URL
-        base_url = f"http://{self.hostname}:{port}/"
-        logger.info(f"Configuring base URL: {base_url}")
-        client.init(base_url=base_url)
-        logger.info("Container configured successfully")
+        # Poll external URL
+        logger.info(f"Waiting for external URL to be ready: {health_check_url}")
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                req = urllib.request.Request(health_check_url, method="GET")
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    if resp.status < 500:
+                        logger.info("External URL is ready")
+                        return
+            except urllib.error.HTTPError as e:
+                # HTTPError is raised for 4xx/5xx but also has a status code
+                # Accept 4xx (client errors like auth required) as "site is up"
+                if e.code < 500:
+                    logger.info(f"External URL is ready (status {e.code})")
+                    return
+            except (urllib.error.URLError, TimeoutError):
+                pass
+            time.sleep(2)
+
+        raise RuntimeError(f"External URL failed to become ready: {health_check_url}")

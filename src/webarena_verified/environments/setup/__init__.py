@@ -9,11 +9,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from webarena_verified.types.task import WebArenaSite
-
 from ..container.config import get_container_config, get_sites_with_setup
 from .docker_ops import (
-    copy_file_to_volume,
     create_volume,
     download_file,
     extract_tar_to_volume,
@@ -25,6 +22,8 @@ from .docker_ops import (
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from webarena_verified.types.task import WebArenaSite
+
 # Type for progress callbacks
 ProgressCallback = Callable[[str, str], None]  # (phase, message)
 
@@ -34,7 +33,7 @@ def _print_default(phase: str, message: str) -> None:
     print(f"[{phase}] {message}")
 
 
-def setup_init(  # noqa: C901, PLR0912, PLR0915
+def setup_init(  # noqa: C901, PLR0912
     *,
     site: WebArenaSite | None,
     data_dir: Path,
@@ -140,13 +139,6 @@ def setup_init(  # noqa: C901, PLR0912, PLR0915
                         result["volumes_populated"].append(vol_name)
                     else:
                         progress("WARN", f"Tar file not found: {vol_spec.source_tar}")
-                elif s == WebArenaSite.WIKIPEDIA and vol_name.endswith("_data"):
-                    # Special case: Wikipedia copies ZIM file directly
-                    zim_files = list(data_dir.glob("*.zim"))
-                    if zim_files:
-                        progress("COPY", f"Copying ZIM file to {vol_name}...")
-                        copy_file_to_volume(zim_files[0], vol_name)
-                        result["volumes_populated"].append(vol_name)
             elif dry_run and vol_spec.source_tar:
                 if volume_exists(vol_name) and not volume_is_empty(vol_name):
                     progress("DRY-RUN", f"Would skip (has data): {vol_name}")

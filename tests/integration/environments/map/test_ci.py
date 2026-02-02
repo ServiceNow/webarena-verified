@@ -11,6 +11,7 @@ Usage:
 """
 
 import math
+import urllib.error
 import urllib.request
 
 import pytest

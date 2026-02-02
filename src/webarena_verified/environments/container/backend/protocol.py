@@ -53,6 +53,7 @@ class ContainerBackend(Protocol):
         image: str,
         port_mappings: dict[int, int],
         volume_mappings: dict[str, str],
+        env_vars: dict[str, str] | None = None,
     ) -> None:
         """Run a container with the given configuration.
 
@@ -61,6 +62,7 @@ class ContainerBackend(Protocol):
             image: Docker image to run.
             port_mappings: Host port -> container port mappings.
             volume_mappings: Volume name -> container path mappings.
+            env_vars: Environment variables to set in the container.
 
         Raises:
             RuntimeError: If container fails to start.

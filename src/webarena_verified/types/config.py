@@ -67,8 +67,12 @@ class ContainerConfig(BaseModel):
         docker_img: Docker image name (e.g., "am1n3e/webarena-verified-shopping")
         container_port: Port inside container where the web service listens (default: 80)
         env_ctrl_port: Port inside container where env-ctrl API listens (default: 8877)
-        volumes: Named Docker volumes to mount. Maps volume name to mount path.
+        host_port: Port on host to expose the web service (default: same as container_port)
+        host_env_ctrl_port: Port on host to expose env-ctrl API (default: same as env_ctrl_port)
+        health_check_path: URL path to poll for external health check (e.g., "/login")
         setup: Optional setup configuration for sites needing data volume preparation
+        data_dir_mount: If set, bind-mount data_dir to this path instead of using volumes.
+            Used for sites like Wikipedia where data should be read directly from disk.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -76,8 +80,18 @@ class ContainerConfig(BaseModel):
     docker_img: str
     container_port: int = 80
     env_ctrl_port: int = 8877
-    volumes: dict[str, str] = Field(default_factory=dict)
+    host_port: int | None = None
+    host_env_ctrl_port: int | None = None
+    health_check_path: str = "/"
     setup: ContainerSetupConfig | None = None
+    data_dir_mount: str | None = None
+
+    @property
+    def volumes(self) -> dict[str, str]:
+        """Derive volume mounts from setup.volumes."""
+        if self.setup is None:
+            return {}
+        return {v.volume_name: v.mount_path for v in self.setup.volumes}
 
 
 # ============================================================================
