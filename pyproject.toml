@@ -28,12 +28,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "click>=8.3.0",
-    "environment-control",
-    "pydantic-settings>=2.11.0",
-    "litellm>=1.80.5",
-]
 examples = [
     "playwright>=1.55.0",
     "browser-use>=0.8.1",
@@ -66,6 +60,10 @@ include = ["src/**", "assets/**"]
 
 [dependency-groups]
 dev = [
+    "click>=8.3.0",
+    "environment-control",
+    "pydantic-settings>=2.11.0",
+    "litellm>=1.80.5",
     "invoke>=2.2.0",
     "semver>=3.0.0",
     "mkdocs>=1.6.1",
