@@ -167,10 +167,3 @@ def get_sites_with_setup() -> list[WebArenaSite]:
         for site, config in DEFAULT_CONTAINER_CONFIGS.items()
         if config.setup is not None and config.setup.data_urls
     ]
-
-
-__all__ = [
-    "DEFAULT_CONTAINER_CONFIGS",
-    "get_container_config",
-    "get_sites_with_setup",
-]

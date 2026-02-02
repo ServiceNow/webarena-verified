@@ -206,8 +206,3 @@ class ContainerManager:
         # Configure base URL
         base_url = f"http://{self.hostname}:{port}/"
         client.init(base_url=base_url)
-
-
-__all__ = [
-    "ContainerManager",
-]

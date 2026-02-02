@@ -99,6 +99,3 @@ class DockerBackend:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(("", 0))
             return s.getsockname()[1]
-
-
-__all__ = ["DockerBackend"]
