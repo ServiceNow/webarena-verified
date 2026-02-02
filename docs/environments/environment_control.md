@@ -42,6 +42,20 @@ graph LR
 
 The client library communicates with `env-ctrl` running inside each container, allowing operations like health checks, resets, and configuration changes without direct Docker access.
 
+## Dashboard
+
+The env-ctrl server includes a web-based dashboard for manual environment management. Access it by navigating to the server's root URL (e.g., `http://localhost:8877/`).
+
+![Environment Control Dashboard](../assets/env-ctrl-dashboard.png)
+
+The dashboard provides:
+
+- **Environment status** - Shows the current environment type and health status
+- **Action buttons** - Initialize, Start, Stop, Restart, and Refresh Status
+- **Console output** - Real-time feedback from operations
+
+This is useful for debugging and manual testing without needing to use the CLI or write code.
+
 ## Usage
 
 ### Via Docker Exec (CLI)
