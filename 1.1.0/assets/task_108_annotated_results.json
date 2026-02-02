@@ -1,0 +1,57 @@
+{
+  "task_id": 108,
+  "intent_template_id": 270,
+  "sites": [
+    "shopping_admin"
+  ],
+  "task_revision": 2, // (1)!
+  "status": "success", // (2)!
+  "score": 1.0, // (3)!
+  "evaluators_results": [ // (4)!
+    {
+      "evaluator_name": "AgentResponseEvaluator", // (5)!
+      "status": "success",
+      "score": 1.0,
+      "actual": { // (6)!
+        "task_type": "RETRIEVE",
+        "status": "SUCCESS",
+        "retrieved_data": [
+          { "month": "Jan", "count": 12 },
+          { "month": "Feb", "count": 7 },
+          { "month": "March", "count": 5 },
+          { "month": "April", "count": 9 },
+          { "month": "May", "count": 5 }
+        ],
+        "error_details": null
+      },
+      "actual_normalized": { // (7)!
+        "task_type": "retrieve",
+        "status": "success",
+        "retrieved_data": [
+          { "month": "january", "count": 12.0 },
+          { "month": "february", "count": 7.0 },
+          { "month": "march", "count": 5.0 },
+          { "month": "april", "count": 9.0 },
+          { "month": "may", "count": 5.0 }
+        ]
+      },
+      "expected": { // (8)!
+        "task_type": "retrieve",
+        "status": "success",
+        "retrieved_data": [
+          { "month": "january", "count": 12.0 },
+          { "month": "february", "count": 7.0 },
+          { "month": "march", "count": 5.0 },
+          { "month": "april", "count": 9.0 },
+          { "month": "may", "count": 5.0 }
+        ]
+      },
+      "assertions": null, // (9)!
+      "error_msg": null // (10)!
+    }
+  ],
+  "error_msg": null,
+  "webarena_verified_version": "2.0.0", // (11)!
+  "webarena_verified_evaluator_checksum": "a9e6da7e172f7ba62e388d445ccc974cc5df02529b833738051c54879319d4f8", // (12)!
+  "webarena_verified_data_checksum": "33048e32d7349835e3ea656348e59ba4ca43d2068cce24d3772134e402ef8f4b" // (13)!
+}
