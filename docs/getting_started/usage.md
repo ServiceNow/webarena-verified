@@ -139,9 +139,20 @@ Use the `eval-tasks` command to score your agent's outputs:
 
 Score one or more runs. When no filters are provided, the CLI discovers every task directory under `--output-dir` that contains the required files.
 
-```bash
-webarena-verified eval-tasks --config config.json --output-dir output
-```
+=== "CLI"
+
+    ```bash
+    webarena-verified eval-tasks --output-dir output
+    ```
+
+=== "Docker"
+
+    ```bash
+    docker run --rm \
+      -v /path/to/output:/data \
+      am1n3e/webarena-verified:latest \
+      eval-tasks --output-dir /data
+    ```
 
 ### Filtering Tasks
 

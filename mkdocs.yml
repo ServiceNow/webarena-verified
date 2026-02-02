@@ -112,7 +112,3 @@ nav:
       - Evaluators:
           - Agent Response: api_reference/evaluators/agent_response_evaluator.md
           - Network Event: api_reference/evaluators/network_event_evaluator.md
-  - Contributing:
-      - Quick Start: contributing/index.md
-      - Updating Data: contributing/data/index.md
-      - Local Development: contributing/local-development.md

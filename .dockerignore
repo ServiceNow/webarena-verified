@@ -1,0 +1,120 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python cache and compiled files
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.installed.cfg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.pixi/
+__pypackages__/
+
+# Distribution / packaging
+build/
+dist/
+sdist/
+wheels/
+*.whl
+
+# Test and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checkers and linters
+.mypy_cache/
+.dmypy.json
+.pytype/
+.pyre/
+.ruff_cache/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# Documentation
+docs/_build/
+/site/
+
+# macOS
+.DS_Store
+
+# Project-specific
+output/
+scratch/
+tmp/
+downloads
+*.wip.json
+*.json.backup
+*.json.bkp
+*.tmp.json
+*.headers.json
+network.original.har
+.storage_state.json
+eval_log.txt
+demo_config.json
+config.json
+
+# Logs
+*.log
+
+# Large files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Lock files (optional - uncomment if you want smaller context)
+# uv.lock
+
+# Development files
+.pre-commit-config.yaml
+.python-version
+mkdocs.yml
+checklist.md
+CLAUDE.md
+LICENSE
+
+# Examples and tests (not needed in production image)
+examples/
+tests/
+
+# Contributing and development packages (not needed in production)
+contributing/
+packages/
+
+# But allow files needed for Docker builds
+!contributing/environments/docker/sites/
+!packages/environment_control/environment_control/
+
+# Worktrees
+.worktrees
+
+# Environment files
+.env
+.envrc
