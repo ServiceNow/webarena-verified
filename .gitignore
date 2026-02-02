@@ -242,4 +242,4 @@ tmp/
 eval_log.txt
 
 # Generated Gatus config
-contributing/environments/docker/monitoring/gatus/config.yaml
+dev/environments/docker/monitoring/gatus/config.yaml

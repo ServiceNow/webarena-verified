@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-contributing = [
+dev = [
     "click>=8.3.0",
     "pydantic-settings>=2.11.0",
     "litellm>=1.80.5",
@@ -192,7 +192,7 @@ convention = "google"
     "ANN",     # conftest fixtures don't need annotations
     "D",       # conftest doesn't need docstrings
 ]
-"contributing/**/*.py" = [
+"dev/**/*.py" = [
     "ANN",     # invoke tasks use dynamic typing from CLI
     "D101",    # settings classes don't need docstrings
     "PLR0913", # CLI tasks naturally have many arguments (flags)

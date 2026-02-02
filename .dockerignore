@@ -105,11 +105,11 @@ examples/
 tests/
 
 # Contributing and development packages (not needed in production)
-contributing/
+dev/
 packages/
 
 # But allow files needed for Docker builds
-!contributing/environments/docker/sites/
+!dev/environments/docker/sites/
 !packages/environment_control/environment_control/
 
 # Worktrees

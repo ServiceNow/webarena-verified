@@ -29,7 +29,7 @@ uv run pre-commit install
 ├── assets/dataset/           # Dataset files
 │   ├── webarena-verified.json  # Working dataset
 │   └── test.raw.json           # Original reference (read-only)
-├── contributing/             # Dev tools and invoke tasks
+├── dev/                      # Dev tools and invoke tasks
 │   ├── data/transforms/        # Transform scripts for bulk modifications
 │   └── data/validators/        # Validation scripts for data integrity
 ├── docs/                     # Documentation source (MkDocs)
@@ -43,16 +43,16 @@ All development tasks use [Invoke](https://www.pyinvoke.org/):
 
 ```bash
 # Format and check code (ruff + ty)
-inv -r contributing code-format-and-check
+inv -r dev code-format-and-check
 
 # Run tests
 uv run pytest
 
 # Serve documentation locally
-inv -r contributing docs-serve
+inv -r dev docs-serve
 
 # Build documentation
-inv -r contributing docs-build
+inv -r dev docs-build
 ```
 
 ## Code Style
@@ -81,7 +81,7 @@ pre-commit run --all-files
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Make your changes
-4. Run checks: `inv -r contributing code-format-and-check`
+4. Run checks: `inv -r dev code-format-and-check`
 5. Run tests: `uv run pytest`
 6. Commit with a clear message
 7. Push and open a pull request
@@ -127,10 +127,10 @@ Documentation is built with [MkDocs Material](https://squidfunk.github.io/mkdocs
 
 ```bash
 # Serve locally with live reload
-inv -r contributing docs-serve
+inv -r dev docs-serve
 
 # Build static site
-inv -r contributing docs-build
+inv -r dev docs-build
 ```
 
 Documentation is automatically deployed to GitHub Pages by CI when changes are merged to main.

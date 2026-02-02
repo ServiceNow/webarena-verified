@@ -154,9 +154,9 @@ def data_format(c):
 @task
 def code_format_and_check(c):
     """Format code using ruff and run type checking."""
-    c.run("uv run ruff check src contributing --fix --unsafe-fixes")
-    c.run("uv run ruff format src contributing")
-    c.run("uv run ty check src contributing")
+    c.run("uv run ruff check src dev --fix --unsafe-fixes")
+    c.run("uv run ruff format src dev")
+    c.run("uv run ty check src dev")
 
 
 def load_json(file_path: Path) -> list[dict]:

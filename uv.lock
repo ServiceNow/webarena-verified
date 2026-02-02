@@ -6870,7 +6870,7 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-contributing = [
+dev = [
     { name = "click" },
     { name = "litellm" },
     { name = "pydantic-settings" },
@@ -6909,19 +6909,19 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = "==4.14.2" },
     { name = "browser-use", marker = "extra == 'examples'", specifier = ">=0.8.1" },
     { name = "browser-use", marker = "extra == 'examples'", specifier = ">=0.9.6" },
-    { name = "click", marker = "extra == 'contributing'", specifier = ">=8.3.0" },
+    { name = "click", marker = "extra == 'dev'", specifier = ">=8.3.0" },
     { name = "compact-json", specifier = "==1.8.1" },
     { name = "filelock", marker = "extra == 'examples'", specifier = ">=3.16.1" },
     { name = "geographiclib", specifier = "==2.1" },
     { name = "geopy", specifier = "==2.4.1" },
     { name = "jinja2", marker = "extra == 'examples'", specifier = ">=3.1.6" },
     { name = "jsonpath-ng", specifier = "==1.7.0" },
-    { name = "litellm", marker = "extra == 'contributing'", specifier = ">=1.80.5" },
+    { name = "litellm", marker = "extra == 'dev'", specifier = ">=1.80.5" },
     { name = "pint", specifier = "==0.25" },
     { name = "playwright", marker = "extra == 'examples'", specifier = ">=1.55.0" },
     { name = "price-parser", specifier = "==0.5.0" },
     { name = "pydantic", specifier = "==2.12.0" },
-    { name = "pydantic-settings", marker = "extra == 'contributing'", specifier = ">=2.11.0" },
+    { name = "pydantic-settings", marker = "extra == 'dev'", specifier = ">=2.11.0" },
     { name = "python-dateutil", specifier = "==2.9.0.post0" },
     { name = "pytimeparse2", specifier = "==1.7.1" },
     { name = "requests", marker = "extra == 'examples'", specifier = ">=2.32.0" },
@@ -6933,7 +6933,7 @@ requires-dist = [
     { name = "usaddress-scourgify", specifier = "==0.6.0" },
     { name = "word2number", specifier = "==1.1" },
 ]
-provides-extras = ["contributing", "examples"]
+provides-extras = ["dev", "examples"]
 
 [package.metadata.requires-dev]
 dev = [
