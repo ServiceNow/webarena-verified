@@ -120,10 +120,9 @@ class ValueComparator:
             return self._compare_arrays_ordered(
                 expected_array, actual_array, value_name, ordered, visited=visited, **kwargs
             )
-        else:
-            return self._compare_arrays_unordered(
-                expected_array, actual_array, value_name, ordered, visited=visited, **kwargs
-            )
+        return self._compare_arrays_unordered(
+            expected_array, actual_array, value_name, ordered, visited=visited, **kwargs
+        )
 
     def _compare_arrays_unordered(
         self,
@@ -483,7 +482,7 @@ class ValueComparator:
                 visited=visited,
                 **kwargs,
             )
-        elif isinstance(expected, (list, tuple)):
+        if isinstance(expected, (list, tuple)):
             return self._compare_arrays(
                 expected_array=expected,
                 actual_array=actual,
@@ -494,18 +493,17 @@ class ValueComparator:
                 visited=visited,
                 **kwargs,
             )
-        else:
-            # Direct comparison for all other types (NormalizedType and primitives)
-            # NormalizedType.__eq__ handles alternatives automatically
-            if expected != actual:
-                return [
-                    EvalAssertion.create(
-                        assertion_name=f"{path}_mismatch",
-                        status=EvalStatus.FAILURE,
-                        assertion_msgs=[f"Expected {expected}, got {actual}"],
-                    )
-                ]
-            return []
+        # Direct comparison for all other types (NormalizedType and primitives)
+        # NormalizedType.__eq__ handles alternatives automatically
+        if expected != actual:
+            return [
+                EvalAssertion.create(
+                    assertion_name=f"{path}_mismatch",
+                    status=EvalStatus.FAILURE,
+                    assertion_msgs=[f"Expected {expected}, got {actual}"],
+                )
+            ]
+        return []
 
     def _format_value(self, value: Any) -> Any:
         """Format value for display in error messages.

@@ -34,8 +34,10 @@ class Status(StrEnum):
 
     Attributes:
         SUCCESS: Use when the task objective was fully achieved
-        ACTION_NOT_ALLOWED_ERROR: Use when the platform does not support the requested action or is not allowed in the current context or state
-        NOT_FOUND_ERROR: Use when the target entity or resource could not be located after retry attempts
+        ACTION_NOT_ALLOWED_ERROR: Use when the platform does not support the requested action
+            or is not allowed in the current context or state
+        NOT_FOUND_ERROR: Use when the target entity or resource could not be located
+            after retry attempts
         PERMISSION_DENIED_ERROR: Use when the current user lacks permission to perform the action
         DATA_VALIDATION_ERROR: Use when required input data was missing or invalid
         UNKNOWN_ERROR: Use when an unexpected failure doesn't match other categories
@@ -58,9 +60,11 @@ class FinalAgentResponse(BaseModel):
     Attributes:
         task_type (required): The type of task performed (RETRIEVE, MUTATE, or NAVIGATE)
         status (required): The outcome of the task execution
-        retrieved_data: Array of items for 'retrieve' operations, null for 'mutate' and 'navigate' operations.
-            Returns empty array if no items found. All items must be the same type (either all primitives of the same type, or all objects with the same keys).
-            Use appropriate data type formats (e.g., numbers for amounts/counts, true/false for booleans, not strings).
+        retrieved_data: Array of items for 'retrieve' operations, null for
+            'mutate' and 'navigate' operations. Returns empty array if no items found.
+            All items must be the same type (either all primitives of the same type,
+            or all objects with the same keys). Use appropriate data type formats
+            (e.g., numbers for amounts/counts, true/false for booleans, not strings).
             For list of objects, the user instruction contains the format specification.
         error_details: Null when status is 'SUCCESS'. Otherwise, explains used to explain the failure reason concisely.
     """

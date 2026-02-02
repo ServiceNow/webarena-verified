@@ -8,8 +8,8 @@ EVALUATOR_REGISTRY: dict[str, type[BaseEvaluator]] = {
 }
 
 __all__ = [
+    "EVALUATOR_REGISTRY",
     "AgentResponseEvaluator",
     "BaseEvaluator",
-    "EVALUATOR_REGISTRY",
     "NetworkEventEvaluator",
 ]

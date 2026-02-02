@@ -14,6 +14,8 @@ from webarena_verified.types.tracing import NetworkTrace
 
 from .internal.data_reader import WebArenaVerifiedDataReader
 from .internal.evaluator import WebArenaVerifiedEvaluator
+from .internal.patch_manager import PatchManager
+from .internal.submission_handler import SubmissionHandler
 
 if TYPE_CHECKING:
     from .internal.submission_handler import SubmissionResult
@@ -51,7 +53,7 @@ class WebArenaVerified:
         ```
     """
 
-    def __init__(self, *, config: Path | WebArenaVerifiedConfig | None = None):
+    def __init__(self, *, config: Path | WebArenaVerifiedConfig | None = None) -> None:
         """Initialize evaluator with config and load dataset.
 
         Args:
@@ -165,7 +167,8 @@ class WebArenaVerified:
                 - NetworkTrace: Pre-constructed NetworkTrace object
 
         Returns:
-            TaskEvalResult with status, score, and detailed evaluation results. Errors are captured in result.status = EvalStatus.ERROR with result.error_msg.
+            TaskEvalResult with status, score, and detailed evaluation results.
+            Errors are captured in result.status = EvalStatus.ERROR with result.error_msg.
 
         Examples:
             String response with HAR file:
@@ -277,8 +280,6 @@ class WebArenaVerified:
                 print("All Reddit patches applied successfully")
             ```
         """
-        from .internal.patch_manager import PatchManager
-
         patch_manager = PatchManager(exec_patch)
         return patch_manager.apply_patches_for_site(site)
 
@@ -335,8 +336,6 @@ class WebArenaVerified:
             print(f"See details: {result.summary_file}")
             ```
         """
-        from .internal.submission_handler import SubmissionHandler
-
         valid_task_ids = set(self._reader.task_id_map.keys())
         handler = SubmissionHandler(output_dirs, self._config, valid_task_ids)
         return handler.create_submission(
@@ -379,10 +378,9 @@ class WebArenaVerified:
         if config is None:
             logger.info("No config provided, using default configuration")
             return WebArenaVerifiedConfig()
-        elif isinstance(config, Path):
+        if isinstance(config, Path):
             logger.info(f"Loading config from: {config}")
             return WebArenaVerifiedConfig.from_file(config)
-        elif isinstance(config, WebArenaVerifiedConfig):
+        if isinstance(config, WebArenaVerifiedConfig):
             return config
-        else:
-            raise TypeError(f"Config must be Path, WebArenaVerifiedConfig, or None, got {type(config)}")
+        raise TypeError(f"Config must be Path, WebArenaVerifiedConfig, or None, got {type(config)}")

@@ -106,6 +106,4 @@ class MarkdownString(NormalizedType[str]):
         content = re.sub(r"\(\s*([^\)]+?)\s*\)", r"(\1)", content)
 
         # Strip leading/trailing whitespace from entire content
-        content = content.strip()
-
-        return content
+        return content.strip()

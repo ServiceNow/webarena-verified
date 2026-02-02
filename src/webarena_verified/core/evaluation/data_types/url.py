@@ -1,6 +1,7 @@
 """URL normalization with query parameter handling."""
 
 import re
+from collections.abc import Callable
 from copy import deepcopy
 from types import MappingProxyType
 from typing import Any, Self
@@ -51,12 +52,11 @@ class _NormalizedUrlValues(BaseModel):
             """Recursively convert NormalizedType instances to plain values."""
             if isinstance(obj, (MappingProxyType, dict)):
                 return {k: convert_to_serializable(v) for k, v in obj.items()}
-            elif isinstance(obj, (list, tuple)):
+            if isinstance(obj, (list, tuple)):
                 return type(obj)(convert_to_serializable(item) for item in obj)
-            elif isinstance(obj, NormalizedType):
+            if isinstance(obj, NormalizedType):
                 return obj.normalized
-            else:
-                return obj
+            return obj
 
         return {
             "base_url": self.base_url,
@@ -68,7 +68,7 @@ class _NormalizedUrlValues(BaseModel):
         query_frozen = frozenset(self.query_params.items()) if self.query_params else frozenset()
         return hash((self.base_url, query_frozen))
 
-    def __deepcopy__(self, memo: dict[int, object] | None = None):
+    def __deepcopy__(self, memo: dict[int, object] | None = None) -> "_NormalizedUrlValues":
         """Custom deepcopy to handle MappingProxyType in query_params.
 
         Converts MappingProxyType query_params to regular dict to avoid pickling errors.
@@ -83,7 +83,9 @@ class _NormalizedUrlValues(BaseModel):
             base_url=self.base_url, query_params=MappingProxyType(query_params_dict), is_regex=self.is_regex
         )
 
-    def matches_base_path(self, other: "_NormalizedUrlValues", render_url_fct=None) -> bool:
+    def matches_base_path(  # noqa: C901
+        self, other: "_NormalizedUrlValues", render_url_fct: Callable[[str], str] | None = None
+    ) -> bool:
         """Compare only base_url (ignore query_params), with regex support.
 
         Args:
@@ -282,7 +284,7 @@ class URL(NormalizedType[_NormalizedUrlValues]):
     - Case-insensitive scheme/netloc
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         raw: Any,
         query_params: QueryParams | None = None,
@@ -290,11 +292,11 @@ class URL(NormalizedType[_NormalizedUrlValues]):
         url_map: dict[str, tuple[str, ...]] | None = None,
         ignored_query_parameters: tuple[str, ...] | None = None,
         ignored_query_parameters_patterns: tuple[str, ...] | None = None,
-        render_url_fct=None,
-        derender_url_fct=None,
-        normalize_query_params_fct=None,
-        **kwargs,
-    ):
+        render_url_fct: Callable[[str], str] | None = None,
+        derender_url_fct: Callable[[str], str] | None = None,
+        normalize_query_params_fct: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Initialize with optional metadata for URL comparison.
 
         Args:
@@ -527,7 +529,7 @@ class URL(NormalizedType[_NormalizedUrlValues]):
             path = parsed.path.lstrip("/").lower()  # Normalize path to lowercase
         else:
             # Parse short format: git@host:port/path or git@host:path
-            user, host, path = self._parse_git_scp_format(value)
+            user, _host, path = self._parse_git_scp_format(value)
             path = path.lstrip("/").lower()  # Normalize path to lowercase
             user = user.lower()  # Normalize user to lowercase
 

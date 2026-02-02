@@ -7,17 +7,19 @@ and response status against expected criteria using four-step architecture.
 import re
 from functools import partial
 from types import MappingProxyType
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from webarena_verified.core.evaluation.data_types import URL
 from webarena_verified.core.utils import logger
 from webarena_verified.core.utils.jsonpath_utils import extract_jsonpath_value, is_jsonpath_key
-from webarena_verified.types.common import SerializableMappingProxyType
 from webarena_verified.types.eval import EvalAssertion, EvalStatus, TaskEvalContext
 from webarena_verified.types.task import NetworkEventEvaluatorCfg, NetworkEventSpec
 from webarena_verified.types.tracing import NetworkEvent
 
 from .base import BaseEvaluator
+
+if TYPE_CHECKING:
+    from webarena_verified.types.common import SerializableMappingProxyType
 
 
 class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
@@ -81,7 +83,9 @@ class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
         """
         return config.expected
 
-    def _normalized_expected_value(self, expected_raw: Any, config: NetworkEventEvaluatorCfg, context: TaskEvalContext):
+    def _normalized_expected_value(
+        self, expected_raw: Any, config: NetworkEventEvaluatorCfg, context: TaskEvalContext
+    ) -> Any:
         """Normalize expected value using _normalize_value helper.
 
         Args:
@@ -101,7 +105,7 @@ class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
 
     def _normalized_actual_value(
         self, actual_raw: Any, normalized_expected: Any, config: NetworkEventEvaluatorCfg, context: TaskEvalContext
-    ):
+    ) -> Any:
         post_data = normalized_expected.get("post_data")
         post_keys = post_data.keys() if post_data else None
         if post_keys is not None:
@@ -404,9 +408,8 @@ class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
 
         if is_list_input:
             return final
-        else:
-            assert len(final) == 1
-            return final[0]
+        assert len(final) == 1
+        return final[0]
 
     # ========================================================================
     # Event Comparison
@@ -436,18 +439,17 @@ class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
             if not actual_normalized:
                 # Success: no events found (as expected)
                 return []
-            else:
-                # Failure: events found when they shouldn't exist
-                return [
-                    EvalAssertion(
-                        status=EvalStatus.FAILURE,
-                        assertion_name="unexpected_navigation_event",
-                        assertion_msgs=(
-                            f"Found {len(actual_normalized)} matching event(s) "
-                            f"when none were expected (should_not_exist=True).",
-                        ),
-                    )
-                ]
+            # Failure: events found when they shouldn't exist
+            return [
+                EvalAssertion(
+                    status=EvalStatus.FAILURE,
+                    assertion_name="unexpected_navigation_event",
+                    assertion_msgs=(
+                        f"Found {len(actual_normalized)} matching event(s) "
+                        f"when none were expected (should_not_exist=True).",
+                    ),
+                )
+            ]
 
         # Normal comparison mode
         if not actual_normalized:
@@ -524,12 +526,12 @@ class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
 
         # Extract post_data if expected
         # Cast to SerializableMappingProxyType for type checking (Pydantic will validate/convert)
-        post_data = cast(SerializableMappingProxyType | None, event.post_data if config.expected.post_data else None)
+        post_data = cast("SerializableMappingProxyType | None", event.post_data if config.expected.post_data else None)
 
         # Extract response content if expected
         # Cast to SerializableMappingProxyType for type checking (Pydantic will validate/convert)
         response_content = cast(
-            SerializableMappingProxyType | None, event.response_content if config.expected.response_content else None
+            "SerializableMappingProxyType | None", event.response_content if config.expected.response_content else None
         )
 
         # Extract response_cookies if expected
@@ -578,8 +580,7 @@ class NetworkEventEvaluator(BaseEvaluator[NetworkEventEvaluatorCfg]):
         # we use the normal filtering logic below.
         if context.task.is_navigate_task and config.expected.http_method == "GET":
             last_navigation_event = [e for e in events if e.is_navigation_event]
-            matched_events = (last_navigation_event[-1],) if last_navigation_event else ()
-            return matched_events
+            return (last_navigation_event[-1],) if last_navigation_event else ()
 
         matches = []
         try:

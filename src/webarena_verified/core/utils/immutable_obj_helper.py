@@ -86,14 +86,13 @@ def serialize_to_mutable(obj: Any, lists_to_tuples: bool = True) -> Any:
     """
     if isinstance(obj, (MappingProxyType, dict)):
         return {k: serialize_to_mutable(v, lists_to_tuples) for k, v in obj.items()}
-    elif isinstance(obj, (list, tuple)):
+    if isinstance(obj, (list, tuple)):
         converted = [serialize_to_mutable(item, lists_to_tuples) for item in obj]
         # Convert tuple → list if flag is set, otherwise preserve original type
         if lists_to_tuples and isinstance(obj, tuple):
             return converted
         return type(obj)(converted)
-    else:
-        return obj
+    return obj
 
 
 def deserialize_to_immutable(obj: Any, lists_to_tuples: bool = True) -> Any:
@@ -129,14 +128,13 @@ def deserialize_to_immutable(obj: Any, lists_to_tuples: bool = True) -> Any:
     """
     if isinstance(obj, dict):
         return MappingProxyType({k: deserialize_to_immutable(v, lists_to_tuples) for k, v in obj.items()})
-    elif isinstance(obj, (list, tuple)):
+    if isinstance(obj, (list, tuple)):
         converted = [deserialize_to_immutable(item, lists_to_tuples) for item in obj]
         # Convert list → tuple if flag is set
         if lists_to_tuples and isinstance(obj, list):
             return tuple(converted)
         return type(obj)(converted)
-    else:
-        return obj
+    return obj
 
 
 class ImmutableObjJSONEncoder(json.JSONEncoder):
@@ -154,7 +152,7 @@ class ImmutableObjJSONEncoder(json.JSONEncoder):
         '{"items": [1, 2, 3]}'
     """
 
-    def __init__(self, *args, lists_to_tuples: bool = False, **kwargs):
+    def __init__(self, *args: Any, lists_to_tuples: bool = False, **kwargs: Any) -> None:
         """Initialize encoder.
 
         Args:
@@ -194,7 +192,7 @@ class ImmutableObjJSONDecoder(json.JSONDecoder):
         True
     """
 
-    def __init__(self, *args, lists_to_tuples: bool = False, **kwargs):
+    def __init__(self, *args: Any, lists_to_tuples: bool = False, **kwargs: Any) -> None:
         """Initialize decoder with custom object_hook.
 
         Args:

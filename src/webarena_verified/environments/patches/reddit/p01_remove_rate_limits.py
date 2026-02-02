@@ -53,10 +53,9 @@ def remove_rate_limits(handler: SiteInstanceHandler) -> None:
             if line.strip().endswith(")"):
                 # Single line, skip it
                 continue
-            else:
-                # Multi-line annotation, mark to skip until we find the closing paren
-                skip_next = True
-                continue
+            # Multi-line annotation, mark to skip until we find the closing paren
+            skip_next = True
+            continue
 
         if skip_next:
             # Continue skipping until we find the end of the annotation
@@ -102,10 +101,9 @@ def verify_changes(handler: SiteInstanceHandler) -> bool:
     if result.returncode == 1:
         logger.info("Rate limit annotations successfully removed")
         return True
-    else:
-        count = result.stdout.strip()
-        logger.warning(f"Still found {count} @RateLimit annotation(s)")
-        return False
+    count = result.stdout.strip()
+    logger.warning(f"Still found {count} @RateLimit annotation(s)")
+    return False
 
 
 def restart_php_fpm(handler: SiteInstanceHandler) -> None:

@@ -71,7 +71,7 @@ def is_jsonpath_key(key: str) -> bool:
     return isinstance(key, str) and (key.startswith("$") or is_regexp(key))
 
 
-def deserialize_nested_json(data):
+def deserialize_nested_json(data: Any) -> Any:
     """
     Recursively deserialize JSON string fields.
 
@@ -89,10 +89,9 @@ def deserialize_nested_json(data):
             else:
                 result[key] = deserialize_nested_json(value)
         return result
-    elif isinstance(data, list):
+    if isinstance(data, list):
         return [deserialize_nested_json(item) for item in data]
-    else:
-        return data
+    return data
 
 
 def _extract_by_regex_key(data: dict | list, pattern: str, strict: bool) -> Any:
@@ -139,7 +138,7 @@ def _extract_by_regex_key(data: dict | list, pattern: str, strict: bool) -> Any:
 
     if len(matches) == 1:
         return matches[0][1]  # Return the value
-    elif len(matches) > 1:
+    if len(matches) > 1:
         # Return tuple for multiple matches in non-strict mode
         if not strict:
             return tuple(value for _, value in matches)
@@ -229,7 +228,7 @@ def extract_jsonpath_value(data: dict | list, path: str, strict: bool) -> Any:
     if len(matches) == 1 and "?(" not in path:
         # $() marks a filter expression which may validly return multiple matches
         return matches[0].value
-    elif len(matches) >= 1:
+    if len(matches) >= 1:
         return tuple(m.value for m in matches)
 
     if strict:

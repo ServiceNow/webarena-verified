@@ -31,7 +31,7 @@ class PatchManager:
     a SiteInstanceHandler for executing commands on the target environment.
     """
 
-    def __init__(self, exec_patch: Callable[..., bool], patches_dir: Path | None = None):
+    def __init__(self, exec_patch: Callable[..., bool], patches_dir: Path | None = None) -> None:
         """Initialize the patch manager.
 
         Args:

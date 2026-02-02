@@ -13,12 +13,15 @@ EvalConfigT = TypeVar("EvalConfigT", bound=BaseEval[Any])
 
 
 class BaseEvaluator(ABC, Generic[EvalConfigT]):
+    """Abstract base class for task evaluators."""
+
     def __init__(self) -> None:
         self.value_comparator = ValueComparator()
         self.value_normalizer = ValueNormalizer()
 
     @property
     def name(self) -> str:
+        """Return evaluator class name."""
         return self.__class__.__name__
 
     def evaluate(self, *, context: TaskEvalContext, config: EvalConfigT) -> EvaluatorResult:
@@ -129,10 +132,9 @@ class BaseEvaluator(ABC, Generic[EvalConfigT]):
             This is the ONLY step that is evaluator-specific. All other steps
             (get expected, normalize, compare) use the same logic across evaluators.
         """
-        pass
 
     @abstractmethod
-    def _normalized_expected_value(self, expected_raw: Any, config: EvalConfigT, context: TaskEvalContext):
+    def _normalized_expected_value(self, expected_raw: Any, config: EvalConfigT, context: TaskEvalContext) -> Any:
         """Normalize expected value.
 
         **Step 3a: Normalize Expected Value**
@@ -152,7 +154,7 @@ class BaseEvaluator(ABC, Generic[EvalConfigT]):
     @abstractmethod
     def _normalized_actual_value(
         self, actual_raw: Any, normalized_expected: Any, config: EvalConfigT, context: TaskEvalContext
-    ):
+    ) -> Any:
         """Normalize actual value.
 
         **Step 3b: Normalize Actual Value**
@@ -235,9 +237,9 @@ class BaseEvaluator(ABC, Generic[EvalConfigT]):
     def _parse_normalized_value_for_reporting(self, value: Any) -> Any:
         if isinstance(value, NormalizedType):
             return value.normalized
-        elif isinstance(value, (list, tuple)):
+        if isinstance(value, (list, tuple)):
             return [self._parse_normalized_value_for_reporting(v) for v in value]
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return {k: self._parse_normalized_value_for_reporting(v) for k, v in value.items()}
 
         return value

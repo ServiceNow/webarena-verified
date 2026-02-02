@@ -1,11 +1,11 @@
 """Site handler protocol for executing commands on site instances."""
 
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from webarena_verified.types.environment import SiteInstanceCommandResult
 
 if TYPE_CHECKING:
-    from playwright.sync_api import BrowserContext  # type: ignore[import-untyped]
+    from playwright.sync_api import BrowserContext
 
 
 class SiteInstanceHandler(Protocol):
@@ -29,7 +29,7 @@ class SiteInstanceHandler(Protocol):
         capture_output: bool = True,
         text: bool = True,
         check: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> SiteInstanceCommandResult:
         """Execute a command on the site instance.
 

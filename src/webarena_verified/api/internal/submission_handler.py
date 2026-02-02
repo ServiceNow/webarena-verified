@@ -39,7 +39,7 @@ class SubmissionHandler:
         output_dirs: list[Path],
         config: WebArenaVerifiedConfig,
         valid_task_ids: set[int],
-    ):
+    ) -> None:
         """Initialize handler.
 
         Args:
@@ -102,9 +102,7 @@ class SubmissionHandler:
         discovery_result = self._discover_task_outputs()
 
         # Package tasks (never fails, creates summary.json)
-        result = self._package_tasks(discovery_result, output_path, no_tar, progress_callback)
-
-        return result
+        return self._package_tasks(discovery_result, output_path, no_tar, progress_callback)
 
     def _generate_output_path(self, output_root: Path, no_tar: bool, custom_name: str | None = None) -> Path:
         """Generate output path with custom or auto-generated name.

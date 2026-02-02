@@ -72,11 +72,11 @@ class Empty(NormalizedType[type[None]]):
         if not value:
             if isinstance(value, (int, float, Decimal)):
                 raise ValueError("Numeric zero is not considered empty")
-            return None
+            return
 
         # Check for string representations
         if isinstance(value, str) and value in self.EMPTY_PATTERNS:
-            return None
+            return
 
         # Value is not an empty representation
         raise ValueError(
@@ -100,6 +100,4 @@ class Empty(NormalizedType[type[None]]):
         # Normalize whitespace (including around slashes)
         s = re.sub(r"\s+", " ", s)
         # Remove spaces around slashes: "n / a" -> "n/a"
-        s = re.sub(r"\s*/\s*", "/", s)
-
-        return s
+        return re.sub(r"\s*/\s*", "/", s)

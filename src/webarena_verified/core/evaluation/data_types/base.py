@@ -4,6 +4,7 @@ import contextlib
 import re
 import unicodedata as ud
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from copy import deepcopy
 from typing import Any, Generic, TypeVar
 
@@ -16,8 +17,8 @@ T = TypeVar("T")
 
 # Regex pattern matching various hyphen-like Unicode characters when adjacent to letters.
 # This normalizes "Buffalo-Niagara" → "Buffalo Niagara" but preserves "123-4567".
-# Hyphen characters: - (U+002D), ‐ (U+2010), ‑ (U+2011), ‒ (U+2012), – (U+2013),
-# — (U+2014), ― (U+2015), − (U+2212), ­ (U+00AD)
+# Hyphen characters: - (U+002D), ‐ (U+2010), ‑ (U+2011), ‒ (U+2012), – (U+2013),  # noqa: RUF003
+# — (U+2014), ― (U+2015), − (U+2212), ­ (U+00AD)  # noqa: RUF003
 _HYPHEN_CHARS = r"[\u002D\u2010\u2011\u2012\u2013\u2014\u2015\u2212\u00AD]"
 _HYPHEN_PATTERN = re.compile(rf"(?<=[a-zA-Z]){_HYPHEN_CHARS}|{_HYPHEN_CHARS}(?=[a-zA-Z])")
 
@@ -36,7 +37,9 @@ class NormalizedType(Generic[T], ABC):
     alternative. Single-item lists are rejected to avoid ambiguity.
     """
 
-    def __init__(self, raw: Any | list[Any], *, derender_url_fct=None, **kwargs):
+    def __init__(
+        self, raw: Any | list[Any], *, derender_url_fct: Callable[..., str] | None = None, **kwargs: Any
+    ) -> None:
         """Initialize with raw value(s) and normalize them.
 
         Args:
@@ -145,7 +148,6 @@ class NormalizedType(Generic[T], ABC):
         Subclasses must implement this method and handle empty values (None, "", []).
         Should raise an exception if normalization cannot be performed.
         """
-        pass
 
     def __eq__(self, other: Any) -> bool:
         """Equality comparison with alternatives support.
@@ -190,25 +192,24 @@ class NormalizedType(Generic[T], ABC):
         return hash(self.get_str_for_hashing())
 
     def get_str_for_hashing(self) -> str:
+        """Return string representation for hashing."""
         if len(self.alternatives) == 1:
             return str(self.alternatives[0])
-        else:
-            # For alternatives, use tuple hash
-            # Sort for consistency (if values are comparable)
-            try:
-                return str(tuple(sorted(self.alternatives)))  # type: ignore[type-var]
-            except TypeError:
-                # If alternatives are not sortable, use unsorted tuple
-                return str(tuple(self.alternatives))
+        # For alternatives, use tuple hash
+        # Sort for consistency (if values are comparable)
+        try:
+            return str(tuple(sorted(self.alternatives)))  # type: ignore[type-var]
+        except TypeError:
+            # If alternatives are not sortable, use unsorted tuple
+            return str(tuple(self.alternatives))
 
     def __repr__(self) -> str:
         """String representation for debugging."""
         if len(self.alternatives) > 1:
             alt_strs = ", or ".join(str(alt) for alt in self.alternatives)
             return f"{self.__class__.__name__}({self._raw_value!r} -> {alt_strs!r})"
-        else:
-            if self._raw_value == self.normalized:
-                return f"{self.__class__.__name__}({self.normalized!r})"
+        if self._raw_value == self.normalized:
+            return f"{self.__class__.__name__}({self.normalized!r})"
         return f"{self.__class__.__name__}({self._raw_value!r} -> {self.normalized!r})"
 
     def __str__(self) -> str:
@@ -254,7 +255,7 @@ class NormalizedType(Generic[T], ABC):
         s = s.translate({0x2122: None, 0x00AE: None, 0x2120: None, 0x00A9: None})
 
         # Step 2: NFKC - handles many edge cases
-        # ﬁ → fi, ① → 1, ｆｕｌｌ → full, ² → 2
+        # ﬁ → fi, ① → 1, ｆｕｌｌ → full, ² → 2  # noqa: RUF003
         s = ud.normalize("NFKC", s)
 
         # Step 2.5: Normalize hyphen-like characters to spaces BEFORE unidecode
@@ -284,6 +285,4 @@ class NormalizedType(Generic[T], ABC):
         s = re.sub(r"\s+", " ", s)
 
         # Step 5: Casefold for robust case-insensitive comparison
-        s = s.casefold()
-
-        return s
+        return s.casefold()

@@ -47,7 +47,7 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
 
     def _normalized_expected_value(
         self, expected_raw: _FinalAgentResponse, config: AgentResponseEvaluatorCfg, context: TaskEvalContext
-    ):
+    ) -> MappingProxyType:
         if not isinstance(expected_raw, _FinalAgentResponse):
             raise TypeError(f"Expected value must be of type _FinalAgentResponse, got {type(expected_raw).__name__}")
         normalized_retrieved_data = self._normalized_retrieved_data(
@@ -85,7 +85,7 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
 
     def _normalized_actual_value(
         self, actual_raw: Any, normalized_expected: Any, config: AgentResponseEvaluatorCfg, context: TaskEvalContext
-    ):
+    ) -> Any:
         value = self._get_actual_agent_response_dict(actual_raw=actual_raw)
         if not isinstance(value, (dict, MappingProxyType)):
             return value
@@ -140,13 +140,12 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
         )
         _derender_url_fct = partial(context.config.derender_url, sites=context.task.sites, strict=strict)
         # TODO: Maybe call normalize array directly here
-        _normalized_value = self.value_normalizer.normalize_array(
+        return self.value_normalizer.normalize_array(
             retrieved_data_raw,
             config.results_schema,
             strict=strict,
             derender_url_fct=_derender_url_fct,
         )
-        return _normalized_value
 
     def _compare_values(  # type: ignore[override]
         self,
@@ -155,7 +154,7 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
         expected_normalized: MappingProxyType,
         config: AgentResponseEvaluatorCfg,
         context: TaskEvalContext,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[EvalAssertion]:
         """Compare normalized actual vs expected using ValueComparator."""
         # Compare all keys except the value of retrieved_data

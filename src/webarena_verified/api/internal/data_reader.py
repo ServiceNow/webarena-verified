@@ -11,17 +11,21 @@ TOTAL_TASK_COUNT = 812
 
 
 class WebArenaVerifiedDataReader:
-    def __init__(self, config: WebArenaVerifiedConfig, subset: TaskSubset | None = None):
+    """Reads and manages WebArena task data from JSON files."""
+
+    def __init__(self, config: WebArenaVerifiedConfig, subset: TaskSubset | None = None) -> None:
         self.config = config
         self.subset = subset
         self._task_id_map: MappingProxyType[int, WebArenaVerifiedTask] = self._load_tasks()
 
     @property
     def tasks(self) -> list[WebArenaVerifiedTask]:
+        """Return all loaded tasks as a list."""
         return list(self._task_id_map.values())
 
     @property
     def task_id_map(self) -> MappingProxyType[int, WebArenaVerifiedTask]:
+        """Return mapping of task IDs to task objects."""
         return self._task_id_map
 
     @property
