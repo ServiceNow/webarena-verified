@@ -99,7 +99,7 @@ class ShoppingOps(SupervisorMixin, BaseOps):
         # NOTE: SQL uses escaped double quotes to avoid quote issues with docker exec bash -c '...'
         commands = [
             f'php {cls.MAGENTO_ROOT}/bin/magento setup:store-config:set --base-url="{base_url}"',
-            f'mysql -u {cls.MYSQL_USER} -p{cls.MYSQL_PASSWORD} {cls.DATABASE} -e '
+            f"mysql -u {cls.MYSQL_USER} -p{cls.MYSQL_PASSWORD} {cls.DATABASE} -e "
             f'"UPDATE core_config_data SET value = \\"{base_url}\\" WHERE path = \\"web/secure/base_url\\";"',
             f"php {cls.MAGENTO_ROOT}/bin/magento cache:flush",
         ]

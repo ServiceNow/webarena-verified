@@ -5,6 +5,11 @@ import shutil
 import pytest
 
 
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line("markers", "docker: marks tests that require Docker")
+
+
 @pytest.fixture(scope="session")
 def docker():
     """Check that docker is available and return the CLI name."""

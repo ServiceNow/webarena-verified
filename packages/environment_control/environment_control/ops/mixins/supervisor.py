@@ -165,9 +165,7 @@ class SupervisorMixin:
         return Result(success=result.success, exec_logs=result.exec_logs)
 
     @classmethod
-    def supervisor_stop(
-        cls, exec_cmd: Optional[CommandExecutor] = None, exclude_env_ctrl: bool = True
-    ) -> Result:
+    def supervisor_stop(cls, exec_cmd: Optional[CommandExecutor] = None, exclude_env_ctrl: bool = True) -> Result:
         """Stop supervisord services.
 
         Args:

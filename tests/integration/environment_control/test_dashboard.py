@@ -8,12 +8,16 @@ Usage:
 
 import urllib.request
 
-DASHBOARD_URL = "http://localhost:8877/"
+import pytest
+
+pytestmark = pytest.mark.docker
 
 
 def test_dashboard_returns_html(env_control_container):
     """Test GET / returns HTML dashboard."""
-    with urllib.request.urlopen(DASHBOARD_URL, timeout=5) as response:
+    url = f"{env_control_container.base_url}/"
+
+    with urllib.request.urlopen(url, timeout=5) as response:
         content_type = response.headers.get("Content-Type", "")
         content = response.read().decode("utf-8")
 

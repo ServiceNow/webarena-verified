@@ -4,10 +4,11 @@ Starts a Python 3.10 container with the environment_control package mounted
 and installed, running the env-ctrl server with the dummy ops.
 """
 
-import os
-import shutil
+import socket
 import subprocess
 import time
+from collections.abc import Generator
+from dataclasses import dataclass
 
 import pytest
 
@@ -16,22 +17,22 @@ from webarena_verified.environments.env_ctrl_client import EnvCtrlClient
 # Container configuration
 CONTAINER_NAME = "env-ctrl-test"
 CONTAINER_IMAGE = "python:3.10-slim"
-SERVER_PORT = 8877
 
 
-def _docker_available() -> bool:
-    """Check if Docker is available and running."""
-    if not shutil.which("docker"):
-        return False
-    try:
-        result = subprocess.run(
-            ["docker", "info"],
-            capture_output=True,
-            timeout=10,
-        )
-        return result.returncode == 0
-    except (subprocess.TimeoutExpired, OSError):
-        return False
+@dataclass
+class EnvControlContainer:
+    """Container info returned by env_control_container fixture."""
+
+    name: str
+    base_url: str
+    port: int
+
+
+def _find_free_port() -> int:
+    """Find a free port on localhost."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
 
 
 def _image_exists(image: str) -> bool:
@@ -44,8 +45,14 @@ def _image_exists(image: str) -> bool:
     return bool(result.stdout.strip())
 
 
+@pytest.fixture(scope="session")
+def env_ctrl_server_port() -> int:
+    """Find an available port for the env-ctrl server."""
+    return _find_free_port()
+
+
 @pytest.fixture(scope="module")
-def env_control_container(request, docker):
+def env_control_container(request, docker, env_ctrl_server_port) -> Generator[EnvControlContainer]:
     """Start a Python container with environment_control installed and server running.
 
     The container:
@@ -53,21 +60,22 @@ def env_control_container(request, docker):
     - Mounts packages/environment_control into /app
     - Installs the package with pip
     - Runs env-ctrl serve with WA_ENV_CTRL_TYPE=dummy
-    - Exposes port 8877
+
+    Yields:
+        EnvControlContainer with name, base_url, and port.
 
     Cleanup:
     - Removes the container
     - If the image was pulled by this test (didn't exist before), removes it too
     """
-    if not _docker_available():
-        pytest.skip("Docker is not available or not running")
+    port = env_ctrl_server_port
+    base_url = f"http://localhost:{port}"
 
     # Check if image existed before we start
     image_existed_before = _image_exists(CONTAINER_IMAGE)
 
-    # Get the path to packages/environment_control
-    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    package_path = os.path.join(repo_root, "packages", "environment_control")
+    # Get the path to packages/environment_control using pytest rootpath
+    package_path = request.config.rootpath / "packages" / "environment_control"
 
     # Stop any existing container
     subprocess.run(
@@ -84,7 +92,7 @@ def env_control_container(request, docker):
             "--name",
             CONTAINER_NAME,
             "-p",
-            f"{SERVER_PORT}:{SERVER_PORT}",
+            f"{port}:{port}",
             "-v",
             f"{package_path}:/app",
             "-w",
@@ -92,7 +100,7 @@ def env_control_container(request, docker):
             "-e",
             "WA_ENV_CTRL_TYPE=dummy",
             "-e",
-            "WA_ENV_CTRL_PORT=8877",
+            f"WA_ENV_CTRL_PORT={port}",
             CONTAINER_IMAGE,
             "bash",
             "-c",
@@ -106,7 +114,7 @@ def env_control_container(request, docker):
         raise RuntimeError(f"Failed to start container: {result.stderr}")
 
     # Wait for server to be ready
-    client = EnvCtrlClient(base_url=f"http://localhost:{SERVER_PORT}", timeout=5)
+    client = EnvCtrlClient(base_url=base_url, timeout=5)
     max_wait = 30
     start_time = time.time()
 
@@ -123,9 +131,10 @@ def env_control_container(request, docker):
             capture_output=True,
             text=True,
         )
+        subprocess.run(["docker", "rm", "-f", CONTAINER_NAME], capture_output=True)
         raise RuntimeError(f"Server did not start within {max_wait}s. Logs:\n{logs.stdout}\n{logs.stderr}")
 
-    yield CONTAINER_NAME
+    yield EnvControlContainer(name=CONTAINER_NAME, base_url=base_url, port=port)
 
     # Cleanup container
     subprocess.run(["docker", "rm", "-f", CONTAINER_NAME], capture_output=True)
@@ -136,14 +145,15 @@ def env_control_container(request, docker):
 
 
 @pytest.fixture
-def client(env_control_container):
+def client(env_control_container: EnvControlContainer) -> EnvCtrlClient:
     """Create a client connected to the test container's server."""
-    return EnvCtrlClient(base_url=f"http://localhost:{SERVER_PORT}", timeout=10)
+    return EnvCtrlClient(base_url=env_control_container.base_url, timeout=10)
 
 
 @pytest.fixture
-def docker_exec(env_control_container):
+def docker_exec(env_control_container: EnvControlContainer):
     """Return a function to execute commands in the container."""
+    container_name = env_control_container.name
 
     def _exec(cmd: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
         docker_cmd = ["docker", "exec"]
@@ -152,7 +162,7 @@ def docker_exec(env_control_container):
             for key, value in env.items():
                 docker_cmd.extend(["-e", f"{key}={value}"])
 
-        docker_cmd.extend([CONTAINER_NAME, "bash", "-c", cmd])
+        docker_cmd.extend([container_name, "bash", "-c", cmd])
 
         return subprocess.run(docker_cmd, capture_output=True, text=True)
 

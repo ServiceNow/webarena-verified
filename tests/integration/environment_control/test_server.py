@@ -12,6 +12,8 @@ import urllib.request
 
 import pytest
 
+pytestmark = pytest.mark.docker
+
 # --- Server Endpoint Tests ---
 
 
@@ -74,7 +76,7 @@ def test_wait_until_ready(client):
 
 def test_not_found_endpoint(env_control_container):
     """Test 404 response for unknown endpoints."""
-    url = "http://localhost:8877/unknown"
+    url = f"{env_control_container.base_url}/unknown"
     req = urllib.request.Request(url)
 
     with pytest.raises(urllib.error.HTTPError) as exc_info:

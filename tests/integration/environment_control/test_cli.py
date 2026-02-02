@@ -8,6 +8,10 @@ Usage:
 
 import json
 
+import pytest
+
+pytestmark = pytest.mark.docker
+
 # --- CLI Command Tests ---
 
 
