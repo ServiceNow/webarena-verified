@@ -90,6 +90,32 @@ cd webarena-verified
 uv sync
 ```
 
+## 🌐 Run WebArena Environments
+
+Run any WebArena environment locally using Docker:
+
+```bash
+# Shopping (Magento)
+docker run -d --name webarena-shopping -p 7770:80 am1n3e/webarena-verified-shopping
+
+# Shopping Admin
+docker run -d --name webarena-shopping-admin -p 7780:80 am1n3e/webarena-verified-shopping_admin
+
+# Reddit (Postmill)
+docker run -d --name webarena-reddit -p 9999:80 am1n3e/webarena-verified-reddit
+
+# GitLab
+docker run -d --name webarena-gitlab -p 8023:8023 am1n3e/webarena-verified-gitlab
+
+# Wikipedia (Kiwix)
+docker run -d --name webarena-wikipedia -p 8888:8080 am1n3e/webarena-verified-wikipedia
+
+# Map (OpenStreetMap) - requires data volumes, see docs
+docker run -d --name webarena-map -p 3000:8080 am1n3e/webarena-verified-map
+```
+
+See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/) for detailed setup instructions, credentials, and configuration options.
+
 ## 🧪 Evaluate A Task
 
 Evaluate a task using the CLI or programmatically:
