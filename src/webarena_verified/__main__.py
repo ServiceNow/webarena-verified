@@ -36,8 +36,54 @@ from webarena_verified.utils import (
 )
 
 
+def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
+    """Add the env subcommand group for Docker container control."""
+    env_parser = subparsers.add_parser(
+        "env",
+        help="Control Docker container environments",
+        description="Control and monitor Docker container environments via the environment control REST API",
+        epilog=textwrap.dedent("""
+            examples:
+              # Check environment status
+              webarena-verified env status --url http://localhost:8877
+
+              # Start environment (wait for ready)
+              webarena-verified env start --url http://localhost:8877 --wait
+
+              # Stop environment
+              webarena-verified env stop --url http://localhost:8877
+
+              # Initialize environment
+              webarena-verified env init --url http://localhost:8877
+            """),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    env_subparsers = env_parser.add_subparsers(dest="env_command", required=True)
+
+    # env status subcommand
+    env_status_parser = env_subparsers.add_parser("status", help="Get environment status")
+    env_status_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_status_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+    # env start subcommand
+    env_start_parser = env_subparsers.add_parser("start", help="Start the environment")
+    env_start_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_start_parser.add_argument("--wait", action="store_true", help="Wait until environment is ready")
+    env_start_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+    # env stop subcommand
+    env_stop_parser = env_subparsers.add_parser("stop", help="Stop the environment")
+    env_stop_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_stop_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+    # env init subcommand
+    env_init_parser = env_subparsers.add_parser("init", help="Initialize the environment")
+    env_init_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
+    env_init_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+
+
 def create_parser() -> argparse.ArgumentParser:
-    """Create the argument parser for the CLI"""
+    """Create the argument parser for the CLI."""
     parser = argparse.ArgumentParser(
         prog="webarena-verified",
         description="WebArena Verified CLI for running and evaluating tasks",
@@ -333,48 +379,7 @@ def create_parser() -> argparse.ArgumentParser:
     trim_logs_parser.add_argument("--output", type=str, required=True, help="Output HAR file path")
 
     # env subcommand group - control Docker container environments
-    env_parser = subparsers.add_parser(
-        "env",
-        help="Control Docker container environments",
-        description="Control and monitor Docker container environments via the environment control REST API",
-        epilog=textwrap.dedent("""
-            examples:
-              # Check environment status
-              webarena-verified env status --url http://localhost:8877
-
-              # Start environment (wait for ready)
-              webarena-verified env start --url http://localhost:8877 --wait
-
-              # Stop environment
-              webarena-verified env stop --url http://localhost:8877
-
-              # Initialize environment
-              webarena-verified env init --url http://localhost:8877
-            """),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    env_subparsers = env_parser.add_subparsers(dest="env_command", required=True)
-
-    # env status subcommand
-    env_status_parser = env_subparsers.add_parser("status", help="Get environment status")
-    env_status_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
-    env_status_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
-
-    # env start subcommand
-    env_start_parser = env_subparsers.add_parser("start", help="Start the environment")
-    env_start_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
-    env_start_parser.add_argument("--wait", action="store_true", help="Wait until environment is ready")
-    env_start_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
-
-    # env stop subcommand
-    env_stop_parser = env_subparsers.add_parser("stop", help="Stop the environment")
-    env_stop_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
-    env_stop_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
-
-    # env init subcommand
-    env_init_parser = env_subparsers.add_parser("init", help="Initialize the environment")
-    env_init_parser.add_argument("--url", type=str, required=True, help="Environment control server URL")
-    env_init_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
+    _add_env_subcommand(subparsers)
 
     return parser
 

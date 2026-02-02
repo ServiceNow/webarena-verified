@@ -16,6 +16,7 @@ Image size breakdown (77.6GB original):
 
 from __future__ import annotations
 
+import os
 from typing import Any, ClassVar
 
 from ..base import BaseOps
@@ -103,8 +104,6 @@ class GitlabOps(BaseOps):
             base_url: Base URL for GitLab (e.g., "http://localhost:8023")
             dry_run: If True, preview changes without applying them.
         """
-        import os
-
         if not base_url:
             raise ValueError("base_url is required")
 
