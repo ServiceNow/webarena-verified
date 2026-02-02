@@ -57,13 +57,18 @@ plugins:
   - redirects:
       redirect_maps:
         getting_started/index.md: index.md
+        getting_started/environments.md: environments/index.md
 
 markdown_extensions:
   - admonition
   - pymdownx.details
   - attr_list
   - md_in_html
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
@@ -94,10 +99,13 @@ nav:
           - Configuration: getting_started/configuration.md
           - Subset Manager: getting_started/subset_manager.md
           - Utilities: getting_started/utilities.md
-          - Environments: getting_started/environments.md
           - Changelog: changelog/index.md
       - Subsets:
           - WebArena-Verified Hard: getting_started/hard_subset.md
+  - Environments:
+      - Overview: environments/index.md
+      - Docker Images: environments/docker_images.md
+      - Environment Control: environments/environment_control.md
   - Evaluation:
       - Quick Start: evaluation/index.md
       - Handling of Unachievable Tasks: evaluation/handling_of_unachievable_tasks.md

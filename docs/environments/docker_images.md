@@ -1,6 +1,6 @@
-# Environments
+# Docker Images
 
-WebArena-Verified uses Docker containers to provide isolated, reproducible environments for each website in the benchmark. To improve reset time and reduce storage requirements, we provide recipes to create **slim images** - optimized versions of the original environments while keeping the exact content and functionality.
+To improve reset time and reduce storage requirements, we provide recipes to create **slim images** - optimized versions of the original environments while keeping the exact content and functionality.
 
 ## Size Improvements
 
@@ -105,11 +105,13 @@ docker exec admin-slim magento-init http://localhost:7780
    ```
 
 **Container not initializing:**
+
 - Check container logs: `docker logs admin-slim`
 - Verify MAGENTO_BASE_URL is set correctly
 - Wait ~30 seconds for initialization to complete
 
 **Database reset not working:**
+
 - Ensure archive exists: `docker exec admin-slim ls -lh /var/backups/mysql/data.tar.gz`
 - Check services status: `docker exec admin-slim supervisorctl status`
 
@@ -123,6 +125,7 @@ bash create_slim_image.sh
 ```
 
 **Note:** The script reuses existing data if available:
+
 - PostgreSQL archive (~1.6GB)
 - Optimized submission images (~6GB)
 - This saves ~30-60 minutes on subsequent runs
@@ -150,11 +153,13 @@ docker exec reddit-slim postmill-init
 ### Troubleshooting
 
 **Container not initializing:**
+
 - Check container logs: `docker logs reddit-slim`
 - Wait ~2-3 minutes for initial data extraction
 - Check initialization status: `docker exec reddit-slim cat /run/postmill.env`
 
 **Database reset not working:**
+
 - Ensure archives exist:
   ```bash
   docker exec reddit-slim ls -lh /var/backups/pgsql/data.tar.gz
@@ -164,6 +169,7 @@ docker exec reddit-slim postmill-init
 - Verify database integrity: `docker exec reddit-slim postmill-init` (shows validation output)
 
 **Patches not applied:**
+
 1. Check rate limits removed:
    ```bash
    docker exec reddit-slim grep -c '@RateLimit' /var/www/html/src/DataObject/SubmissionData.php
