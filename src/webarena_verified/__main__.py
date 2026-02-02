@@ -1301,7 +1301,7 @@ def env_command(args: argparse.Namespace) -> int | None:
 def _env_container_command(args: argparse.Namespace) -> int:
     """Execute env subcommands using Docker container management."""
     site = WebArenaSite(args.site)
-    manager = ContainerManager(site)
+    manager = ContainerManager(site=site)
 
     try:
         if args.env_command == "status":
@@ -1312,6 +1312,8 @@ def _env_container_command(args: argparse.Namespace) -> int:
                 print(f"URL: {result.url}")
             if result.env_ctrl_url:
                 print(f"Env-ctrl: {result.env_ctrl_url}")
+            if result.env_ctrl_status:
+                print(f"Services: {json.dumps(result.env_ctrl_status, indent=2)}")
             return 0 if result.status == ContainerStatus.RUNNING else 1
 
         if args.env_command == "start":
@@ -1376,11 +1378,11 @@ def _env_setup_command(args: argparse.Namespace) -> int:
 
         if args.setup_command == "init":
             data_dir = Path(args.data_dir)
-            setup_init(site, data_dir, dry_run=args.dry_run)
+            setup_init(site=site, data_dir=data_dir, dry_run=args.dry_run)
             return 0
 
         if args.setup_command == "clean":
-            setup_clean(site, force=args.force)
+            setup_clean(site=site, force=args.force)
             return 0
 
         logger.error(f"Unknown setup command: {args.setup_command}")

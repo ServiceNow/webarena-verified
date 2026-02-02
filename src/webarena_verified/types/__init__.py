@@ -1,6 +1,7 @@
 """Type definitions for WebArena Verified."""
 
 from .agent_response import FinalAgentResponse, MainObjectiveType, Status
+from .container import ContainerStartResult, ContainerStatus, ContainerStatusResult
 from .environment import EnvCtrlResult
 from .task import (
     AgentResponseEvaluatorCfg,
@@ -12,6 +13,9 @@ from .task import (
 
 __all__ = [
     "AgentResponseEvaluatorCfg",
+    "ContainerStartResult",
+    "ContainerStatus",
+    "ContainerStatusResult",
     "EnvCtrlResult",
     "EvaluatorCfg",
     "FinalAgentResponse",

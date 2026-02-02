@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from webarena_verified.types.task import WebArenaSite
 
-from ..container.defaults import get_container_config, get_sites_with_setup, get_volume_name
+from ..container.defaults import get_container_config, get_sites_with_setup
 from .docker_ops import (
     copy_file_to_volume,
     create_volume,
@@ -35,6 +35,7 @@ def _print_default(phase: str, message: str) -> None:
 
 
 def setup_init(  # noqa: C901, PLR0912, PLR0915
+    *,
     site: WebArenaSite | None,
     data_dir: Path,
     dry_run: bool = False,
@@ -80,7 +81,7 @@ def setup_init(  # noqa: C901, PLR0912, PLR0915
     }
 
     for s in sites:
-        config = get_container_config(s)
+        config = get_container_config(site=s)
         if config.setup is None or not config.setup.data_urls:
             if site is not None:
                 raise ValueError(f"Site {s.value} doesn't require setup (no data files to download)")
@@ -109,7 +110,7 @@ def setup_init(  # noqa: C901, PLR0912, PLR0915
 
         # Set up volumes
         for vol_spec in config.setup.volumes:
-            vol_name = get_volume_name(s, vol_spec.suffix)
+            vol_name = vol_spec.volume_name
 
             # Create volume if needed
             if not volume_exists(vol_name):
@@ -139,7 +140,7 @@ def setup_init(  # noqa: C901, PLR0912, PLR0915
                         result["volumes_populated"].append(vol_name)
                     else:
                         progress("WARN", f"Tar file not found: {vol_spec.source_tar}")
-                elif vol_spec.suffix == "data" and s == WebArenaSite.WIKIPEDIA:
+                elif s == WebArenaSite.WIKIPEDIA and vol_name.endswith("_data"):
                     # Special case: Wikipedia copies ZIM file directly
                     zim_files = list(data_dir.glob("*.zim"))
                     if zim_files:
@@ -161,6 +162,7 @@ def setup_init(  # noqa: C901, PLR0912, PLR0915
 
 
 def setup_clean(  # noqa: C901
+    *,
     site: WebArenaSite | None,
     force: bool = False,
     progress: ProgressCallback | None = None,
@@ -192,14 +194,13 @@ def setup_clean(  # noqa: C901
     # Collect volumes to remove
     volumes_to_remove: list[str] = []
     for s in sites:
-        config = get_container_config(s)
+        config = get_container_config(site=s)
         if config.setup is None:
             continue
 
         for vol_spec in config.setup.volumes:
-            vol_name = get_volume_name(s, vol_spec.suffix)
-            if volume_exists(vol_name):
-                volumes_to_remove.append(vol_name)
+            if volume_exists(vol_spec.volume_name):
+                volumes_to_remove.append(vol_spec.volume_name)
 
     if not volumes_to_remove:
         progress("INFO", "No volumes found to remove")
@@ -234,7 +235,7 @@ def setup_clean(  # noqa: C901
     return result
 
 
-def list_site_volumes(site: WebArenaSite | None = None) -> dict[str, list[str]]:
+def list_site_volumes(*, site: WebArenaSite | None = None) -> dict[str, list[str]]:
     """List Docker volumes for a site (or all sites).
 
     Args:
@@ -247,15 +248,14 @@ def list_site_volumes(site: WebArenaSite | None = None) -> dict[str, list[str]]:
     result: dict[str, list[str]] = {}
 
     for s in sites:
-        config = get_container_config(s)
+        config = get_container_config(site=s)
         if config.setup is None:
             continue
 
         volumes: list[str] = []
         for vol_spec in config.setup.volumes:
-            vol_name = get_volume_name(s, vol_spec.suffix)
-            if volume_exists(vol_name):
-                volumes.append(vol_name)
+            if volume_exists(vol_spec.volume_name):
+                volumes.append(vol_spec.volume_name)
 
         if volumes:
             result[s.value] = volumes

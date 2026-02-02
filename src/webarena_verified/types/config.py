@@ -23,8 +23,7 @@ class ContainerVolumeSpec(BaseModel):
     (from a tar file or empty), and how to mount it in the container.
 
     Attributes:
-        suffix: Volume name suffix (e.g., "data", "tile-db"). Full volume name is
-            constructed as: {prefix}-{site}-{suffix}
+        volume_name: Full Docker volume name (e.g., "webarena_verified_wikipedia_data")
         mount_path: Path inside container where volume is mounted (e.g., "/data/database")
         source_tar: Optional tar filename to extract data from (e.g., "osm_tile_server.tar")
         tar_extract_path: Path inside tar to extract (e.g., "data/database"). If None,
@@ -34,7 +33,7 @@ class ContainerVolumeSpec(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    suffix: str
+    volume_name: str
     mount_path: str
     source_tar: str | None = None
     tar_extract_path: str | None = None
