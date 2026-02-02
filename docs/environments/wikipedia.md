@@ -11,28 +11,27 @@ MediaWiki-based encyclopedia with pre-populated content.
 
 ## Quick Start
 
-```bash
-# Using Docker Compose
-docker compose up -d wikipedia
+Wikipedia requires external data files (~100GB) to be downloaded before starting.
 
-# Using Invoke
-inv envs.docker.pull --site wikipedia
-inv envs.docker.start --site wikipedia
+```bash
+# 1. Download data and set up volumes
+webarena-verified env setup init --site wikipedia --data-dir ./downloads
+
+# 2. Start the container
+webarena-verified env start --site wikipedia --data-dir ./downloads
+```
+
+Or using Docker directly:
+
+```bash
+# Download ZIM file first, then run
+docker run -d --name webarena-verified-wikipedia \
+  -p 8888:8080 -p 8889:8874 \
+  -v /path/to/downloads:/data:ro \
+  am1n3e/webarena-verified-wikipedia
 ```
 
 Access at: http://localhost:8888
-
-## Data Requirements
-
-Wikipedia requires external data files to be downloaded and mounted:
-
-```bash
-# Download Wikipedia data
-inv envs.docker.data-download --site wikipedia
-
-# Set up volumes
-inv envs.docker.setup --site wikipedia --data-dir ./data
-```
 
 ## Optimizations
 

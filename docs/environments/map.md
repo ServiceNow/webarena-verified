@@ -21,16 +21,17 @@ Each container needed its own configuration, data volumes, and orchestration. Th
 
 ## Quick Start
 
-```bash
-# Using Docker Compose
-docker compose up -d map
+Map requires external data files (~60GB) to be downloaded before starting.
 
-# Using Invoke
-inv envs.docker.pull --site map
-inv envs.docker.start --site map
+```bash
+# 1. Download data and set up volumes
+webarena-verified env setup init --site map --data-dir ./downloads
+
+# 2. Start the container
+webarena-verified env start --site map
 ```
 
-Access at: http://localhost:3030
+Access at: http://localhost:3000
 
 ## Architecture
 
@@ -52,11 +53,8 @@ The map environment is a combined image with multiple services:
 Map requires external data files for tiles and routing:
 
 ```bash
-# Download map data
-inv envs.docker.data-download --site map
-
-# Set up volumes
-inv envs.docker.setup --site map --data-dir ./data
+# Download and set up volumes
+webarena-verified env setup init --site map --data-dir ./downloads
 ```
 
 ### Data Sizes

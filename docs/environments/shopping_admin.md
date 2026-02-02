@@ -12,12 +12,11 @@ Magento 2 admin panel for e-commerce management.
 ## Quick Start
 
 ```bash
-# Using Docker Compose
-docker compose up -d shopping_admin
+# Using CLI (recommended)
+webarena-verified env start --site shopping_admin
 
-# Using Invoke
-inv envs.docker.pull --site shopping_admin
-inv envs.docker.start --site shopping_admin
+# Using Docker directly
+docker run -d --name webarena-verified-shopping_admin -p 7780:80 -p 7781:8877 am1n3e/webarena-verified-shopping_admin
 ```
 
 Access at: http://localhost:7780/admin

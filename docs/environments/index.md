@@ -63,35 +63,31 @@ Each site also has an `_ENV_CTRL_PORT` variable (e.g., `WA_SHOPPING_ADMIN_ENV_CT
 
 ## Quick Start
 
-The easiest way to run environments is using Docker Compose:
+### Using the CLI (Recommended)
+
+The easiest way to run environments is using the built-in CLI:
 
 ```bash
-# Start all environments
-docker compose up -d
-
-# Or start specific services
-docker compose up -d shopping_admin shopping
+# Start a site (waits for services to be ready)
+webarena-verified env start --site shopping
 
 # Check status
-docker compose ps
+webarena-verified env status --site shopping
 
-# Stop all
-docker compose down
+# Stop a site
+webarena-verified env stop --site shopping
+
+# Stop all running sites
+webarena-verified env stop-all
 ```
 
-Alternatively, use the Invoke tasks for more control:
+Start multiple sites:
 
 ```bash
-# List available sites
-inv envs.sites
-
-# Pull and start a site
-inv envs.docker.pull --site shopping_admin
-inv envs.docker.start --site shopping_admin
-inv envs.docker.check --site shopping_admin
-
-# Stop when done
-inv envs.docker.stop --site shopping_admin
+webarena-verified env start --site shopping
+webarena-verified env start --site shopping_admin
+webarena-verified env start --site reddit
+webarena-verified env start --site gitlab
 ```
 
 ### Wikipedia and Map Data
@@ -99,52 +95,53 @@ inv envs.docker.stop --site shopping_admin
 Wikipedia and Map require external data files to be downloaded before starting:
 
 ```bash
-# Download data for Wikipedia
-inv envs.docker.data-download --site wikipedia
-inv envs.docker.setup --site wikipedia --data-dir ./data
+# Wikipedia (~100GB download)
+webarena-verified env setup init --site wikipedia --data-dir ./downloads
+webarena-verified env start --site wikipedia --data-dir ./downloads
 
-# Download data for Map (tiles + routing ~60GB)
-inv envs.docker.data-download --site map
-inv envs.docker.setup --site map --data-dir ./data
+# Map (~60GB download)
+webarena-verified env setup init --site map --data-dir ./downloads
+webarena-verified env start --site map
 ```
 
 See the [Wikipedia](wikipedia.md) and [Map](map.md) documentation for details.
 
-## Command Reference
+### Using Docker Directly
+
+You can also run environments directly with Docker:
+
+```bash
+# Shopping (Magento)
+docker run -d --name webarena-verified-shopping -p 7770:80 -p 7771:8877 am1n3e/webarena-verified-shopping
+
+# Shopping Admin
+docker run -d --name webarena-verified-shopping_admin -p 7780:80 -p 7781:8877 am1n3e/webarena-verified-shopping_admin
+
+# Reddit (Postmill)
+docker run -d --name webarena-verified-reddit -p 9999:80 -p 9998:8877 am1n3e/webarena-verified-reddit
+
+# GitLab
+docker run -d --name webarena-verified-gitlab -p 8023:8023 -p 8024:8877 am1n3e/webarena-verified-gitlab
+```
+
+## CLI Command Reference
 
 ### Container Lifecycle
 
 ```bash
-inv envs.docker.start --site <site>              # Start container
-inv envs.docker.start --site <site> --original   # Start with original image
-inv envs.docker.start --site <site> --port 8080  # Custom port
-inv envs.docker.stop --site <site>               # Stop and remove container
-inv envs.docker.check --site <site>              # Health check
+webarena-verified env start --site <site>                    # Start container (waits by default)
+webarena-verified env start --site <site> --no-wait          # Start without waiting
+webarena-verified env start --site <site> --port 8080        # Custom port
+webarena-verified env stop --site <site>                     # Stop and remove container
+webarena-verified env stop-all                               # Stop all containers
+webarena-verified env status --site <site>                   # Check status
 ```
 
-### Image Management
+### Data Setup (Wikipedia, Map)
 
 ```bash
-inv envs.docker.pull --site <site>               # Pull from Docker Hub
-inv envs.docker.pull --site <site> --original    # Download original tar file
-inv envs.docker.build --site <site>              # Build from Dockerfile
-inv envs.docker.create-base-img --site <site>    # Create optimized base image
-inv envs.docker.publish --site <site> --tag 1.0.0  # Push to Docker Hub
-```
-
-### Data Management
-
-```bash
-inv envs.docker.data-download                    # Download all data files
-inv envs.docker.data-download --site wikipedia   # Download specific site data
-inv envs.docker.setup --site map --data-dir ./data  # Set up volumes for a site
-```
-
-### Testing
-
-```bash
-inv envs.docker.test --site <site>               # Run integration tests
-inv envs.docker.test --site <site> --headed      # Run with visible browser
+webarena-verified env setup init --site <site> --data-dir ./data   # Download and setup volumes
+webarena-verified env setup clean --site <site>                     # Remove volumes
 ```
 
 ## Troubleshooting

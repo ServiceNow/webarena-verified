@@ -12,12 +12,11 @@ GitLab Community Edition for source code management and CI/CD.
 ## Quick Start
 
 ```bash
-# Using Docker Compose
-docker compose up -d gitlab
+# Using CLI (recommended)
+webarena-verified env start --site gitlab
 
-# Using Invoke
-inv envs.docker.pull --site gitlab
-inv envs.docker.start --site gitlab
+# Using Docker directly
+docker run -d --name webarena-verified-gitlab -p 8023:8023 -p 8024:8877 am1n3e/webarena-verified-gitlab
 ```
 
 Access at: http://localhost:8023

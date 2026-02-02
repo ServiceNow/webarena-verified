@@ -12,12 +12,11 @@ Postmill-based forum platform (Reddit clone).
 ## Quick Start
 
 ```bash
-# Using Docker Compose
-docker compose up -d reddit
+# Using CLI (recommended)
+webarena-verified env start --site reddit
 
-# Using Invoke
-inv envs.docker.pull --site reddit
-inv envs.docker.start --site reddit
+# Using Docker directly
+docker run -d --name webarena-verified-reddit -p 9999:80 -p 9998:8877 am1n3e/webarena-verified-reddit
 ```
 
 Access at: http://localhost:9999

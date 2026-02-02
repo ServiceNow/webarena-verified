@@ -12,12 +12,11 @@ Magento 2 storefront for e-commerce browsing and purchasing.
 ## Quick Start
 
 ```bash
-# Using Docker Compose
-docker compose up -d shopping
+# Using CLI (recommended)
+webarena-verified env start --site shopping
 
-# Using Invoke
-inv envs.docker.pull --site shopping
-inv envs.docker.start --site shopping
+# Using Docker directly
+docker run -d --name webarena-verified-shopping -p 7770:80 -p 7771:8877 am1n3e/webarena-verified-shopping
 ```
 
 Access at: http://localhost:7770
