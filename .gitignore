@@ -11,7 +11,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
+downloads
 eggs/
 .eggs/
 lib/
@@ -240,3 +240,6 @@ demo_config.json
 .storage_state.json
 tmp/
 eval_log.txt
+
+# Generated Gatus config
+contributing/environments/docker/monitoring/gatus/config.yaml

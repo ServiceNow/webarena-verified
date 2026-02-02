@@ -1,6 +1,7 @@
 """Simple logging helper utilities."""
 
 import logging
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -75,7 +76,7 @@ class LoggingHelper:
 
 
 @contextmanager
-def file_logging_context(logger_name: str, log_file_path: Path):
+def file_logging_context(logger_name: str, log_file_path: Path) -> Generator[logging.FileHandler, None, None]:
     """
     Context manager for temporary file logging.
 

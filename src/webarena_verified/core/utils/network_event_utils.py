@@ -116,8 +116,7 @@ def load_playwright_trace(trace_path: Path) -> tuple["NetworkEvent", ...]:
     Raises:
         FileNotFoundError: If trace file does not exist
     """
-    # Avoid circular import
-    from webarena_verified.types.tracing import NetworkEvent
+    from webarena_verified.types.tracing import NetworkEvent  # noqa: PLC0415 (circular import)
 
     file_name = "trace.network"
 
@@ -154,8 +153,7 @@ def load_har_trace(har_path: Path) -> tuple["NetworkEvent", ...]:
         FileNotFoundError: If HAR file does not exist
         ValueError: If HAR format is invalid or contains no entries
     """
-    # Avoid circular import
-    from webarena_verified.types.tracing import NetworkEvent
+    from webarena_verified.types.tracing import NetworkEvent  # noqa: PLC0415 (circular import)
 
     if not har_path.exists():
         raise FileNotFoundError(f"HAR file not found: {har_path}")
@@ -196,8 +194,7 @@ def load_trace_from_content(content: list[dict[str, Any]]) -> tuple[bool, tuple[
     Raises:
         ValueError: If content is empty, format is unknown, or no valid events found
     """
-    # Avoid circular import
-    from webarena_verified.types.tracing import NetworkEvent
+    from webarena_verified.types.tracing import NetworkEvent  # noqa: PLC0415 (circular import)
 
     if not content:
         raise ValueError("Trace content list is empty")

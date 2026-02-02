@@ -11,8 +11,10 @@ Comparison is based on required fields only (city, state, street, house_number, 
 Optional fields like 'name' are normalized but ignored during comparison.
 """
 
+import re
 from typing import Any, ClassVar
 
+import us
 from scourgify import normalize_address_record
 
 from .base import NormalizedType
@@ -123,8 +125,6 @@ class FullAddress(NormalizedType[dict]):
         Raises:
             ValueError: If state cannot be found or value is empty
         """
-        import us
-
         if not value or not str(value).strip():
             raise ValueError("State value is empty")
 
@@ -150,8 +150,6 @@ class FullAddress(NormalizedType[dict]):
         Raises:
             ValueError: If value is empty or invalid format
         """
-        import re
-
         if not value or not str(value).strip():
             raise ValueError("ZIP code value is empty")
 
@@ -164,11 +162,10 @@ class FullAddress(NormalizedType[dict]):
         if len(digits) == 5:
             # 5-digit ZIP
             return digits
-        elif len(digits) == 9:
+        if len(digits) == 9:
             # ZIP+4: format as 12345-6789
             return f"{digits[:5]}-{digits[5:]}"
-        else:
-            raise ValueError(f"Invalid ZIP code length: expected 5 or 9 digits, got {len(digits)}")
+        raise ValueError(f"Invalid ZIP code length: expected 5 or 9 digits, got {len(digits)}")
 
     def _extract_and_normalize_from_parsed(
         self,

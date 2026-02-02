@@ -50,7 +50,7 @@ class SubsetsManager:
     Methods return data structures that the CLI can use for printing.
     """
 
-    def __init__(self, config: WebArenaVerifiedConfig | None = None):
+    def __init__(self, config: WebArenaVerifiedConfig | None = None) -> None:
         """Initialize SubsetsManager.
 
         Args:

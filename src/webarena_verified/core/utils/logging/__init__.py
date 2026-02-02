@@ -10,7 +10,7 @@ logger = logging.getLogger("WebArena-Verified")
 logging_helper = LoggingHelper()
 
 
-def setup_webarena_verified_logging(level=logging.INFO):
+def setup_webarena_verified_logging(level: int = logging.INFO) -> None:
     """
     Setup logging with a clean format for the webarena_verified package.
 
@@ -31,9 +31,9 @@ def setup_webarena_verified_logging(level=logging.INFO):
 
 
 __all__ = [
-    "logger",
-    "setup_webarena_verified_logging",
-    "logging_helper",
     "LoggingHelper",
     "file_logging_context",
+    "logger",
+    "logging_helper",
+    "setup_webarena_verified_logging",
 ]

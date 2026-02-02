@@ -16,6 +16,8 @@ WEBARENA_VERIFIED_VERSION = version("webarena-verified")  # Read from pyproject 
 
 
 class SiteEvalResultsSummary(BaseModel):
+    """Evaluation summary for a single site."""
+
     total: int = 0
     success_count: int = 0
     failure_count: int = 0
@@ -27,6 +29,8 @@ class SiteEvalResultsSummary(BaseModel):
 
 
 class OverallEvalSummary(BaseModel):
+    """Overall evaluation summary across all sites."""
+
     total: int = 0
     success_count: int = 0
     failure_count: int = 0
@@ -35,11 +39,15 @@ class OverallEvalSummary(BaseModel):
 
 
 class EvalResultsSummary(BaseModel):
+    """Combined evaluation summary with overall and per-site breakdowns."""
+
     overall: OverallEvalSummary
     per_site: dict[str, SiteEvalResultsSummary]
 
 
 class EvalStatus(StrEnum):
+    """Evaluation result status."""
+
     SUCCESS = "success"
     PARTIAL_MATCH = "partial_match"
     FAILURE = "failure"
@@ -47,6 +55,8 @@ class EvalStatus(StrEnum):
 
 
 class EvalAssertion(BaseModel):
+    """Single assertion result within an evaluation."""
+
     assertion_name: str
     status: EvalStatus
     assertion_msgs: tuple[str, ...] | None = None
@@ -56,6 +66,7 @@ class EvalAssertion(BaseModel):
 
     @property
     def is_success(self) -> bool:
+        """Check if assertion passed."""
         return self.status == EvalStatus.SUCCESS
 
     @classmethod
@@ -67,6 +78,7 @@ class EvalAssertion(BaseModel):
         status: EvalStatus,
         error_msg: str | None = None,
     ) -> Self:
+        """Create an EvalAssertion instance."""
         if status == EvalStatus.ERROR:
             assert error_msg is not None, "Error message must be provided for ERROR status"
 
@@ -79,6 +91,8 @@ class EvalAssertion(BaseModel):
 
 
 class EvaluatorResult(BaseModel):
+    """Result from a single evaluator."""
+
     evaluator_name: str
     status: EvalStatus
     score: float
@@ -99,18 +113,17 @@ class EvaluatorResult(BaseModel):
         normalized values) for JSON serialization. These types can appear nested in dicts
         or lists where Pydantic's type-based serialization doesn't automatically apply.
         """
-        from webarena_verified.core.evaluation.data_types import NormalizedType
+        from webarena_verified.core.evaluation.data_types import NormalizedType  # noqa: PLC0415 (circular import)
 
         def convert_to_serializable(obj: Any) -> Any:
             if isinstance(obj, (MappingProxyType, dict)):
                 return {k: convert_to_serializable(v) for k, v in obj.items()}
-            elif isinstance(obj, (list, tuple)):
+            if isinstance(obj, (list, tuple)):
                 return [convert_to_serializable(item) for item in obj]
-            elif isinstance(obj, NormalizedType):
+            if isinstance(obj, NormalizedType):
                 # Extract normalized value from NormalizedType instances
                 return obj.normalized
-            else:
-                return obj
+            return obj
 
         return {
             "evaluator_name": self.evaluator_name,
@@ -125,7 +138,7 @@ class EvaluatorResult(BaseModel):
         }
 
     @classmethod
-    def create(
+    def create(  # noqa: PLR0913
         cls,
         *,
         evaluator_name: str,
@@ -137,6 +150,7 @@ class EvaluatorResult(BaseModel):
         expected: Any | None = None,
         should_not_exist: bool | None = None,
     ) -> Self:
+        """Create an EvaluatorResult with computed status and score."""
         if is_error:
             # Case where the evaluator itself encountered an error
             assert error_msg is not None, "Error message must be provided for ERROR status"
@@ -170,6 +184,8 @@ class EvaluatorResult(BaseModel):
 
 
 class TaskEvalResult(BaseModel):
+    """Evaluation result for a single task."""
+
     task_id: int
     intent_template_id: int
     sites: tuple[WebArenaSite, ...]
@@ -183,7 +199,7 @@ class TaskEvalResult(BaseModel):
     webarena_verified_data_checksum: str
 
     @classmethod
-    def create(
+    def create(  # noqa: PLR0913
         cls,
         *,
         task_id: int,
@@ -195,6 +211,7 @@ class TaskEvalResult(BaseModel):
         error_msg: str | None = None,
         is_error: bool = False,
     ) -> Self:
+        """Create a TaskEvalResult with computed status and score."""
         if is_error:
             # Case where the task eval encountered an error
             assert error_msg is not None, "Error message must be provided for ERROR status"
@@ -202,9 +219,8 @@ class TaskEvalResult(BaseModel):
             score = 0.0
             evaluators_results = evaluators_results or []
         else:
-            assert evaluators_results is not None and len(evaluators_results) > 0, (
-                "At least one evaluator result is required to create task eval result."
-            )
+            assert evaluators_results is not None, "Evaluator results cannot be None."
+            assert len(evaluators_results) > 0, "At least one evaluator result is required."
             if any(er.status == EvalStatus.ERROR for er in evaluators_results):
                 # Case where one or more evaluators resulted in an error
                 status = EvalStatus.ERROR
@@ -227,6 +243,8 @@ class TaskEvalResult(BaseModel):
 
 
 class TasksEvalResults(BaseModel):
+    """Collection of evaluation results for multiple tasks."""
+
     timestamp: str
     webarena_verified_version: str = WEBARENA_VERIFIED_VERSION
     webarena_verified_evaluator_checksum: str = compute_evaluator_checksum()
@@ -238,6 +256,7 @@ class TasksEvalResults(BaseModel):
 
     @classmethod
     def create(cls, *, task_results: list[TaskEvalResult] | tuple[TaskEvalResult], data_checksum: str) -> Self:
+        """Create TasksEvalResults with computed summary."""
         timestamp = datetime.datetime.now(datetime.UTC).isoformat()
         summary = cls._compute_summary(task_results)
 
@@ -293,6 +312,7 @@ class TransformedAgentResponse(BaseModel):
 
     @classmethod
     def create(cls, *, original_response: Any, transformed_response: dict[str, Any] | MappingProxyType) -> Self:
+        """Create a TransformedAgentResponse instance."""
         assert isinstance(transformed_response, (dict, MappingProxyType))
         return cls(
             original_response=original_response,
@@ -301,6 +321,8 @@ class TransformedAgentResponse(BaseModel):
 
 
 class TaskEvalContext(BaseModel):
+    """Context passed to evaluators during task evaluation."""
+
     task: WebArenaVerifiedTask
     agent_response_raw: Any | TransformedAgentResponse | None = None
     network_trace: NetworkTrace

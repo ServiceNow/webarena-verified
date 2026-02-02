@@ -41,6 +41,7 @@ TYPE_REGISTRY: dict[str, type[NormalizedType]] = {
 }
 
 __all__ = [
+    "URL",
     "Base64String",
     "Boolean",
     "Coordinates",
@@ -50,13 +51,12 @@ __all__ = [
     "Duration",
     "Empty",
     "FullAddress",
-    "LocationName",
     "JsonString",
+    "LocationName",
     "MarkdownString",
     "Month",
     "NormalizedString",
     "NormalizedType",
     "Number",
     "StringList",
-    "URL",
 ]

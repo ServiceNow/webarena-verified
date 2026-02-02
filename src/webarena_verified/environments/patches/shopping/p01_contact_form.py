@@ -165,9 +165,8 @@ def verify_patch(handler: SiteInstanceHandler) -> bool:
     if result.returncode == 0 and int(result.stdout.strip()) > 0:
         logger.info("Patch applied successfully")
         return True
-    else:
-        logger.error("Patch verification failed")
-        return False
+    logger.error("Patch verification failed")
+    return False
 
 
 def apply_patch(handler: SiteInstanceHandler) -> bool:

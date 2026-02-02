@@ -50,8 +50,7 @@ class Month(NormalizedType[str]):
             month_num = int(value)
             if 1 <= month_num <= 12:
                 return calendar.month_name[month_num]
-            else:
-                raise ValueError(f"Month number out of range (1-12): {month_num}")
+            raise ValueError(f"Month number out of range (1-12): {month_num}")
 
         # Convert to string for processing
         value_str = str(value).strip()
@@ -66,15 +65,13 @@ class Month(NormalizedType[str]):
             if 1 <= month_num <= 12:
                 # It's a valid month number
                 return calendar.month_name[month_num]
-            else:
-                # Out of range numeric value - don't try dateutil, just fail
-                raise ValueError(f"Month number out of range (1-12): {month_num}")
+            # Out of range numeric value - don't try dateutil, just fail
+            raise ValueError(f"Month number out of range (1-12): {month_num}")
         except ValueError as e:
             # If it's a range error, re-raise it
             if "out of range" in str(e):
                 raise
             # Not a pure number, continue with dateutil parsing
-            pass
 
         try:
             # Try to parse as month name or abbreviation using dateutil

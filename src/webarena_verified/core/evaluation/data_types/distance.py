@@ -65,7 +65,6 @@ class Distance(NormalizedType[Decimal]):
             if "must include a unit" in str(e):
                 raise
             # Otherwise, it's not a plain number, continue with pint parsing
-            pass
 
         # Parse with pint (whitespace already normalized by base class)
         try:

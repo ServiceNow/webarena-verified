@@ -3,6 +3,7 @@
 import argparse
 import contextlib
 import datetime
+import glob
 import json
 import os
 import subprocess
@@ -33,7 +34,7 @@ from webarena_verified.utils import (
 )
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI"""
     parser = argparse.ArgumentParser(
         prog="webarena-verified",
@@ -72,7 +73,8 @@ def create_parser():
               webarena-verified eval-tasks --sites reddit --dry-run --output-dir output
 
               # Transform agent responses before evaluation
-              webarena-verified eval-tasks --output-dir output --agent-response-transform examples/evaluation/extract_agent_response.py
+              webarena-verified eval-tasks --output-dir output \\
+                --agent-response-transform examples/evaluation/extract_agent_response.py
 
             transform script contract:
               The transform script receives the agent response file path as the first argument
@@ -164,7 +166,8 @@ def create_parser():
         epilog=textwrap.dedent("""
             examples:
               # Create subset from full dataset
-              webarena-verified subsets-create --src assets/dataset/webarena-verified.json --name full_dataset --desc "Complete dataset"
+              webarena-verified subsets-create --src assets/dataset/webarena-verified.json \\
+                --name full_dataset --desc "Complete dataset"
 
               # Create subset from custom tasks file
               webarena-verified subsets-create --src custom_tasks.json --name custom
@@ -270,7 +273,8 @@ def create_parser():
               webarena-verified create-submission-pkg --run-output-dir ./output --output ./submissions --no-tar
 
               # Use custom name instead of auto-generated timestamp
-              webarena-verified create-submission-pkg --run-output-dir ./output --output ./submissions --name experiment-001
+              webarena-verified create-submission-pkg --run-output-dir ./output \\
+                --output ./submissions --name experiment-001
 
             Output naming:
               - Default (auto-generated): webarena-verified-submission-YYYYMMDD_HHMMSS.tar.gz
@@ -324,7 +328,7 @@ def create_parser():
     return parser
 
 
-def _discover_completed_tasks(output_dir: Path, config) -> tuple[list[int], list[int]]:
+def _discover_completed_tasks(output_dir: Path, config: WebArenaVerifiedConfig) -> tuple[list[int], list[int]]:
     """Discover all completed tasks in output directory.
 
     Args:
@@ -355,7 +359,8 @@ def _discover_completed_tasks(output_dir: Path, config) -> tuple[list[int], list
                 logger.warning(f"Skipping invalid task directory {task_dir}: {e}")
                 skipped_task_ids.append(task_id)
     logger.info(
-        f"Discovered {len(task_ids)} completed tasks: {task_ids}. Skipped {len(skipped_task_ids)} invalid tasks: {skipped_task_ids}"
+        f"Discovered {len(task_ids)} completed tasks: {task_ids}. "
+        f"Skipped {len(skipped_task_ids)} invalid tasks: {skipped_task_ids}"
     )
     return task_ids, skipped_task_ids
 
@@ -452,7 +457,7 @@ def _resolve_config(
     return WebArenaVerifiedConfig()
 
 
-def _create_evaluator(config: WebArenaVerifiedConfig):
+def _create_evaluator(config: WebArenaVerifiedConfig) -> WebArenaVerified:
     """Create WebArenaVerified instance."""
     return WebArenaVerified(config=config)
 
@@ -520,7 +525,7 @@ def _save_eval_result(result: TaskEvalResult, task_id: int, output_dir: Path, co
     return eval_result_file
 
 
-def _print_task_header(task_id: int, task_log_dir: Path):
+def _print_task_header(task_id: int, task_log_dir: Path) -> None:
     """Print header for single task evaluation."""
     header_info = {
         "Command": "Single Task Evaluation",
@@ -530,7 +535,7 @@ def _print_task_header(task_id: int, task_log_dir: Path):
     logging_helper.print_panel("Evaluating Task", header_info)
 
 
-def _print_task_footer(result, log_file: Path, result_file: Path):
+def _print_task_footer(result: TaskEvalResult, log_file: Path, result_file: Path) -> None:
     """Print footer for single task evaluation."""
 
     footer_info = {
@@ -542,7 +547,7 @@ def _print_task_footer(result, log_file: Path, result_file: Path):
     logging_helper.print_panel("Evaluation Complete", footer_info)
 
 
-def _print_batch_header(task_ids: list[int]):
+def _print_batch_header(task_ids: list[int]) -> None:
     """Print header for batch evaluation."""
     header_info = {
         "Command": "Batch Task Evaluation",
@@ -554,7 +559,7 @@ def _print_batch_header(task_ids: list[int]):
     logging_helper.print_panel("Evaluating Tasks", header_info)
 
 
-def _print_batch_footer(results_file: Path):
+def _print_batch_footer(results_file: Path) -> None:
     """Print footer for batch evaluation."""
     footer_info = {
         "Results File": str(results_file),
@@ -562,7 +567,7 @@ def _print_batch_footer(results_file: Path):
     logging_helper.print_panel("Evaluation Complete", footer_info)
 
 
-def _print_error_tasks(error_task_ids: list[int]):
+def _print_error_tasks(error_task_ids: list[int]) -> None:
     """Print error tasks summary."""
     if not error_task_ids:
         return
@@ -574,7 +579,7 @@ def _print_error_tasks(error_task_ids: list[int]):
     logging_helper.print_panel("Tasks with Errors", error_info)
 
 
-def _print_permission_error_tasks(permission_error_task_ids: list[int]):
+def _print_permission_error_tasks(permission_error_task_ids: list[int]) -> None:
     """Print permission error tasks summary."""
     if not permission_error_task_ids:
         return
@@ -587,7 +592,7 @@ def _print_permission_error_tasks(permission_error_task_ids: list[int]):
     logging_helper.print_panel("Permission Denied Tasks", permission_error_info)
 
 
-def _print_skipped_tasks(skipped_task_ids: list[int]):
+def _print_skipped_tasks(skipped_task_ids: list[int]) -> None:
     """Print skipped tasks summary."""
     if not skipped_task_ids:
         return
@@ -600,7 +605,7 @@ def _print_skipped_tasks(skipped_task_ids: list[int]):
     logging_helper.print_panel("Skipped Task Directories", skipped_info)
 
 
-def _print_transformed_tasks(transformed_task_ids: list[int]):
+def _print_transformed_tasks(transformed_task_ids: list[int]) -> None:
     """Print transformed tasks summary."""
     if not transformed_task_ids:
         return
@@ -718,7 +723,7 @@ def _transform_agent_response(script_path: Path, agent_response_file: Path) -> T
 
 
 def _resolve_task_ids(
-    args, output_dir: Path, config: WebArenaVerifiedConfig, wa: WebArenaVerified
+    args: argparse.Namespace, output_dir: Path, config: WebArenaVerifiedConfig, wa: WebArenaVerified
 ) -> tuple[list[int], list[int]]:
     """Resolve which task IDs to evaluate based on args.
 
@@ -754,7 +759,7 @@ def _resolve_task_ids(
     return filtered_task_ids, skipped_task_ids
 
 
-def eval_tasks(args):
+def eval_tasks(args: argparse.Namespace) -> int:
     """Execute eval-tasks command (batch evaluation)"""
     output_dir = Path(args.output_dir)
 
@@ -798,13 +803,13 @@ def eval_tasks(args):
                 # Check for permission errors
                 if _check_permission_error(agent_response):
                     permission_error_task_ids.append(task_id)
-                if args.agent_response_transform and (
-                    transformed_agent_response := _transform_agent_response(
+                if args.agent_response_transform:
+                    transformed_agent_response = _transform_agent_response(
                         Path(args.agent_response_transform), original_agent_response_file
                     )
-                ):
-                    agent_response = transformed_agent_response
-                    transformed_task_ids.append(task_id)
+                    if transformed_agent_response:
+                        agent_response = transformed_agent_response
+                        transformed_task_ids.append(task_id)
 
                 # Evaluate
                 result = task_wa.evaluate_task(
@@ -875,7 +880,7 @@ def eval_tasks(args):
     return 0
 
 
-def subset_export(args):
+def subset_export(args: argparse.Namespace) -> int:
     """Execute subset-export command"""
     try:
         # For subset export, we don't have task-specific configs
@@ -894,7 +899,7 @@ def subset_export(args):
         return 1
 
 
-def subsets_ls(args):
+def subsets_ls(args: argparse.Namespace) -> int:
     """Execute subsets-ls command"""
     try:
         manager = SubsetsManager()
@@ -922,7 +927,7 @@ def subsets_ls(args):
         return 1
 
 
-def subset_recompute_checksum(args):
+def subset_recompute_checksum(args: argparse.Namespace) -> int:
     """Execute subset-recompute-checksum command"""
     try:
         manager = SubsetsManager()
@@ -945,7 +950,7 @@ def subset_recompute_checksum(args):
         return 1
 
 
-def subsets_create(args):
+def subsets_create(args: argparse.Namespace) -> int:
     """Execute subsets-create command"""
     try:
         manager = SubsetsManager()
@@ -1036,7 +1041,7 @@ def _get_filtered_tasks(
     return output_data
 
 
-def dataset_get(args):
+def dataset_get(args: argparse.Namespace) -> int:
     """Execute dataset-get command"""
     # Prepare field set (always include core fields)
     include_fields = None
@@ -1071,7 +1076,7 @@ def dataset_get(args):
     return 0
 
 
-def agent_input_get(args):
+def agent_input_get(args: argparse.Namespace) -> int:
     """Execute agent-input-get command"""
 
     # Load config if provided (for URL rendering)
@@ -1125,7 +1130,7 @@ def agent_input_get(args):
     return 0
 
 
-def trim_network_logs(args):
+def trim_network_logs(args: argparse.Namespace) -> int:
     """Execute trim-network-logs command"""
     try:
         input_path = Path(args.input)
@@ -1152,9 +1157,8 @@ def trim_network_logs(args):
         return 1
 
 
-def create_submission_pkg(args):
+def create_submission_pkg(args: argparse.Namespace) -> int:
     """Execute create-submission-pkg command"""
-    import glob
 
     # Display command info
     command_info = {
@@ -1245,7 +1249,7 @@ def create_submission_pkg(args):
     return 0
 
 
-def main():
+def main() -> None:
     """Main CLI entry point"""
     parser = create_parser()
     args = parser.parse_args()

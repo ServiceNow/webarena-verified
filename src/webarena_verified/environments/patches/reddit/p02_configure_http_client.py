@@ -194,9 +194,8 @@ def verify_configuration(handler: SiteInstanceHandler) -> bool:
     if "alias: postmill.http_client.default" in result.stdout:
         logger.info("Configuration verified successfully")
         return True
-    else:
-        logger.error("Configuration verification failed")
-        return False
+    logger.error("Configuration verification failed")
+    return False
 
 
 def apply_patch(handler: SiteInstanceHandler) -> bool:

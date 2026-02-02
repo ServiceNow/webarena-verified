@@ -10,6 +10,7 @@ Supports parsing various coordinate formats:
 Uses geopy.Point for robust coordinate parsing and validation.
 """
 
+from copy import deepcopy
 from typing import Any, ClassVar
 
 from geopy import Point
@@ -52,7 +53,7 @@ class Coordinates(NormalizedType[dict]):
 
     DEFAULT_TOLERANCE: ClassVar[float] = 1e-5  # ~1.1 meters at equator
 
-    def __init__(self, raw: Any, **kwargs):
+    def __init__(self, raw: Any, **kwargs: Any) -> None:
         """Initialize Coordinates with special handling for list/tuple inputs.
 
         For Coordinates, a 2-element list [lat, lon] represents a SINGLE coordinate value,
@@ -72,8 +73,6 @@ class Coordinates(NormalizedType[dict]):
                 if is_coord_pair:
                     # This is a coordinate pair [lat, lon], not alternatives
                     # Bypass base class alternative detection
-                    from copy import deepcopy
-
                     self._raw_value = deepcopy(raw)
                     self.alternatives = (self._normalize_pipeline(raw),)
                     self.normalized = self.alternatives[0]
@@ -172,13 +171,12 @@ class Coordinates(NormalizedType[dict]):
 
             if lat_key and lon_key:
                 return Point(latitude=value[lat_key], longitude=value[lon_key])
-            else:
-                missing = []
-                if not lat_key:
-                    missing.append("latitude (key starting with 'la')")
-                if not lon_key:
-                    missing.append("longitude (key starting with 'lo')")
-                raise ValueError(f"Dictionary must contain {' and '.join(missing)}")
+            missing = []
+            if not lat_key:
+                missing.append("latitude (key starting with 'la')")
+            if not lon_key:
+                missing.append("longitude (key starting with 'lo')")
+            raise ValueError(f"Dictionary must contain {' and '.join(missing)}")
 
         # List or tuple format: [lat, lon] or (lat, lon)
         if isinstance(value, (list, tuple)) and len(value) == 2:

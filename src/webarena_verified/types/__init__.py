@@ -10,14 +10,12 @@ from .task import (
 )
 
 __all__ = [
-    # Agent response types
-    "MainObjectiveType",
-    "Status",
-    "FinalAgentResponse",
-    # Task types
-    "WebArenaVerifiedTask",
-    "WebArenaSite",
-    "EvaluatorCfg",
     "AgentResponseEvaluatorCfg",
+    "EvaluatorCfg",
+    "FinalAgentResponse",
+    "MainObjectiveType",
     "NetworkEventEvaluatorCfg",
+    "Status",
+    "WebArenaSite",
+    "WebArenaVerifiedTask",
 ]

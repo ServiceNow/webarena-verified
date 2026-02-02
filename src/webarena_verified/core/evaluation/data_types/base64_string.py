@@ -96,9 +96,7 @@ class Base64String(NormalizedType[str]):
         content = decoded_str.replace("\r\n", "\n").replace("\r", "\n")
 
         # Strip leading/trailing whitespace from entire content
-        content = content.strip()
-
-        return content
+        return content.strip()
 
     def __eq__(self, other: Any) -> bool:
         """Equality comparison with regex pattern matching on decoded content.

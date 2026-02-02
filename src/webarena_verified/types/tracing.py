@@ -1,6 +1,7 @@
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Self
+from urllib.parse import unquote, urlparse
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
@@ -13,12 +14,15 @@ from webarena_verified.core.utils.network_event_utils import (
 
 
 class NetworkEvent(BaseModel):
+    """Represents a single network request/response event from a trace."""
+
     data: MappingProxyType
 
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     @property
     def url(self) -> str:
+        """Return the request URL."""
         return self.data["request"]["url"]
 
     @property
@@ -28,13 +32,12 @@ class NetworkEvent(BaseModel):
         Returns:
             str: URL path (e.g., '/path/to/resource')
         """
-        from urllib.parse import urlparse
-
         parsed = urlparse(self.url)
         return parsed.path
 
     @property
     def referer(self) -> str | None:
+        """Return the Referer header value if present."""
         for header in self.data["request"]["headers"]:
             if header["name"].lower() == "referer":
                 return header["value"]
@@ -42,6 +45,7 @@ class NetworkEvent(BaseModel):
 
     @property
     def http_method(self) -> str:
+        """Return the HTTP method (GET, POST, etc.)."""
         return self.data["request"]["method"]
 
     @property
@@ -61,7 +65,7 @@ class NetworkEvent(BaseModel):
         return parse_har_content(post_data_obj) if post_data_obj else None
 
     @property
-    def response_content(self):
+    def response_content(self) -> dict[str, Any] | None:
         """Get response content parsed based on content type.
 
         Returns:
@@ -72,20 +76,24 @@ class NetworkEvent(BaseModel):
 
     @property
     def request_status(self) -> int:
+        """Return the HTTP response status code."""
         return self.data["response"]["status"]
 
     @property
     def redirect_url(self) -> str | None:
+        """Return redirect URL if this is a redirect response."""
         if self.is_redirect:
             return self.data["response"]["redirectURL"]
         return None
 
     @property
     def is_redirect(self) -> bool:
+        """Check if response is a redirect (3xx status)."""
         return self.request_status in range(300, 400) and self.data["response"]["redirectURL"].strip() != ""
 
     @property
     def is_request_success(self) -> bool:
+        """Check if request succeeded (2xx or redirect)."""
         if self.request_status in range(200, 300):
             return True
 
@@ -126,19 +134,18 @@ class NetworkEvent(BaseModel):
         Returns:
             dict[str, str]: Cookie name to decoded value mapping
         """
-        import urllib.parse
-
         cookies = {}
         for cookie in self.data["response"].get("cookies", []):
             name = cookie["name"]
             value = cookie.get("value", "")
             # URL decode the value for pattern matching
-            decoded_value = urllib.parse.unquote(value)
+            decoded_value = unquote(value)
             cookies[name] = decoded_value
         return cookies
 
     @property
     def is_evaluation_event(self) -> bool:
+        """Check if event is relevant for evaluation (not a static asset)."""
         return not self.url_path.endswith(
             (".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".woff", ".woff2", ".ttf", ".ico", ".webp")
         )
@@ -166,16 +173,19 @@ class NetworkEvent(BaseModel):
 
     @field_serializer("data")
     def serialize_data(self, value: MappingProxyType) -> dict:
+        """Serialize MappingProxyType to dict for JSON output."""
         return dict(value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<NetworkEvent(method={self.http_method}, url={self.url}, status={self.request_status} )>"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 
 class NetworkTrace(BaseModel):
+    """Collection of network events from a browser trace."""
+
     is_playwright: bool
     src_file: Path
     events: tuple[NetworkEvent, ...]
@@ -194,6 +204,7 @@ class NetworkTrace(BaseModel):
 
     @classmethod
     def from_playwright_trace(cls, trace_path: Path) -> Self:
+        """Create NetworkTrace from a Playwright trace file."""
         events = load_playwright_trace(trace_path)
         return cls.model_construct(is_playwright=True, src_file=trace_path, events=events)
 

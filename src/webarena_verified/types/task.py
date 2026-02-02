@@ -1,7 +1,7 @@
 """Data models for WebArena Verified tasks (version >= 2.0.0)."""
 
 from enum import StrEnum
-from typing import Annotated, Generic, Literal, Self, TypeVar
+from typing import Annotated, Any, Generic, Literal, Self, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -27,12 +27,12 @@ class WebArenaSite(StrEnum):
     HOMEPAGE = "homepage"
 
     @classmethod
-    def _missing_(cls, value):
+    def _missing_(cls, value: Any) -> Self | None:
         # Strip underscores and try to match
         if isinstance(value, str):
             stripped = value.strip("_")
             for member in cls:
-                if member.value == stripped or member.name == stripped:
+                if stripped in (member.value, member.name):
                     return member
         return None
 
@@ -188,7 +188,7 @@ class NetworkEventSpec(BaseModel):
 
 
 class NetworkEventEvaluatorCfg(BaseEval[NetworkEventSpec]):
-    """Validates network events by checking URL, headers, query parameters, response status, event type, and HTTP method.
+    """Validates network events by checking URL, headers, query params, status, event type, and method.
 
     Searches for network events matching the expected criteria and validates all fields
     in the expected block. Provides a cleaner API where all validation criteria are
@@ -354,4 +354,7 @@ class WebArenaVerifiedTask(BaseModel):
 
     def __repr__(self) -> str:
         """Repr with key information."""
-        return f"WebArenaVerifiedTask(task_id={self.task_id}, intent_template_id={self.intent_template_id}, sites=[{self.sites_str}])"
+        return (
+            f"WebArenaVerifiedTask(task_id={self.task_id}, "
+            f"intent_template_id={self.intent_template_id}, sites=[{self.sites_str}])"
+        )

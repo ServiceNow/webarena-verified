@@ -48,8 +48,8 @@ class ValueNormalizer:
         if item_type is None:
             return NormalizedString  # Default to string type
 
-        if format := item_type.get("format"):
-            type_name = format
+        if type_format := item_type.get("format"):
+            type_name = type_format
         else:
             type_name = item_type.get("type", "string")  # Default to string if not specified
 
@@ -58,7 +58,7 @@ class ValueNormalizer:
         return TYPE_REGISTRY[type_name]
 
     def _normalize_simple_value(
-        self, original_value: Any, item_type: dict | None, strict: bool = True, **kwargs
+        self, original_value: Any, item_type: dict | None, strict: bool = True, **kwargs: Any
     ) -> NormalizedType | Any:
         type_class = self._get_normalized_type_class(item_type)
 
@@ -76,8 +76,9 @@ class ValueNormalizer:
             return original_value
 
     def normalize_object(
-        self, value: Any, schema: dict | MappingProxyType | None, strict: bool = True, **kwargs
+        self, value: Any, schema: dict | MappingProxyType | None, strict: bool = True, **kwargs: Any
     ) -> MappingProxyType | None:
+        """Normalize a dict/object value according to schema."""
         if schema:
             if not isinstance(schema, (dict, MappingProxyType)):
                 raise TypeError(f"Schema must be dict or MappingProxyType, got {type(schema).__name__}")
@@ -88,11 +89,8 @@ class ValueNormalizer:
             # Try json parsing for strings
             try:
                 parsed = json.loads(value)
-                if (
-                    isinstance(parsed, dict)
-                    or isinstance(parsed, (list, tuple))
-                    and len(parsed) == 1
-                    and isinstance(parsed[0], dict)
+                if isinstance(parsed, dict) or (
+                    isinstance(parsed, (list, tuple)) and len(parsed) == 1 and isinstance(parsed[0], dict)
                 ):
                     value = parsed
             except json.JSONDecodeError:
@@ -118,9 +116,10 @@ class ValueNormalizer:
 
         return MappingProxyType(normalized)
 
-    def normalize_array(
-        self, value: Any, schema: dict | MappingProxyType | None, strict: bool = True, **kwargs
+    def normalize_array(  # noqa: C901
+        self, value: Any, schema: dict | MappingProxyType | None, strict: bool = True, **kwargs: Any
     ) -> tuple | None:
+        """Normalize an array/list value according to schema."""
         if schema and not isinstance(schema, (dict, MappingProxyType)):
             raise TypeError(f"Schema must be dict or MappingProxyType, got {type(schema).__name__}")
 
@@ -171,7 +170,7 @@ class ValueNormalizer:
         return tuple(normalized_array)
 
     def normalize(
-        self, value: Any, schema: dict | MappingProxyType, strict: bool = True, **kwargs
+        self, value: Any, schema: dict | MappingProxyType, strict: bool = True, **kwargs: Any
     ) -> NormalizedType | tuple[NormalizedType, ...] | tuple[dict, ...] | dict | MappingProxyType | None:
         """Main entry point for normalization.
 
@@ -221,12 +220,11 @@ class ValueNormalizer:
                     raise ValueError(f"Schema expects array but got {type(value).__name__}: {value!r}")
                 return value  # Return raw value in non-strict mode
             return self._normalize_array(value, type_name_or_schema, strict, **kwargs)
-        else:
-            # Schema indicates single value
-            # If value is list at root level, treat as alternatives
-            return self.normalize_single(value, type_name_or_schema, strict, **kwargs)
+        # Schema indicates single value
+        # If value is list at root level, treat as alternatives
+        return self.normalize_single(value, type_name_or_schema, strict, **kwargs)
 
-    def normalize_single(self, value: Any, type_name: str, strict: bool, **kwargs) -> NormalizedType:
+    def normalize_single(self, value: Any, type_name: str, strict: bool, **kwargs: Any) -> NormalizedType:
         """Normalize single value with alternative detection.
 
         Args:
@@ -266,7 +264,7 @@ class ValueNormalizer:
         value: list | tuple | str,
         type_name: str | dict | MappingProxyType,
         strict: bool,
-        **kwargs,
+        **kwargs: Any,
     ) -> tuple[NormalizedType, ...] | Any:
         """Normalize array, detecting element-level alternatives.
 
@@ -301,7 +299,7 @@ class ValueNormalizer:
             return value  # Return raw value in non-strict mode
         if isinstance(type_name, (dict, MappingProxyType)):
             return self._normalize_object_or_array(value, type_name, strict, **kwargs)
-        elif type_name not in TYPE_REGISTRY:
+        if type_name not in TYPE_REGISTRY:
             raise ValueError(f"Unknown type name: {type_name!r}")
 
         type_class = TYPE_REGISTRY[type_name]
@@ -327,7 +325,7 @@ class ValueNormalizer:
         value: dict | MappingProxyType | list[dict] | tuple[dict, ...],
         object_schema: dict | MappingProxyType,
         strict: bool,
-        **kwargs,
+        **kwargs: Any,
     ) -> dict | tuple[dict, ...]:
         """Normalize object or array of objects.
 
@@ -342,16 +340,15 @@ class ValueNormalizer:
         if isinstance(value, (list, tuple)):
             # Array of objects
             return tuple(self._normalize_object(obj, object_schema, strict, **kwargs) for obj in value)
-        else:
-            # Single object
-            return self._normalize_object(value, object_schema, strict, **kwargs)
+        # Single object
+        return self._normalize_object(value, object_schema, strict, **kwargs)
 
-    def _normalize_object(
+    def _normalize_object(  # noqa: C901, PLR0912
         self,
         obj: dict | MappingProxyType,
         object_schema: dict | MappingProxyType,
         strict: bool,
-        **kwargs,
+        **kwargs: Any,
     ) -> dict:
         """Normalize object with property-level alternatives.
 

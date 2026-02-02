@@ -140,7 +140,8 @@ class EnvironmentConfig(BaseModel):
         Args:
             ssh_url: SSH URL to derender (e.g., "ssh://git@localhost:2222/path/to/repo.git")
             hostname: Hostname to match and replace (e.g., "localhost")
-            template: Present for interface consistency; ignored for SSH URLs, which always use the fixed __ssh_host__ template
+            template: Present for interface consistency; ignored for SSH URLs,
+                which always use the fixed __ssh_host__ template
 
         Returns:
             Derendered URL in short format (e.g., "git@__ssh_host__:path/to/repo.git") or None if hostname not found
@@ -287,6 +288,7 @@ class WebArenaVerifiedConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_data(self) -> Self:
+        """Validate config and set default data file if needed."""
         if not self.test_data_file.exists():
             # Handle cases where the run was done on a different machine or mount point
             logger.warning(f"test_data_file {self.test_data_file} does not exist. Falling back to default dataset.")
@@ -367,7 +369,8 @@ class WebArenaVerifiedConfig(BaseModel):
             Rendered URL with template replaced by actual URL. Returns same type as input (string or list).
 
         Raises:
-            ValueError: If no environments configured, site not found in environments, or (when strict=True) no site matches
+            ValueError: If no environments configured, site not found in environments,
+                or (when strict=True) no site matches
         """
         if self.environments is None:
             raise ValueError("No environments configured")
@@ -399,8 +402,7 @@ class WebArenaVerifiedConfig(BaseModel):
             if rendered is None:
                 if strict:
                     raise ValueError(f"No site in {[s.name for s in sites]} matched template: {url_template}")
-                else:
-                    rendered = url_template  # Return original
+                rendered = url_template  # Return original
 
             results.append(rendered)
 
@@ -461,11 +463,11 @@ class WebArenaVerifiedConfig(BaseModel):
 
             if derendered is None:
                 if strict:
+                    sites_str = [s.name for s in sites]
                     raise ValueError(
-                        f"URL '{url_to_derender}' does not match any configured URLs for sites {[s.name for s in sites]}"
+                        f"URL '{url_to_derender}' does not match any configured URLs for sites {sites_str}"
                     )
-                else:
-                    derendered = url_to_derender  # Return original
+                derendered = url_to_derender  # Return original
 
             results.append(derendered)
 

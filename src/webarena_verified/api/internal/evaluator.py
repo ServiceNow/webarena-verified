@@ -19,7 +19,7 @@ class WebArenaVerifiedEvaluator:
     Simplified API: Evaluate tasks by providing TaskEvalContext directly.
     """
 
-    def __init__(self, *, config: WebArenaVerifiedConfig, reader: WebArenaVerifiedDataReader):
+    def __init__(self, *, config: WebArenaVerifiedConfig, reader: WebArenaVerifiedDataReader) -> None:
         self.config = config
         self.reader = reader
 
@@ -102,8 +102,7 @@ class WebArenaVerifiedEvaluator:
                 config=self.config,
             )
 
-            result = self._evaluate_with_context(context=eval_context)
-            return result
+            return self._evaluate_with_context(context=eval_context)
 
         except Exception as e:
             error_msg = f"Failed to evaluate task {task_id}: {e}"
@@ -199,15 +198,13 @@ class WebArenaVerifiedEvaluator:
         """
         if isinstance(agent_response, (str, dict, list, type(None), TransformedAgentResponse)):
             return agent_response
-        elif isinstance(agent_response, Path):
+        if isinstance(agent_response, Path):
             logger.info(f"Loading agent response from file: {agent_response}")
             if not agent_response.exists():
                 raise FileNotFoundError(f"Agent response file not found: {agent_response}")
 
-            content = agent_response.read_text()
-            return content
-        else:
-            raise TypeError(f"agent_response must be str, dict, list, None, or Path, got {type(agent_response)}")
+            return agent_response.read_text()
+        raise TypeError(f"agent_response must be str, dict, list, None, or Path, got {type(agent_response)}")
 
     def _parse_network_trace(self, network_trace: Any) -> NetworkTrace:
         """Parse network trace to NetworkTrace object.
@@ -226,17 +223,16 @@ class WebArenaVerifiedEvaluator:
         if isinstance(network_trace, NetworkTrace) or network_trace is None:
             return network_trace
 
-        elif isinstance(network_trace, Path):
+        if isinstance(network_trace, Path):
             logger.info(f"Loading network trace from file: {network_trace}")
             if not network_trace.exists():
                 raise FileNotFoundError(f"Network trace file not found: {network_trace}")
             return NetworkTrace.from_content(network_trace)
 
-        elif isinstance(network_trace, (list, tuple)):
+        if isinstance(network_trace, (list, tuple)):
             return NetworkTrace.from_content(list(network_trace) if isinstance(network_trace, tuple) else network_trace)
 
-        else:
-            raise TypeError(f"network_trace must be list, Path, or NetworkTrace, got {type(network_trace)}")
+        raise TypeError(f"network_trace must be list, Path, or NetworkTrace, got {type(network_trace)}")
 
     def _create_eval_error_result(self, task_id: int, error_msg: str) -> TaskEvalResult:
         """Create an error result for unhandled evaluation errors.
@@ -337,7 +333,8 @@ class WebArenaVerifiedEvaluator:
             corrected_config.environments = environments
 
             logger.warning(
-                f"Auto-corrected config using best-effort URL extraction from trace for sites: {[s.name for s in context.task.sites]}. "
+                f"Auto-corrected config using best-effort URL extraction from trace "
+                f"for sites: {[s.name for s in context.task.sites]}. "
                 "This is not recommended - please provide a proper config with environment URLs."
             )
             return corrected_config

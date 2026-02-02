@@ -6,8 +6,8 @@ from .patch_manager import PatchManager
 from .subsets_manager import SubsetsManager
 
 __all__ = [
-    "WebArenaVerifiedDataReader",
-    "WebArenaVerifiedEvaluator",
     "PatchManager",
     "SubsetsManager",
+    "WebArenaVerifiedDataReader",
+    "WebArenaVerifiedEvaluator",
 ]

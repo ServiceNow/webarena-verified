@@ -36,10 +36,9 @@ class Boolean(NormalizedType[bool]):
             normalized = value.strip().lower()
             if normalized in ("true", "yes", "y", "1", "t", "on"):
                 return True
-            elif normalized in ("false", "no", "n", "0", "f", "off"):
+            if normalized in ("false", "no", "n", "0", "f", "off"):
                 return False
-            else:
-                raise ValueError(f"Cannot normalize string to boolean: {value!r}")
+            raise ValueError(f"Cannot normalize string to boolean: {value!r}")
 
         # Unrecognized type
         raise ValueError(f"Cannot normalize type {type(value).__name__} to boolean: {value!r}")

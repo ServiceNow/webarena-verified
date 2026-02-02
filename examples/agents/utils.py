@@ -251,12 +251,13 @@ async def ui_login(
                     f"__{site_name.upper()}__",
                     f"__{site_name.lower()}__",
                 ]
+                env_config = None
                 for site_name_candidate in possible_name:
                     env_config = environments.get(site_name_candidate)
                     if env_config:
                         break
 
-                if not env_config:
+                if env_config is None:
                     raise ValueError(f"Environment config for site '{site_name}' not found in config")
 
                 # Access URLs and determine active URL

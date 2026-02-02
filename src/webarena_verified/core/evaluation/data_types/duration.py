@@ -4,6 +4,7 @@ import re
 from datetime import timedelta
 from typing import Any, ClassVar, cast
 
+from pydantic_core import CoreSchema, core_schema
 from pytimeparse2 import parse
 
 from .base import NormalizedType
@@ -27,10 +28,8 @@ class Duration(NormalizedType[timedelta]):
     DEFAULT_TOLERANCE_PERCENT: ClassVar[float] = 0.10  # 10%
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any):
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> CoreSchema:
         """Custom Pydantic schema to serialize timedelta as string for JSON."""
-        from pydantic_core import core_schema
-
         return core_schema.is_instance_schema(
             cls,
             serialization=core_schema.plain_serializer_function_ser_schema(
@@ -71,10 +70,9 @@ class Duration(NormalizedType[timedelta]):
             if "must include a unit" in str(e):
                 raise
             # Otherwise, it's not a plain number, continue with pytimeparse2 parsing
-            pass
 
         # Parse with pytimeparse2 to get seconds
-        seconds_value = cast(int | float | None, parse(value_str))
+        seconds_value = cast("int | float | None", parse(value_str))
 
         if seconds_value is None:
             raise ValueError(f"Unable to parse duration: {value_str}")
@@ -86,8 +84,7 @@ class Duration(NormalizedType[timedelta]):
         """Additional handling for duration strings"""
         normalized = super()._normalize_string(s)
         # Handle "1:35 hours"
-        normalized = re.sub(r"(\d+):(\d+)\s*hours?", r"\1h\2m", normalized)
-        return normalized
+        return re.sub(r"(\d+):(\d+)\s*hours?", r"\1h\2m", normalized)
 
     def _to_seconds(self) -> float:
         """Convert primary normalized duration to total seconds.
