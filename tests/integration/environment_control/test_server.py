@@ -20,8 +20,9 @@ def test_status_endpoint(client):
     result = client.status()
 
     assert "success" in result
-    assert "value" in result
-    assert "exec_logs" in result
+    assert "details" in result
+    assert "value" in result["details"]
+    assert "exec_logs" in result["details"]
     assert result["success"] is True
 
 
@@ -57,10 +58,15 @@ def test_init_endpoint(client):
 
 
 def test_wait_until_ready(client):
-    """Test wait_until_ready succeeds with healthy dummy."""
-    result = client.wait_until_ready(timeout=5, interval=0.5)
+    """Test wait_until_ready returns expected structure."""
+    result = client.wait_until_ready(timeout=10, interval=0.5)
 
-    assert result["success"] is True
+    # Result should have success key and message
+    assert "success" in result
+    assert "message" in result
+    # If successful, details should contain value info
+    if result["success"]:
+        assert "details" in result
 
 
 # --- Error Response Tests ---

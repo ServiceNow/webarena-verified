@@ -29,7 +29,7 @@ def _image_exists(image: str) -> bool:
 
 
 @pytest.fixture(scope="module")
-def env_control_container(request):
+def env_control_container(request, docker):
     """Start a Python container with environment_control installed and server running.
 
     The container:

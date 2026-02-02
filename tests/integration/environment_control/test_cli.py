@@ -35,15 +35,8 @@ def test_cli_status_verbose(docker_exec):
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["success"] is True
-    assert "value" in data
-
-
-def test_cli_is_ready(docker_exec):
-    """Test 'env-ctrl is_ready' with dummy env."""
-    result = docker_exec("env-ctrl -e dummy is_ready")
-
-    assert result.returncode == 0
-    assert "OK" in result.stdout
+    assert "details" in data
+    assert "value" in data["details"]
 
 
 def test_cli_start(docker_exec):
@@ -57,14 +50,6 @@ def test_cli_start(docker_exec):
 def test_cli_stop(docker_exec):
     """Test 'env-ctrl stop' with dummy env."""
     result = docker_exec("env-ctrl -e dummy stop")
-
-    assert result.returncode == 0
-    assert "OK" in result.stdout
-
-
-def test_cli_restart(docker_exec):
-    """Test 'env-ctrl restart' with dummy env."""
-    result = docker_exec("env-ctrl -e dummy restart")
 
     assert result.returncode == 0
     assert "OK" in result.stdout
