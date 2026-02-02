@@ -65,7 +65,7 @@ class ShoppingAdminSettings(BaseSiteSettings):
     original_docker_img: str = "shopping_admin_final_0719"
     original_docker_url: str = "http://metis.lti.cs.cmu.edu/webarena-images/shopping_admin_final_0719.tar"
     docker_img: str = "am1n3e/webarena-verified-shopping_admin"
-    base_docker_img: str = "am1n3e/webarena-verified-shopping-admin-base"
+    base_docker_img: str = "am1n3e/webarena-verified-shopping_admin-base"
     dockerfile: str = "dev/environments/docker/sites/shopping_admin/Dockerfile"
 
 

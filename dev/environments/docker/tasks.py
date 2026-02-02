@@ -375,7 +375,6 @@ def docker_test(
         ctx.run(f"docker pull {image_name}")
 
     port = find_free_port()
-    env_ctrl_port = find_free_port()
     try:
         # Start container
         logging_utils.print_info(f"Starting container {container_name} from {image_name}")
@@ -399,6 +398,7 @@ def docker_test(
                 extra_args += f" -v {data_path}/routing/bike:/data/routing/bike"
                 extra_args += f" -v {data_path}/routing/foot:/data/routing/foot"
                 extra_args += f" -v {data_path}/nominatim/postgres:/data/nominatim/postgres"
+                extra_args += f" -v {data_path}/website/postgres:/var/lib/postgresql/14/main"
 
             elif site == "wikipedia":
                 # Find ZIM file in data directory
@@ -410,8 +410,10 @@ def docker_test(
                 extra_args += f" -v {zim_file}:/data/{zim_name}"
                 extra_args += f" -e WA_ENV_CTRL_ZIM_FILE=/data/{zim_name}"
 
-        containers._docker_run(
-            ctx, settings, image_name, container_name, port, env_ctrl_port=env_ctrl_port, extra_args=extra_args
+        # Skip named volumes if we're mounting data directly to avoid duplicate mount points
+        skip_volumes = bool(data_dir)
+        env_ctrl_port = containers._docker_run(
+            ctx, settings, image_name, container_name, port, extra_args=extra_args, skip_volumes=skip_volumes
         )
         containers._wait_and_configure(container_name, port)
 
@@ -421,6 +423,8 @@ def docker_test(
         site_url = f"http://localhost:{port}"
         env_ctrl_url = f"http://localhost:{env_ctrl_port}"
         pytest_args = f"--{site}_url={site_url} --{site}_env_ctrl_url={env_ctrl_url}"
+        if site == "map":
+            pytest_args += f" --map_tile_url={site_url}"
         ctx.run(f"uv run pytest tests/integration/environments/ -m {marker} -v {pytest_args}{headed_flag}")
     finally:
         # Cleanup: stop and remove container

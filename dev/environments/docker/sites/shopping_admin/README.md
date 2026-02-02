@@ -1,6 +1,6 @@
 # Shopping Admin (Magento)
 
-Port: 6680
+Port: 7780
 
 ## Fixes
 

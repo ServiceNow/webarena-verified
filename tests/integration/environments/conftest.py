@@ -114,6 +114,12 @@ def pytest_addoption(parser):
         help="Base URL for map site (e.g., http://localhost:3030)",
     )
     parser.addoption(
+        "--map_env_ctrl_url",
+        action="store",
+        default=None,
+        help="env-ctrl URL for map site (e.g., http://localhost:8877)",
+    )
+    parser.addoption(
         "--map_tile_url",
         action="store",
         default=None,

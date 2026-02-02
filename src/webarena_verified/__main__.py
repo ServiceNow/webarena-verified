@@ -57,6 +57,10 @@ def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
               # Start on specific ports
               webarena-verified env start --site shopping --port 8080 --env-ctrl-port 9000
 
+              # Start wikipedia (requires --data-dir with downloaded ZIM file)
+              webarena-verified env setup init --site wikipedia --data-dir ./data
+              webarena-verified env start --site wikipedia --data-dir ./data
+
               # Check container status
               webarena-verified env status --site shopping
 
@@ -67,12 +71,12 @@ def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
               webarena-verified env status --url http://localhost:8877
               webarena-verified env start --url http://localhost:8877 --wait
 
-              # Set up data volumes (download data, create volumes)
+              # Set up data (download files for sites that need them)
               webarena-verified env setup init --site wikipedia --data-dir ./data
-              webarena-verified env setup init --data-dir ./data --dry-run
+              webarena-verified env setup init --site map --data-dir ./data
 
-              # Clean up volumes
-              webarena-verified env setup clean --site wikipedia
+              # Clean up volumes (for map site)
+              webarena-verified env setup clean --site map
               webarena-verified env setup clean --force
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -97,6 +101,7 @@ def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
     )
     env_start_parser.add_argument("--wait", action="store_true", help="Wait until environment is ready")
     env_start_parser.add_argument("--timeout", type=int, default=120, help="Wait timeout in seconds (default: 120)")
+    env_start_parser.add_argument("--data-dir", type=str, help="Data directory to bind-mount (required for wikipedia)")
 
     # env stop subcommand
     env_stop_parser = env_subparsers.add_parser("stop", help="Stop the environment")
@@ -1306,36 +1311,41 @@ def _env_container_command(args: argparse.Namespace) -> int:
     try:
         if args.env_command == "status":
             result = manager.status()
-            print(f"Container: {result.container_name}")
-            print(f"Status: {result.status.value}")
+            logger.info(f"Container: {result.container_name}")
+            logger.info(f"Status: {result.status.value}")
             if result.url:
-                print(f"URL: {result.url}")
+                logger.info(f"URL: {result.url}")
             if result.env_ctrl_url:
-                print(f"Env-ctrl: {result.env_ctrl_url}")
+                logger.info(f"Env-ctrl: {result.env_ctrl_url}")
             if result.env_ctrl_status:
-                print(f"Services: {json.dumps(result.env_ctrl_status, indent=2)}")
+                logger.info(f"Services: {json.dumps(result.env_ctrl_status, indent=2)}")
             return 0 if result.status == ContainerStatus.RUNNING else 1
 
         if args.env_command == "start":
+            data_dir = Path(args.data_dir) if getattr(args, "data_dir", None) else None
             result = manager.start(
                 port=getattr(args, "port", None),
                 env_ctrl_port=getattr(args, "env_ctrl_port", None),
                 wait=args.wait,
                 timeout=args.timeout,
+                data_dir=data_dir,
             )
-            print(f"Container started: {result.container_name}")
-            print(f"  URL: {result.url}")
-            print(f"  Env-ctrl: {result.env_ctrl_url}")
+            logger.info(f"Container started: {result.container_name}")
+            logger.info(f"  URL: {result.url}")
+            logger.info(f"  Env-ctrl: {result.env_ctrl_url}")
             return 0
 
         if args.env_command == "stop":
             manager.stop()
-            print(f"Container stopped: {manager.container_name}")
+            logger.info(f"Container stopped: {manager.container_name}")
             return 0
 
         logger.error(f"Unknown env command: {args.env_command}")
         return 1
 
+    except ValueError as e:
+        logger.error(str(e))
+        return 1
     except RuntimeError as e:
         logger.error(f"Container error: {e}")
         return 1

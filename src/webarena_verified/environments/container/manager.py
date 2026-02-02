@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from webarena_verified.core.utils import logger
 from webarena_verified.environments.env_ctrl_client import EnvCtrlDockerClient, HttpClient
 from webarena_verified.types.container import ContainerStartResult, ContainerStatus, ContainerStatusResult
 
@@ -15,6 +16,8 @@ from .backend import ContainerBackend, get_default_backend
 from .config import get_container_config
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from webarena_verified.types.config import ContainerConfig
     from webarena_verified.types.task import WebArenaSite
 
@@ -60,6 +63,7 @@ class ContainerManager:
         env_ctrl_port: int | None = None,
         wait: bool = True,
         timeout: int = 120,
+        data_dir: Path | None = None,
     ) -> ContainerStartResult:
         """Start the container and optionally wait for services.
 
@@ -71,19 +75,30 @@ class ContainerManager:
             env_ctrl_port: Host port for env-ctrl API. If None, auto-assigns a free port.
             wait: If True, wait for services to be ready before returning.
             timeout: Timeout in seconds for waiting (only used with wait=True).
+            data_dir: Path to data directory for bind-mount (required for sites with data_dir_mount).
 
         Returns:
             ContainerStartResult with URLs and port information.
 
         Raises:
             RuntimeError: If container fails to start or services don't become ready.
+            ValueError: If data_dir is required but not provided.
         """
+        # Validate data_dir requirement
+        if self.config.data_dir_mount and not data_dir:
+            raise ValueError(
+                f"Site {self.site.value} requires --data-dir to be specified. "
+                f"Data will be bind-mounted to {self.config.data_dir_mount}"
+            )
+
         # Remove existing container if present
+        logger.info(f"Removing existing container if present: {self.container_name}")
         self.backend.container_remove(name=self.container_name)
 
         # Determine ports
         host_port = port if port is not None else self.backend.find_free_port()
         host_env_ctrl_port = env_ctrl_port if env_ctrl_port is not None else self.backend.find_free_port()
+        logger.info(f"Using ports - site: {host_port}, env-ctrl: {host_env_ctrl_port}")
 
         # Build port and volume mappings
         port_mappings = {
@@ -91,19 +106,29 @@ class ContainerManager:
             host_env_ctrl_port: self.config.env_ctrl_port,
         }
 
+        # Build volume mappings: use bind-mount if data_dir_mount is set, otherwise use named volumes
+        if self.config.data_dir_mount and data_dir:
+            volume_mappings = {str(data_dir.resolve()): self.config.data_dir_mount}
+            logger.info(f"Bind-mounting data directory: {data_dir} -> {self.config.data_dir_mount}")
+        else:
+            volume_mappings = self.config.volumes
+
         # Run container
+        logger.info(f"Starting container: {self.container_name} (image: {self.config.docker_img})")
         self.backend.container_run(
             name=self.container_name,
             image=self.config.docker_img,
             port_mappings=port_mappings,
-            volume_mappings=self.config.volumes,
+            volume_mappings=volume_mappings,
         )
+        logger.info("Container started successfully")
 
         url = f"http://{self.hostname}:{host_port}"
         env_ctrl_url = f"http://{self.hostname}:{host_env_ctrl_port}"
 
         # Wait for services if requested
         if wait:
+            logger.info(f"Waiting for services to be ready (timeout: {timeout}s)")
             self._wait_and_configure(port=host_port, timeout=timeout)
 
         return ContainerStartResult(
@@ -119,7 +144,9 @@ class ContainerManager:
 
         Does nothing if container doesn't exist.
         """
+        logger.info(f"Stopping container: {self.container_name}")
         self.backend.container_remove(name=self.container_name)
+        logger.info("Container stopped")
 
     def status(self) -> ContainerStatusResult:
         """Get container status and URLs if running.
@@ -129,6 +156,7 @@ class ContainerManager:
         Returns:
             ContainerStatusResult with current status and URLs (if running).
         """
+        logger.info(f"Checking status of container: {self.container_name}")
         # Check Docker state first
         if not self.backend.container_exists(name=self.container_name):
             return ContainerStatusResult(
@@ -196,13 +224,18 @@ class ContainerManager:
             RuntimeError: If services don't become ready within timeout.
         """
         # Client timeout should be longer than wait timeout
+        logger.info("Connecting to env-ctrl service inside container")
         client = EnvCtrlDockerClient.create(self.container_name, timeout=timeout + 60)
 
         # Wait for services to be ready
+        logger.info("Waiting for services to be ready...")
         result = client.start(wait=True, timeout=timeout)
         if not result.success:
             raise RuntimeError(f"Services failed to start: {result.message}")
+        logger.info("Services are ready")
 
         # Configure base URL
         base_url = f"http://{self.hostname}:{port}/"
+        logger.info(f"Configuring base URL: {base_url}")
         client.init(base_url=base_url)
+        logger.info("Container configured successfully")

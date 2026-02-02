@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from dev.environments.docker.utils.dockerfile import get_container_port
 from dev.environments.settings import get_settings
 from dev.utils import logging_utils
-from dev.utils.network_utils import find_free_port
 from dev.utils.path_utils import get_repo_root
 from webarena_verified.environments.env_ctrl_client import EnvCtrlDockerClient
 
@@ -47,7 +46,8 @@ def _docker_run(
     idle: bool = False,
     extra_args: str = "",
     env_ctrl_port: int | None = None,
-) -> None:
+    skip_volumes: bool = False,
+) -> int:
     """Run a docker container with standard options.
 
     Args:
@@ -58,17 +58,24 @@ def _docker_run(
         port: Host port for the web service.
         idle: If True, run container in idle mode (tail -f /dev/null).
         extra_args: Additional docker run arguments.
-        env_ctrl_port: Host port for env-ctrl. If None, finds a free port.
+        env_ctrl_port: Host port for env-ctrl. If None, lets Docker assign one.
+        skip_volumes: If True, skip mounting named volumes from settings (use when
+            mounting data directly via extra_args to avoid duplicate mount points).
+
+    Returns:
+        The host port assigned for env-ctrl.
     """
     container_port = get_container_port(settings.dockerfile) if settings.dockerfile else 80
+    env_ctrl_container_port = get_settings().env_ctrl_container_port
     cmd = "docker run -d"
 
     cmd += f" --name {name} -p {port}:{container_port}"
 
-    # Map env-ctrl port (host port is dynamic or specified, container port is standard)
-    host_env_ctrl_port = env_ctrl_port if env_ctrl_port is not None else find_free_port()
-    cmd += f" -p {host_env_ctrl_port}:{get_settings().env_ctrl_container_port}"
-    logging_utils.print_info(f"env-ctrl port: {host_env_ctrl_port}")
+    # Map env-ctrl port (let Docker assign if not specified to avoid race conditions)
+    if env_ctrl_port is not None:
+        cmd += f" -p {env_ctrl_port}:{env_ctrl_container_port}"
+    else:
+        cmd += f" -p 0:{env_ctrl_container_port}"
 
     # Data directory mounting
     if settings.data_dir:
@@ -77,9 +84,10 @@ def _docker_run(
             data_path = get_repo_root() / data_path
         cmd += f" --volume={data_path}:/data"
 
-    # Named Docker volumes
-    for vol_name, container_path in settings.volumes.items():
-        cmd += f" -v {vol_name}:{container_path}"
+    # Named Docker volumes (skip if mounting data directly)
+    if not skip_volumes:
+        for vol_name, container_path in settings.volumes.items():
+            cmd += f" -v {vol_name}:{container_path}"
 
     if extra_args:
         cmd += f" {extra_args}"
@@ -90,6 +98,18 @@ def _docker_run(
     desc = "Starting container (idle mode)" if idle else "Starting container"
     with logging_utils.StepContext.create(cmd, desc=desc):
         ctx.run(cmd, hide=True)
+
+    # Get the assigned env-ctrl port (query Docker for dynamically assigned ports)
+    if env_ctrl_port is not None:
+        host_env_ctrl_port = env_ctrl_port
+    else:
+        result = ctx.run(f"docker port {name} {env_ctrl_container_port}", hide=True)
+        # Output format: "0.0.0.0:12345" or ":::12345"
+        port_mapping = result.stdout.strip().split(":")[-1]
+        host_env_ctrl_port = int(port_mapping)
+
+    logging_utils.print_info(f"env-ctrl port: {host_env_ctrl_port}")
+    return host_env_ctrl_port
 
 
 def publish_images(ctx: Context, images: list[str], yes: bool = False) -> bool:

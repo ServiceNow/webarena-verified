@@ -25,7 +25,7 @@ pytestmark = [pytest.mark.docker, pytest.mark.integration_docker_map]
 @pytest.mark.flaky(reruns=2)
 def test_map_homepage_loads(map_container, map_base_url, page, pw_timeout):
     """Test that the map homepage loads correctly."""
-    page.goto(map_base_url)
+    page.goto(map_base_url, timeout=pw_timeout)
 
     # Wait for the map to be visible
     expect(page.locator("#map")).to_be_visible(timeout=pw_timeout)
@@ -34,7 +34,7 @@ def test_map_homepage_loads(map_container, map_base_url, page, pw_timeout):
 @pytest.mark.flaky(reruns=2)
 def test_map_login_page_loads(map_container, map_base_url, page, pw_timeout):
     """Test that the login page loads correctly."""
-    page.goto(f"{map_base_url}/login")
+    page.goto(f"{map_base_url}/login", timeout=pw_timeout)
 
     # Verify login form is present
     expect(page.get_by_role("heading", name="Log In")).to_be_visible(timeout=pw_timeout)
@@ -43,7 +43,7 @@ def test_map_login_page_loads(map_container, map_base_url, page, pw_timeout):
 @pytest.mark.flaky(reruns=2)
 def test_map_signup_page_loads(map_container, map_base_url, page, pw_timeout):
     """Test that the signup page loads correctly."""
-    page.goto(f"{map_base_url}/user/new")
+    page.goto(f"{map_base_url}/user/new", timeout=pw_timeout)
 
     # Verify signup form is present
     expect(page.get_by_role("heading", name="Sign Up")).to_be_visible(timeout=pw_timeout)
@@ -57,7 +57,7 @@ def test_map_signup_page_loads(map_container, map_base_url, page, pw_timeout):
 @pytest.mark.flaky(reruns=2)
 def test_map_zoom_controls_visible(map_container, map_base_url, page, pw_timeout):
     """Test that map zoom controls are visible."""
-    page.goto(map_base_url)
+    page.goto(map_base_url, timeout=pw_timeout)
 
     # Wait for map to load
     page.wait_for_load_state("networkidle", timeout=pw_timeout)
@@ -70,7 +70,7 @@ def test_map_zoom_controls_visible(map_container, map_base_url, page, pw_timeout
 @pytest.mark.flaky(reruns=2)
 def test_map_layers_control_visible(map_container, map_base_url, page, pw_timeout):
     """Test that map layers control is visible."""
-    page.goto(map_base_url)
+    page.goto(map_base_url, timeout=pw_timeout)
 
     # Wait for map to load
     page.wait_for_load_state("networkidle", timeout=pw_timeout)
@@ -87,7 +87,7 @@ def test_map_layers_control_visible(map_container, map_base_url, page, pw_timeou
 @pytest.mark.flaky(reruns=2)
 def test_map_search_box_visible(map_container, map_base_url, page, pw_timeout):
     """Test that the search box is visible on the map page."""
-    page.goto(map_base_url)
+    page.goto(map_base_url, timeout=pw_timeout)
 
     # Wait for map to load
     page.wait_for_load_state("networkidle", timeout=pw_timeout)
@@ -105,7 +105,7 @@ def test_map_search_box_visible(map_container, map_base_url, page, pw_timeout):
 @pytest.mark.flaky(reruns=2)
 def test_map_history_page_loads(map_container, map_base_url, page, pw_timeout):
     """Test that the history/changesets page loads."""
-    page.goto(f"{map_base_url}/history")
+    page.goto(f"{map_base_url}/history", timeout=pw_timeout)
 
     # Verify history page loaded
     expect(page.get_by_role("heading", name="Changesets")).to_be_visible(timeout=pw_timeout)

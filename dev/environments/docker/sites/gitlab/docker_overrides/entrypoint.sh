@@ -13,10 +13,12 @@ DEFAULT_EXTERNAL_URL="http://localhost:8023"
 WA_ENV_CTRL_EXTERNAL_SITE_URL="${WA_ENV_CTRL_EXTERNAL_SITE_URL:-$DEFAULT_EXTERNAL_URL}"
 WA_ENV_CTRL_SKIP_RECONFIGURE="${WA_ENV_CTRL_SKIP_RECONFIGURE:-false}"
 
+RUNSVDIR_PID=""
+
 cleanup() {
     echo "Shutting down..."
     gitlab-ctl stop 2>/dev/null || true
-    kill $RUNSVDIR_PID 2>/dev/null || true
+    [ -n "$RUNSVDIR_PID" ] && kill "$RUNSVDIR_PID" 2>/dev/null || true
 }
 trap cleanup SIGTERM SIGINT
 

@@ -25,6 +25,7 @@ SITES = [
     pytest.param("reddit", marks=pytest.mark.integration_docker_reddit),
     pytest.param("gitlab", marks=pytest.mark.integration_docker_gitlab),
     pytest.param("wikipedia", marks=pytest.mark.integration_docker_wikipedia),
+    pytest.param("map", marks=pytest.mark.integration_docker_map),
 ]
 
 

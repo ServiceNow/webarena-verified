@@ -1,5 +1,7 @@
 """Main invoke tasks file. Use `inv --list` to see available tasks."""
 
+import os
+
 from invoke import Collection, Context, task
 
 from dev import ci_tasks, code_tasks, data_tasks, docs_tasks, env_tasks
@@ -31,8 +33,9 @@ SERVICE_DESCRIPTIONS = {
 def _get_service_url(service: str) -> str:
     """Get the localhost URL for a service."""
     if service in SERVICES:
-        _, _, default_port = SERVICES[service]
-        return f"http://localhost:{default_port}"
+        _, env_var, default_port = SERVICES[service]
+        port = os.environ.get(env_var, default_port)
+        return f"http://localhost:{port}"
     return ""
 
 

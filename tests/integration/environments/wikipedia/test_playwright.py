@@ -53,14 +53,14 @@ def test_wikipedia_search_returns_results(wikipedia_container, wikipedia_base_ur
 
     # Find and use search input
     search_input = page.get_by_role("textbox", name="Search")
+    assert search_input.is_visible(timeout=5000), "Search input should be visible"
 
-    if search_input.is_visible(timeout=5000):
-        search_input.fill("Ray Charles")
-        search_input.press("Enter")
+    search_input.fill("Ray Charles")
+    search_input.press("Enter")
 
-        # Wait for results
-        page.wait_for_load_state("networkidle", timeout=pw_timeout)
+    # Wait for results
+    page.wait_for_load_state("networkidle", timeout=pw_timeout)
 
-        # Should show Ray Charles content
-        content = page.content().lower()
-        assert "ray" in content or "charles" in content, "Search should show Ray Charles content"
+    # Should show Ray Charles content
+    content = page.content().lower()
+    assert "ray" in content or "charles" in content, "Search should show Ray Charles content"

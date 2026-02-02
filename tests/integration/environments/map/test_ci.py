@@ -112,17 +112,11 @@ def test_map_ci_routing_endpoint(map_container, map_tile_url):
     req = urllib.request.Request(route_url, method="GET")
     req.add_header("Accept", "application/json")
 
-    try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            assert response.status == 200
-            content = response.read().decode("utf-8")
-            # OSRM returns JSON with "code": "Ok" on success
-            assert '"code"' in content
-    except urllib.error.HTTPError as e:
-        # 400 errors may indicate data not loaded, but endpoint works
-        if e.code >= 500:
-            raise
-        # Accept 4xx as "endpoint exists but data issue"
+    with urllib.request.urlopen(req, timeout=30) as response:
+        assert response.status == 200
+        content = response.read().decode("utf-8")
+        # OSRM returns JSON with "code": "Ok" on success
+        assert '"code"' in content
 
 
 @pytest.mark.flaky(reruns=2)

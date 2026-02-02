@@ -47,7 +47,7 @@ Patch files live in `sites/<site>/docker_overrides/`. These are copied into the 
 All optimized images include the `env-ctrl` CLI for runtime operations:
 
 ```bash
-env-ctrl init --base-url http://localhost:6680/  # Configure base URL
+env-ctrl init --base-url http://localhost:7780/  # Configure base URL
 env-ctrl start --wait                            # Start services
 env-ctrl stop                                    # Stop services
 env-ctrl status                                  # Health check
@@ -57,7 +57,7 @@ env-ctrl status                                  # Health check
 
 | Site | Port | Fixes |
 |------|------|-------|
-| [shopping_admin](sites/shopping_admin/) | 6680 | Header auth, mass action protection |
+| [shopping_admin](sites/shopping_admin/) | 7780 | Header auth, mass action protection |
 | [shopping](sites/shopping/) | 7770 | Header auth for customers |
 | [reddit](sites/reddit/) | 9999 | Vote system, header auth, URL rewriting, rate limits |
 | [gitlab](sites/gitlab/) | 8023 | - |
