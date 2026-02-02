@@ -1922,6 +1922,25 @@ wheels = [
 ]
 
 [[package]]
+name = "mike"
+version = "2.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "importlib-metadata" },
+    { name = "importlib-resources" },
+    { name = "jinja2" },
+    { name = "mkdocs" },
+    { name = "pyparsing" },
+    { name = "pyyaml" },
+    { name = "pyyaml-env-tag" },
+    { name = "verspec" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ab/f7/2933f1a1fb0e0f077d5d6a92c6c7f8a54e6128241f116dff4df8b6050bbf/mike-2.1.3.tar.gz", hash = "sha256:abd79b8ea483fb0275b7972825d3082e5ae67a41820f8d8a0dc7a3f49944e810", size = 38119, upload-time = "2024-08-13T05:02:14.167Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/1a/31b7cd6e4e7a02df4e076162e9783620777592bea9e4bb036389389af99d/mike-2.1.3-py3-none-any.whl", hash = "sha256:d90c64077e84f06272437b464735130d380703a76a5738b152932884c60c062a", size = 33754, upload-time = "2024-08-13T05:02:12.515Z" },
+]
+
+[[package]]
 name = "mkdocs"
 version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -6351,6 +6370,15 @@ wheels = [
 ]
 
 [[package]]
+name = "semver"
+version = "3.0.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/d1/d3159231aec234a59dd7d601e9dd9fe96f3afff15efd33c1070019b26132/semver-3.0.4.tar.gz", hash = "sha256:afc7d8c584a5ed0a11033af086e8af226a9c0b206f313e0301f8dd7b6b589602", size = 269730, upload-time = "2025-01-24T13:19:27.617Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl", hash = "sha256:9c824d87ba7f7ab4a1890799cec8596f15c1241cb473404ea1cb0c55e4b04746", size = 17912, upload-time = "2025-01-24T13:19:24.949Z" },
+]
+
+[[package]]
 name = "setuptools"
 version = "80.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -6759,6 +6787,15 @@ wheels = [
 ]
 
 [[package]]
+name = "verspec"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e7/44/8126f9f0c44319b2efc65feaad589cadef4d77ece200ae3c9133d58464d0/verspec-0.1.0.tar.gz", hash = "sha256:c4504ca697b2056cdb4bfa7121461f5a0e81809255b41c03dda4ba823637c01e", size = 27123, upload-time = "2020-11-30T02:24:09.646Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a4/ce/3b6fee91c85626eaf769d617f1be9d2e15c1cca027bbdeb2e0d751469355/verspec-0.1.0-py3-none-any.whl", hash = "sha256:741877d5633cc9464c45a469ae2a31e801e6dbbaa85b9675d481cda100f11c31", size = 19640, upload-time = "2020-11-30T02:24:08.387Z" },
+]
+
+[[package]]
 name = "virtualenv"
 version = "20.35.4"
 source = { registry = "https://pypi.org/simple" }
@@ -6833,7 +6870,7 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-contributing = [
+dev = [
     { name = "click" },
     { name = "litellm" },
     { name = "pydantic-settings" },
@@ -6850,6 +6887,7 @@ examples = [
 [package.dev-dependencies]
 dev = [
     { name = "invoke" },
+    { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocs-redirects" },
@@ -6860,6 +6898,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "rich" },
     { name = "ruff" },
+    { name = "semver" },
     { name = "twine" },
     { name = "ty" },
 ]
@@ -6870,19 +6909,19 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = "==4.14.2" },
     { name = "browser-use", marker = "extra == 'examples'", specifier = ">=0.8.1" },
     { name = "browser-use", marker = "extra == 'examples'", specifier = ">=0.9.6" },
-    { name = "click", marker = "extra == 'contributing'", specifier = ">=8.3.0" },
+    { name = "click", marker = "extra == 'dev'", specifier = ">=8.3.0" },
     { name = "compact-json", specifier = "==1.8.1" },
     { name = "filelock", marker = "extra == 'examples'", specifier = ">=3.16.1" },
     { name = "geographiclib", specifier = "==2.1" },
     { name = "geopy", specifier = "==2.4.1" },
     { name = "jinja2", marker = "extra == 'examples'", specifier = ">=3.1.6" },
     { name = "jsonpath-ng", specifier = "==1.7.0" },
-    { name = "litellm", marker = "extra == 'contributing'", specifier = ">=1.80.5" },
+    { name = "litellm", marker = "extra == 'dev'", specifier = ">=1.80.5" },
     { name = "pint", specifier = "==0.25" },
     { name = "playwright", marker = "extra == 'examples'", specifier = ">=1.55.0" },
     { name = "price-parser", specifier = "==0.5.0" },
     { name = "pydantic", specifier = "==2.12.0" },
-    { name = "pydantic-settings", marker = "extra == 'contributing'", specifier = ">=2.11.0" },
+    { name = "pydantic-settings", marker = "extra == 'dev'", specifier = ">=2.11.0" },
     { name = "python-dateutil", specifier = "==2.9.0.post0" },
     { name = "pytimeparse2", specifier = "==1.7.1" },
     { name = "requests", marker = "extra == 'examples'", specifier = ">=2.32.0" },
@@ -6894,11 +6933,12 @@ requires-dist = [
     { name = "usaddress-scourgify", specifier = "==0.6.0" },
     { name = "word2number", specifier = "==1.1" },
 ]
-provides-extras = ["contributing", "examples"]
+provides-extras = ["dev", "examples"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "invoke", specifier = ">=2.2.0" },
+    { name = "mike", specifier = ">=2.1.0" },
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.6.21" },
     { name = "mkdocs-redirects", specifier = ">=1.2.2" },
@@ -6909,6 +6949,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "ruff", specifier = ">=0.14.1" },
+    { name = "semver", specifier = ">=3.0.0" },
     { name = "twine", specifier = ">=6.0.1" },
     { name = "ty", specifier = ">=0.0.13" },
 ]

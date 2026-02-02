@@ -2,6 +2,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/webarena-verified/"><img src="https://img.shields.io/pypi/v/webarena-verified.svg" alt="PyPI version"></a>
+  <a href="https://hub.docker.com/r/am1n3e/webarena-verified"><img src="https://img.shields.io/docker/pulls/am1n3e/webarena-verified.svg" alt="Docker Hub"></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg" alt="Python 3.11+"></a>
   <a href="tests"><img src="https://img.shields.io/badge/Tests-Pytest-6B2F8.svg" alt="Tests: Pytest"></a>
   <a href="https://servicenow.github.io/webarena-verified/"><img src="https://img.shields.io/badge/Docs-MkDocs-0288D1.svg" alt="Docs: MkDocs"></a>
@@ -15,6 +16,7 @@ WebArena-Verified is the verified release of the WebArena benchmark. It distribu
 
 ## 📢 Announcements
 
+- **February 2, 2026**: WebArena-Verified is now available via Docker and uvx! Run `uvx webarena-verified --help` or `docker run am1n3e/webarena-verified:latest --help` to get started.
 - **January 7, 2026**: WebArena-Verified is now available on PyPI! Install it easily with `pip install webarena-verified`.
 - **December 2, 2025**: We are presenting WebArena-Verified at the [Scaling Environments for Agents (SEA) Workshop](https://sea-workshop.github.io/) at NeurIPS 2025 on December 7th in San Diego. Come see us!
 - **November 12, 2024**: Started initial release with collaborators to gather early feedback, catch any issues, and clarify the documentation. **Public release scheduled for December 4th, 2025.**
@@ -48,6 +50,27 @@ Verify the CLI is working:
 
 ```bash
 webarena-verified --help
+```
+
+### Evaluate with Docker
+
+You can run evaluation directly using the Docker image by mounting your output directory:
+
+```bash
+docker run --rm \
+  -v /path/to/output:/data \
+  am1n3e/webarena-verified:latest \
+  eval-tasks --output-dir /data
+```
+
+Your output directory should contain task subdirectories with `agent_response.json` and `network.har` files:
+```
+output/
+├── 1/
+│   ├── agent_response.json
+│   └── network.har
+├── 2/
+│   └── ...
 ```
 
 ## 🧪 Evaluate A Task
@@ -135,7 +158,7 @@ See the [documentation](https://servicenow.github.io/webarena-verified/) for mor
 
 ## 🤝 Contributing
 
-We welcome improvements to both the dataset and the evaluation tooling. See the [Contributing Guide](https://servicenow.github.io/webarena-verified/contributing/) for guidelines, local development tips, and dataset update workflows.
+We welcome improvements to both the dataset and the evaluation tooling. See the [Contributing Guide](CONTRIBUTING.md) for guidelines, local development tips, and dataset update workflows.
 
 ## 📄 Citation
 

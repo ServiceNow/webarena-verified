@@ -10,7 +10,7 @@ repos:
     hooks:
       - id: ty
         name: ty
-        entry: uv run ty check src contributing
+        entry: uv run ty check src dev
         language: system
         types: [python]
         pass_filenames: false

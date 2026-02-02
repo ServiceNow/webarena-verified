@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-contributing = [
+dev = [
     "click>=8.3.0",
     "pydantic-settings>=2.11.0",
     "litellm>=1.80.5",
@@ -66,11 +66,13 @@ include = ["src/**", "assets/**"]
 [dependency-groups]
 dev = [
     "invoke>=2.2.0",
+    "semver>=3.0.0",
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.6.21",
     "mkdocstrings>=0.30.1",
     "mkdocstrings-python>=1.12.2",
     "mkdocs-redirects>=1.2.2",
+    "mike>=2.1.0",
     "pre-commit>=4.0.0",
     "pytest>=8.4.2",
     "pytest-cov>=6.0.0",
@@ -190,7 +192,7 @@ convention = "google"
     "ANN",     # conftest fixtures don't need annotations
     "D",       # conftest doesn't need docstrings
 ]
-"contributing/**/*.py" = [
+"dev/**/*.py" = [
     "ANN",     # invoke tasks use dynamic typing from CLI
     "D101",    # settings classes don't need docstrings
     "PLR0913", # CLI tasks naturally have many arguments (flags)
@@ -204,6 +206,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = [
+    "-v",
     "--strict-markers",
     "--strict-config",
     "--tb=short",
@@ -211,6 +214,9 @@ addopts = [
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning",
+]
+markers = [
+    "docker: marks tests that require Docker",
 ]
 
 [tool.coverage.run]

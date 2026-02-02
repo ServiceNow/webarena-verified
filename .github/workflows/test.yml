@@ -1,4 +1,4 @@
-name: Lint
+name: Test
 
 on:
   pull_request:
@@ -7,9 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: Lint & Type Check
-    runs-on: ubuntu-slim
+  test:
+    name: Test
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,11 +25,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
-      - name: Run ruff check
-        run: uv run ruff check
+      - name: Build Docker image
+        run: docker build -t webarena-verified:test .
 
-      - name: Run ruff format check
-        run: uv run ruff format --check
-
-      - name: Run ty check
-        run: uv run ty check src dev
+      - name: Run tests
+        run: uv run pytest --webarena-verified-docker-img webarena-verified:test

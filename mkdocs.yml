@@ -1,4 +1,5 @@
 site_name: WebArena-Verified
+site_url: https://servicenow.github.io/webarena-verified/
 site_description: A verified version of the WebArena Benchmark with version-controlled dataset management
 site_author: Amine Elhattami
 repo_url: https://github.com/ServiceNow/webarena-verified
@@ -74,6 +75,11 @@ markdown_extensions:
       permalink: true
       toc_depth: 2-3
 
+extra:
+  version:
+    provider: mike
+    alias: true
+
 extra_css:
   - stylesheets/extra.css
   - stylesheets/default.css
@@ -112,7 +118,3 @@ nav:
       - Evaluators:
           - Agent Response: api_reference/evaluators/agent_response_evaluator.md
           - Network Event: api_reference/evaluators/network_event_evaluator.md
-  - Contributing:
-      - Quick Start: contributing/index.md
-      - Updating Data: contributing/data/index.md
-      - Local Development: contributing/local-development.md
