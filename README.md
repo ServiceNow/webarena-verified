@@ -31,31 +31,25 @@ WebArena-Verified is the verified release of the WebArena benchmark. It distribu
 
 ## 🚀 Quick Start
 
-### Installation
+### Using uvx (Recommended)
 
-Install from PyPI:
-
-```bash
-pip install webarena-verified
-```
-
-Or for development, clone and install from source:
+The fastest way to try WebArena-Verified without installing anything:
 
 ```bash
-git clone https://github.com/ServiceNow/webarena-verified.git
-cd webarena-verified
-uv sync
+uvx webarena-verified --help
 ```
 
-Verify the CLI is working:
+Run evaluation directly:
 
 ```bash
-webarena-verified --help
+uvx webarena-verified eval-tasks \
+  --task-ids 108 \
+  --output-dir examples/agent_logs/demo
 ```
 
-### Evaluate with Docker
+### Using Docker
 
-You can run evaluation directly using the Docker image by mounting your output directory:
+Run evaluation using the Docker image by mounting your output directory:
 
 ```bash
 docker run --rm \
@@ -72,6 +66,28 @@ output/
 │   └── network.har
 ├── 2/
 │   └── ...
+```
+
+### Using pip
+
+Install from PyPI:
+
+```bash
+pip install webarena-verified
+```
+
+Verify the CLI is working:
+
+```bash
+webarena-verified --help
+```
+
+For development, clone and install from source:
+
+```bash
+git clone https://github.com/ServiceNow/webarena-verified.git
+cd webarena-verified
+uv sync
 ```
 
 ## 🧪 Evaluate A Task
