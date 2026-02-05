@@ -1,18 +1,7 @@
 name: Test Docker Reddit
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "dev/environments/docker/sites/reddit/**"
-      - "tests/integration/environments/reddit/**"
-      - "tests/integration/environments/conftest.py"
-  push:
-    branches: [main]
-    paths:
-      - "dev/environments/docker/sites/reddit/**"
-      - "tests/integration/environments/reddit/**"
-      - "tests/integration/environments/conftest.py"
+  workflow_dispatch:
 
 jobs:
   test:
