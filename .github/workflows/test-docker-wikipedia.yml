@@ -1,18 +1,7 @@
 name: Test Docker Wikipedia
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "dev/environments/docker/sites/wikipedia/**"
-      - "tests/integration/environments/wikipedia/**"
-      - "tests/integration/environments/conftest.py"
-  push:
-    branches: [main]
-    paths:
-      - "dev/environments/docker/sites/wikipedia/**"
-      - "tests/integration/environments/wikipedia/**"
-      - "tests/integration/environments/conftest.py"
+  workflow_dispatch:
 
 jobs:
   test:

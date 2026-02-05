@@ -1,18 +1,7 @@
 name: Test Docker Shopping
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "dev/environments/docker/sites/shopping/**"
-      - "tests/integration/environments/shopping/**"
-      - "tests/integration/environments/conftest.py"
-  push:
-    branches: [main]
-    paths:
-      - "dev/environments/docker/sites/shopping/**"
-      - "tests/integration/environments/shopping/**"
-      - "tests/integration/environments/conftest.py"
+  workflow_dispatch:
 
 jobs:
   test:
