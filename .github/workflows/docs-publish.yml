@@ -34,16 +34,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - name: Setup environment
+        uses: ./.github/actions/setup
         with:
-          enable-cache: true
-
-      - name: Set up Python
-        run: uv python install 3.11
-
-      - name: Install dependencies
-        run: uv sync --group dev
+          sync-args: --group dev
 
       - name: Configure git
         run: |
