@@ -3,6 +3,9 @@ name: Test Docker Wikipedia
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test wikipedia

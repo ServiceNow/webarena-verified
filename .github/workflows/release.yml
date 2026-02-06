@@ -22,19 +22,30 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
         with:
-          enable-cache: true
+          ref: main
 
-      - name: Set up Python
-        run: uv python install 3.11
+      - name: Setup environment
+        uses: ./.github/actions/setup
 
-      - name: Install dependencies
-        run: uv sync --all-extras
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Run release
-        run: uv run inv dev.release.release --bump ${{ inputs.bump }}
+      - name: Bump version
+        run: uv run inv dev.release.bump-version --bump ${{ inputs.bump }}
+
+      - name: Commit and push version bump
+        run: |
+          git add pyproject.toml
+          git commit -m "Bump version"
+          git push origin HEAD:main
+
+      - name: Create and push tag
+        run: uv run inv dev.release.tag
+
+      - name: Create GitHub release
+        run: uv run inv dev.release.create-release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

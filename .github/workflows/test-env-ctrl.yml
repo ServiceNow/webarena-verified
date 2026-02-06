@@ -8,6 +8,9 @@ on:
       - "tests/integration/environment_control/**"
       - "src/webarena_verified/environments/env_ctrl_client/**"
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test Environment Control
