@@ -314,9 +314,7 @@ def test_variations_data(project_root: Path) -> MappingProxyType[int, MappingPro
     return MappingProxyType({int(task_id): MappingProxyType(variations) for task_id, variations in data.items()})
 
 
-def _load_variations_from_file(
-    project_root: Path, task_id: int, variation_type: str
-) -> list[tuple[int, str]]:
+def _load_variations_from_file(project_root: Path, task_id: int, variation_type: str) -> list[tuple[int, str]]:
     """Load variations from the consolidated test file.
 
     Args:

@@ -103,7 +103,6 @@ def main_config(project_root: Path) -> WebArenaVerifiedConfig:
     )
 
 
-
 @pytest.fixture(scope="session")
 def data_reader(main_config: WebArenaVerifiedConfig) -> WebArenaVerifiedDataReader:
     """Create WebArenaVerifiedDataReader instance.

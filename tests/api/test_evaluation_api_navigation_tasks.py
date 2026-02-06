@@ -501,9 +501,7 @@ def test_evaluate_navigation_task_valid_variations(
 
     # Verify both evaluators passed
     for eval_result in result.evaluators_results:
-        if (
-            eval_result.evaluator_name in {"AgentResponseEvaluator", "NetworkEventEvaluator"}
-        ):
+        if eval_result.evaluator_name in {"AgentResponseEvaluator", "NetworkEventEvaluator"}:
             assert not eval_result.assertions, f"Unexpected assertions: {eval_result.assertions}"
             assert eval_result.error_msg is None, f"Unexpected error: {eval_result.error_msg}"
             assert eval_result.status == EvalStatus.SUCCESS
