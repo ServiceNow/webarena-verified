@@ -83,7 +83,7 @@ def assert_has_assertion_with_status(result, status: EvalStatus):
 
 
 @pytest.mark.parametrize(
-    "data_type,value1,value2,should_match,error_pattern",
+    ("data_type", "value1", "value2", "should_match", "error_pattern"),
     [
         # Exact matches
         (NormalizedString, "success", "success", True, None),
@@ -217,7 +217,7 @@ def test_type_mismatch_expected_normalized_actual_list(comparator):
 
 
 @pytest.mark.parametrize(
-    "expected,actual,should_match,error_pattern",
+    ("expected", "actual", "should_match", "error_pattern"),
     [
         # Same order match
         (
@@ -296,7 +296,7 @@ def test_unordered_array_scenarios(comparator, expected, actual, should_match, e
 
 
 @pytest.mark.parametrize(
-    "expected,actual,should_match,error_pattern",
+    ("expected", "actual", "should_match", "error_pattern"),
     [
         # Exact match
         (
@@ -361,7 +361,7 @@ def test_ordered_array_scenarios(comparator, expected, actual, should_match, err
 
 
 @pytest.mark.parametrize(
-    "expected,actual,should_match,error_pattern",
+    ("expected", "actual", "should_match", "error_pattern"),
     [
         # Exact match
         (
@@ -463,7 +463,7 @@ def test_object_mapping_proxy_type(comparator):
 
 
 @pytest.mark.parametrize(
-    "expected,actual,should_match,error_pattern",
+    ("expected", "actual", "should_match", "error_pattern"),
     [
         # 2-level nested objects match
         (
@@ -543,7 +543,7 @@ def test_nested_object_scenarios(comparator, expected, actual, should_match, err
 
 
 @pytest.mark.parametrize(
-    "expected,actual,ordered,should_match,error_pattern",
+    ("expected", "actual", "ordered", "should_match", "error_pattern"),
     [
         # 2-level ordered match
         (
@@ -624,7 +624,7 @@ def test_nested_array_scenarios(comparator, expected, actual, ordered, should_ma
 
 
 @pytest.mark.parametrize(
-    "expected,actual,ordered,should_match,error_pattern",
+    ("expected", "actual", "ordered", "should_match", "error_pattern"),
     [
         # Ordered match
         (
@@ -714,7 +714,7 @@ def test_array_of_objects_scenarios(comparator, expected, actual, ordered, shoul
 
 
 @pytest.mark.parametrize(
-    "expected,actual,ordered,should_match,error_pattern",
+    ("expected", "actual", "ordered", "should_match", "error_pattern"),
     [
         # Object containing array
         (
@@ -792,7 +792,7 @@ def test_object_with_array_scenarios(comparator, expected, actual, ordered, shou
 
 
 @pytest.mark.parametrize(
-    "expected,actual,ordered,should_match,custom_check",
+    ("expected", "actual", "ordered", "should_match", "custom_check"),
     [
         # 3-level: Array -> Object -> Array
         (
@@ -1014,7 +1014,7 @@ def test_very_deep_nesting_recursion(comparator):
 
 
 @pytest.mark.parametrize(
-    "expected,actual,ordered,custom_check,description",
+    ("expected", "actual", "ordered", "custom_check", "description"),
     [
         # Full path in nested object
         (

@@ -8,7 +8,7 @@ from webarena_verified.core.evaluation.data_types import JsonString
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         # Basic object - keys should be sorted
         ('{"b": 1, "a": 2}', '{"a":2,"b":1}'),
@@ -38,7 +38,7 @@ def test_normalization_from_string(value, expected):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         # Arrays - order preserved
         ("[1, 2, 3]", "[1,2,3]"),
@@ -65,7 +65,7 @@ def test_normalization_various_json(value, expected):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         # Pretty-printed JSON
         ('{\n  "b": 1,\n  "a": 2\n}', '{"a":2,"b":1}'),
@@ -88,7 +88,7 @@ def test_whitespace_normalization(value, expected):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         ('{"z": 1, "a": 2, "m": 3}', '{"a":2,"m":3,"z":1}'),
         ('{"a": 1, "z": 2, "m": 3}', '{"a":1,"m":3,"z":2}'),
@@ -114,7 +114,7 @@ def test_nested_keys_not_sorted():
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         # Same content, different key order
         ('{"b": 1, "a": 2}', '{"a": 2, "b": 1}'),
@@ -133,7 +133,7 @@ def test_equality_different_formats(value1, value2):
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         # Different values
         ('{"a": 1}', '{"a": 2}'),
@@ -164,7 +164,7 @@ def test_array_order_matters():
 
 
 @pytest.mark.parametrize(
-    "values,expected_alternatives",
+    ("values", "expected_alternatives"),
     [
         # 2 alternatives with different structures
         (
@@ -394,11 +394,11 @@ def test_numeric_precision():
 def test_equality_reflexivity():
     """Test that equality is reflexive: A == A."""
     js = JsonString('{"a": 1}')
-    assert js == js
+    assert js == js  # noqa: PLR0124
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         ('{"b": 1, "a": 2}', '{"a": 2, "b": 1}'),
         ("[1, 2, 3]", "[1, 2, 3]"),

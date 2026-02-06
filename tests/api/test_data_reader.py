@@ -144,7 +144,7 @@ def test_get_task_by_id_not_found(data_reader: WebArenaVerifiedDataReader):
 # Filter Tests
 # ============================================================================
 @pytest.mark.parametrize(
-    "site,expected_min_count",
+    ("site", "expected_min_count"),
     [
         (WebArenaSite.SHOPPING, 50),  # Shopping has many tasks
         (WebArenaSite.MAP, 20),  # Map has some tasks

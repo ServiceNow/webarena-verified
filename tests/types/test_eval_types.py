@@ -56,9 +56,9 @@ class NestedDictModel(BaseModel):
         def convert_nested(obj: Any) -> Any:
             if isinstance(obj, (MappingProxyType, dict)):
                 return {k: convert_nested(v) for k, v in obj.items()}
-            elif isinstance(obj, (list, tuple)):
+            if isinstance(obj, (list, tuple)):
                 return [convert_nested(item) for item in obj]
-            elif isinstance(obj, NormalizedType):
+            if isinstance(obj, NormalizedType):
                 return obj.normalized
             return obj
 
@@ -82,9 +82,9 @@ class NestedListModel(BaseModel):
         def convert_nested(obj: Any) -> Any:
             if isinstance(obj, (MappingProxyType, dict)):
                 return {k: convert_nested(v) for k, v in obj.items()}
-            elif isinstance(obj, (list, tuple)):
+            if isinstance(obj, (list, tuple)):
                 return [convert_nested(item) for item in obj]
-            elif isinstance(obj, NormalizedType):
+            if isinstance(obj, NormalizedType):
                 return obj.normalized
             return obj
 
@@ -108,9 +108,9 @@ class ComplexNestedModel(BaseModel):
         def convert_nested(obj: Any) -> Any:
             if isinstance(obj, (MappingProxyType, dict)):
                 return {k: convert_nested(v) for k, v in obj.items()}
-            elif isinstance(obj, (list, tuple)):
+            if isinstance(obj, (list, tuple)):
                 return [convert_nested(item) for item in obj]
-            elif isinstance(obj, NormalizedType):
+            if isinstance(obj, NormalizedType):
                 return obj.normalized
             return obj
 

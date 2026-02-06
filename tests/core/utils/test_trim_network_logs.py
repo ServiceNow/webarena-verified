@@ -107,7 +107,7 @@ def test_trim_file_not_found(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "invalid_data,error_message",
+    ("invalid_data", "error_message"),
     [
         ({"entries": []}, "missing 'log' field"),
         ({"log": {"version": "1.2"}}, "missing 'log.entries' field"),

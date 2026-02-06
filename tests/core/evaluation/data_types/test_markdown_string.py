@@ -8,7 +8,7 @@ from webarena_verified.core.evaluation.data_types import MarkdownString
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         # Headers with extra spaces
         ("##  Header", "## Header"),
@@ -34,7 +34,7 @@ def test_normalization_basic(value, expected):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         # Line endings
         ("Line 1\r\nLine 2", "Line 1\nLine 2"),
@@ -61,7 +61,7 @@ def test_whitespace_normalization(value, expected):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         ("##  Header", "## Header"),
         ("###   Multiple   Spaces", "### Multiple   Spaces"),  # Only first space normalized
@@ -80,7 +80,7 @@ def test_header_normalization(value, expected):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         # Marker normalization
         ("* Item", "- Item"),
@@ -120,7 +120,7 @@ def test_list_indentation_multiline():
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         # Links split across lines
         ("[Text\nmore text](http://example.com)", "[Text more text](http://example.com)"),
@@ -145,7 +145,7 @@ def test_link_normalization(value, expected):
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         # Same content, different whitespace
         ("# Header", "#  Header"),
@@ -166,7 +166,7 @@ def test_equality_different_formats(value1, value2):
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         # Different content
         ("# Header 1", "# Header 2"),
@@ -227,7 +227,7 @@ def test_real_world_example():
 
 
 @pytest.mark.parametrize(
-    "values,expected_count",
+    ("values", "expected_count"),
     [
         # 2 alternatives with different content
         (["# Header 1", "# Header 2"], 2),
@@ -434,11 +434,11 @@ def test_special_characters():
 def test_equality_reflexivity():
     """Test that equality is reflexive: A == A."""
     md = MarkdownString("# Header")
-    assert md == md
+    assert md == md  # noqa: PLR0124
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         ("* Item", "- Item"),
         ("# Header", "#  Header"),

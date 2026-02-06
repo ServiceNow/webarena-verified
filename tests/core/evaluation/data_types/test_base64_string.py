@@ -10,7 +10,7 @@ from webarena_verified.core.evaluation.data_types import Base64String
 
 
 @pytest.mark.parametrize(
-    "base64_value,expected_decoded",
+    ("base64_value", "expected_decoded"),
     [
         # Simple ASCII text
         ("SGVsbG8gV29ybGQ=", "Hello World"),
@@ -36,7 +36,7 @@ def test_base64_decoding_basic(base64_value, expected_decoded):
 
 
 @pytest.mark.parametrize(
-    "content,expected_normalized",
+    ("content", "expected_normalized"),
     [
         # Windows line endings
         ("Line 1\r\nLine 2", "Line 1\nLine 2"),
@@ -62,7 +62,7 @@ def test_line_ending_normalization(content, expected_normalized):
 
 
 @pytest.mark.parametrize(
-    "pattern,base64_content,should_match",
+    ("pattern", "base64_content", "should_match"),
     [
         # Pattern matches decoded content
         ("^.*MIT License.*$", base64.b64encode(b"MIT License").decode(), True),
@@ -123,7 +123,7 @@ copies of the Software.
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         # Same decoded content
         (
@@ -146,7 +146,7 @@ def test_equality_same_content(value1, value2):
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         # Different content
         (
@@ -186,7 +186,7 @@ def test_case_sensitivity_in_decoded_content():
 
 
 @pytest.mark.parametrize(
-    "values,expected_count",
+    ("values", "expected_count"),
     [
         # 2 alternatives with different content
         (
@@ -477,11 +477,11 @@ This is a copyleft license."""
 def test_equality_reflexivity():
     """Test that equality is reflexive: A == A."""
     b64 = Base64String(base64.b64encode(b"Test").decode())
-    assert b64 == b64
+    assert b64 == b64  # noqa: PLR0124
 
 
 @pytest.mark.parametrize(
-    "value1,value2",
+    ("value1", "value2"),
     [
         # Same base64 encoding
         (

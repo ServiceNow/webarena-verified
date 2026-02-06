@@ -72,7 +72,7 @@ def main_config(project_root: Path) -> WebArenaVerifiedConfig:
         raise FileNotFoundError(f"Dataset not found: {dataset_path}")
 
     # Create config with environments
-    config = WebArenaVerifiedConfig(
+    return WebArenaVerifiedConfig(
         test_data_file=dataset_path,
         environments={
             WebArenaSite.SHOPPING: EnvironmentConfig(
@@ -102,7 +102,6 @@ def main_config(project_root: Path) -> WebArenaVerifiedConfig:
         },
     )
 
-    return config
 
 
 @pytest.fixture(scope="session")
@@ -192,7 +191,7 @@ def har_entry_template(test_assets_dir: Path) -> MappingProxyType[str, Any]:
 
 
 @pytest.fixture
-def create_navigation_network_event(har_entry_template):
+def create_navigation_network_event(har_entry_template):  # noqa: C901
     """Create a function that generates a navigation network event.
 
     Returns:

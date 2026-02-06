@@ -175,7 +175,7 @@ def _generate_alternative_combinations(data: Any, path: str = "") -> list[tuple[
         if index >= len(items):
             # Create variation name from alternative indices
             if alt_indices:
-                var_name = f"alt_{'_'.join(map(str, alt_indices))}"
+                var_name = f"alt_{'_'.join(str(i) for i in alt_indices)}"
             else:
                 var_name = "base"
             combinations.append((var_name, current[:]))
@@ -186,7 +186,7 @@ def _generate_alternative_combinations(data: Any, path: str = "") -> list[tuple[
             # This is an alternatives array, try each alternative
             for i, alternative in enumerate(item):
                 current.append(alternative)
-                generate_recursive(items, index + 1, current, alt_indices + [i])
+                generate_recursive(items, index + 1, current, [*alt_indices, i])
                 current.pop()
         else:
             # Regular item
@@ -309,7 +309,7 @@ def test_variations_data(project_root: Path) -> MappingProxyType[int, MappingPro
     return MappingProxyType({int(task_id): MappingProxyType(variations) for task_id, variations in data.items()})
 
 
-def pytest_generate_tests(metafunc):
+def pytest_generate_tests(metafunc):  # noqa: C901, PLR0912
     """Generate test cases for all navigation tasks and variations.
 
     This generates parameterized tests for:
@@ -502,8 +502,7 @@ def test_evaluate_navigation_task_valid_variations(
     # Verify both evaluators passed
     for eval_result in result.evaluators_results:
         if (
-            eval_result.evaluator_name == "AgentResponseEvaluator"
-            or eval_result.evaluator_name == "NetworkEventEvaluator"
+            eval_result.evaluator_name in {"AgentResponseEvaluator", "NetworkEventEvaluator"}
         ):
             assert not eval_result.assertions, f"Unexpected assertions: {eval_result.assertions}"
             assert eval_result.error_msg is None, f"Unexpected error: {eval_result.error_msg}"

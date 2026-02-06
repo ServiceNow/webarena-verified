@@ -76,7 +76,7 @@ def test_render_url_strict_true_fail():
         }
     )
 
-    with pytest.raises(ValueError, match="No site in .* matched template"):
+    with pytest.raises(ValueError, match=r"No site in .* matched template"):
         config.render_url("__REDDIT__/posts", sites=[WebArenaSite.SHOPPING], strict=True)
 
 
@@ -90,12 +90,12 @@ def test_render_url_fail_site_not_found():
         }
     )
 
-    with pytest.raises(ValueError, match="Sites .* not found in environments"):
+    with pytest.raises(ValueError, match=r"Sites .* not found in environments"):
         config.render_url("__REDDIT__/posts", sites=[WebArenaSite.REDDIT])
 
 
 @pytest.mark.parametrize(
-    "method_name,url_or_template,sites",
+    ("method_name", "url_or_template", "sites"),
     [
         ("render_url", "__REDDIT__/posts", [WebArenaSite.REDDIT]),
         ("derender_url", "http://localhost:9999/posts", [WebArenaSite.REDDIT]),
@@ -112,7 +112,7 @@ def test_fail_site_not_found(method_name, url_or_template, sites):
     )
 
     method = getattr(config, method_name)
-    with pytest.raises(ValueError, match="Sites .* not found in environments"):
+    with pytest.raises(ValueError, match=r"Sites .* not found in environments"):
         method(url_or_template, sites=sites)
 
 
@@ -190,7 +190,7 @@ def test_derender_url_strict_false():
 
 
 @pytest.mark.parametrize(
-    "url,sites,error_match",
+    ("url", "sites", "error_match"),
     [
         (
             "http://localhost:7780/admin/sales/",

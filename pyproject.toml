@@ -191,7 +191,9 @@ convention = "google"
     "ARG",     # fixtures often have unused args
     "D",       # tests don't need docstrings
     "E501",    # long test data URLs are acceptable
+    "PLC0415", # imports inside functions are acceptable in tests
     "PLR0913", # test functions with many fixtures are acceptable
+    "PT011",   # pytest.raises without match is acceptable in tests
 ]
 "**/conftest.py" = [
     "ANN",     # conftest fixtures don't need annotations

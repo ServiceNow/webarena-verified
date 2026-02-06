@@ -10,6 +10,7 @@ Format variations include:
 - Distance: 10.5km, 6.5mi, 10500m, 10.5 km
 """
 
+import calendar
 import logging
 import re
 from typing import Any
@@ -218,9 +219,9 @@ def _duration_short_abbrev(value: Any) -> str:
 
     if hours > 0 and minutes > 0:
         return f"{hours}h{minutes}m"
-    elif hours > 0:
+    if hours > 0:
         return f"{hours}h"
-    elif minutes > 0:
+    if minutes > 0:
         return f"{minutes}m"
     return "0m"
 
@@ -715,8 +716,8 @@ def _string_tabs_to_spaces(value: Any) -> str:
 
 
 def _string_en_dash(value: Any) -> str:
-    """Format: spaces replaced with en-dash (–)"""
-    return str(value).replace(" ", "–")  # U+2013
+    """Format: spaces replaced with en-dash (-)"""
+    return str(value).replace(" ", "–")  # U+2013  # noqa: RUF001
 
 
 def _string_em_dash(value: Any) -> str:
@@ -805,8 +806,6 @@ def _coordinates_scientific_notation(value: Any) -> dict:
 # Month format variation functions
 def _month_numeric_zero(value: Any) -> str:
     """Format: "01" (numeric with leading zero)"""
-    import calendar
-
     months = list(calendar.month_name)[1:]  # Skip empty first element
     if isinstance(value, str) and value in months:
         return f"{months.index(value) + 1:02d}"
@@ -815,8 +814,6 @@ def _month_numeric_zero(value: Any) -> str:
 
 def _month_numeric_no_zero(value: Any) -> str:
     """Format: "1" (numeric without leading zero)"""
-    import calendar
-
     months = list(calendar.month_name)[1:]
     if isinstance(value, str) and value in months:
         return str(months.index(value) + 1)
@@ -825,8 +822,6 @@ def _month_numeric_no_zero(value: Any) -> str:
 
 def _month_abbreviated(value: Any) -> str:
     """Format: "Jan" (abbreviated)"""
-    import calendar
-
     months = list(calendar.month_name)[1:]
     if isinstance(value, str) and value in months:
         return calendar.month_abbr[months.index(value) + 1]
@@ -1032,7 +1027,7 @@ def distribute_variations_round_robin(
 ) -> dict[int, list[tuple[str, Any]]]:
     """Distribute format variations across tasks using round-robin.
 
-    Instead of testing ALL variations for EVERY task (N variations × T tasks = N*T tests),
+    Instead of testing ALL variations for EVERY task (N variations x T tasks = N*T tests),
     this distributes variations across tasks so each task tests only one variation,
     reducing test count to max(N, T) while maintaining full variation coverage.
 

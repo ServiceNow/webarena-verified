@@ -6,7 +6,7 @@ in a minimized format (just values, no redundant metadata).
 
 OPTIMIZATION: Uses round-robin distribution to spread format variations across tasks
 instead of testing ALL variations for EVERY task. This reduces test count from
-N variations × T tasks to max(N, T) while maintaining full variation coverage.
+N variations x T tasks to max(N, T) while maintaining full variation coverage.
 
 Output: tests/assets/e2e_test_retrieved_data.json
 
@@ -37,7 +37,7 @@ from webarena_verified.core.utils import is_regexp
 # Add tests to path to import utilities
 sys.path.insert(0, "tests")
 
-from api.format_variations_utils import (
+from api.format_variations_utils import (  # type: ignore[import-not-found]
     ADDRESS_VARIATIONS,
     BOOLEAN_VARIATIONS,
     COORDINATES_VARIATIONS,
@@ -199,23 +199,22 @@ def apply_variation_to_data(data: Any, variation_func) -> Any:
         for key, value in data.items():
             transformed_item[key] = apply_variation_to_data(value, variation_func)
         return transformed_item
-    elif isinstance(data, list):
+    if isinstance(data, list):
         # Transform list items recursively
         transformed = []
         for item in data:
             transformed.append(apply_variation_to_data(item, variation_func))
         return transformed
-    else:
-        # Skip regex patterns - they should not be transformed
-        if isinstance(data, str) and is_regexp(data):
-            return data
-        # Transform scalar value
-        try:
-            return variation_func(data)
-        except Exception as e:
-            # If transformation fails, keep original
-            logger.debug(f"Transformation failed for {data}: {e}")
-            return data
+    # Skip regex patterns - they should not be transformed
+    if isinstance(data, str) and is_regexp(data):
+        return data
+    # Transform scalar value
+    try:
+        return variation_func(data)
+    except Exception as e:
+        # If transformation fails, keep original
+        logger.debug(f"Transformation failed for {data}: {e}")
+        return data
 
 
 def generate_variations_for_task(
@@ -258,7 +257,7 @@ def generate_variations_for_task(
     return variations
 
 
-def main():
+def main():  # noqa: C901, PLR0912, PLR0915
     """Main function to generate consolidated format variations file."""
     project_root = Path(__file__).parent.parent.parent  # tests/assets/ -> tests/ -> project root
     dataset_path = project_root / "assets" / "dataset" / "webarena-verified.json"
@@ -425,9 +424,9 @@ def main():
             old_tests = count * var_count
             new_tests = count  # One variation per task
             reduction = (1 - new_tests / old_tests) * 100 if old_tests > 0 else 0
-            logger.info(f"  {var_key:15s}: {count:3d} tasks × 1 variation = {count:3d} tests")
+            logger.info(f"  {var_key:15s}: {count:3d} tasks x 1 variation = {count:3d} tests")
             logger.info(
-                f"                   (was: {count:3d} tasks × {var_count} variations = {old_tests:3d} tests, -{reduction:.0f}%)"
+                f"                   (was: {count:3d} tasks x {var_count} variations = {old_tests:3d} tests, -{reduction:.0f}%)"
             )
 
     if old_format_variations > 0:

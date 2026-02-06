@@ -9,7 +9,7 @@ from webarena_verified.core.utils.url_utils import extract_base64_query, normali
 
 
 @pytest.mark.parametrize(
-    "path, expected_path, expected_queries",
+    ("path", "expected_path", "expected_queries"),
     [
         # Happy path - valid base64 in middle
         (
@@ -118,7 +118,7 @@ def test_extract_base64_query(path, expected_path, expected_queries):
 
 
 @pytest.mark.parametrize(
-    "query_string, expected",
+    ("query_string", "expected"),
     [
         # Happy path - simple single parameter
         ("key=value", MappingProxyType({"key": ("value",)})),

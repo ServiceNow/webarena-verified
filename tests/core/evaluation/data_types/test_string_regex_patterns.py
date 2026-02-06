@@ -8,7 +8,7 @@ from webarena_verified.core.utils import is_regexp
 
 # Pattern detection tests
 @pytest.mark.parametrize(
-    "value,is_pattern",
+    ("value", "is_pattern"),
     [
         ("^success$", True),
         ("^test.*$", True),
@@ -28,7 +28,7 @@ def test_is_pattern_detection(value, is_pattern):
 
 # Basic pattern matching tests
 @pytest.mark.parametrize(
-    "pattern,test_string,should_match",
+    ("pattern", "test_string", "should_match"),
     [
         # Exact matches
         ("^success$", "success", True),
@@ -95,7 +95,7 @@ def test_wildcard_pattern_matches_multiple_alternatives():
 
 # Complex pattern tests
 @pytest.mark.parametrize(
-    "pattern,test_string,should_match",
+    ("pattern", "test_string", "should_match"),
     [
         # Phone number patterns
         ("^\\d{3}-\\d{4}$", "123-4567", True),

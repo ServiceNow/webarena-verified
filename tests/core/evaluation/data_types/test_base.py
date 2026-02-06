@@ -6,7 +6,7 @@ from webarena_verified.core.evaluation.data_types import NormalizedString, Numbe
 
 
 @pytest.mark.parametrize(
-    "data_type,value,expected",
+    ("data_type", "value", "expected"),
     [
         (NormalizedString, "success", "success"),
         (Number, 10, 10),
@@ -21,7 +21,7 @@ def test_single_value_creates_single_alternative(data_type, value, expected):
 
 
 @pytest.mark.parametrize(
-    "data_type,values,expected_alternatives",
+    ("data_type", "values", "expected_alternatives"),
     [
         # 2-item lists
         (NormalizedString, ["success", "ok"], ("success", "ok")),
@@ -44,7 +44,7 @@ def test_valid_alternatives_accepted(data_type, values, expected_alternatives):
 
 
 @pytest.mark.parametrize(
-    "data_type,invalid_value",
+    ("data_type", "invalid_value"),
     [
         # Single-item lists
         (NormalizedString, ["success"]),
@@ -88,7 +88,7 @@ def test_alternatives_no_overlap():
 
 
 @pytest.mark.parametrize(
-    "data_type,value1,value2",
+    ("data_type", "value1", "value2"),
     [
         # Single values
         (NormalizedString, "success", "success"),
@@ -114,7 +114,7 @@ def test_equality_symmetry(data_type, value1, value2):
 
 
 @pytest.mark.parametrize(
-    "data_type,value1,value2",
+    ("data_type", "value1", "value2"),
     [
         # Different single values
         (NormalizedString, "success", "failure"),
@@ -138,7 +138,7 @@ def test_inequality_symmetry(data_type, value1, value2):
 
 
 @pytest.mark.parametrize(
-    "data_type,value1,value2,value3",
+    ("data_type", "value1", "value2", "value3"),
     [
         # Transitivity with single values
         (NormalizedString, "success", "success", "success"),
@@ -166,14 +166,14 @@ def test_equality_reflexivity():
     str_alt_obj = NormalizedString(["success", "ok"])
     num_alt_obj = Number([10, 17])
 
-    assert str_obj == str_obj
-    assert num_obj == num_obj
-    assert str_alt_obj == str_alt_obj
-    assert num_alt_obj == num_alt_obj
+    assert str_obj == str_obj  # noqa: PLR0124
+    assert num_obj == num_obj  # noqa: PLR0124
+    assert str_alt_obj == str_alt_obj  # noqa: PLR0124
+    assert num_alt_obj == num_alt_obj  # noqa: PLR0124
 
 
 @pytest.mark.parametrize(
-    "data_type,value,expected_hash",
+    ("data_type", "value", "expected_hash"),
     [
         # Single values should hash to their normalized value
         (NormalizedString, "success", hash("success")),
