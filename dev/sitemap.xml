@@ -2,138 +2,138 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/webarena_verified/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/data_types/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/data_types/agent_response/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/data_types/agent_response_evaluator_cfg/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/data_types/config/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/data_types/task/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/data_types/task_eval_context/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/data_types/web_arena_site/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/evaluators/agent_response_evaluator/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/api_reference/evaluators/network_event_evaluator/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/changelog/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/changelog/v1.0.0-rc.1/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/environments/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/environments/environment_control/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/environments/gitlab/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/environments/map/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/environments/reddit/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/environments/shopping/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/environments/shopping_admin/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/environments/wikipedia/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/evaluation/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/evaluation/evaluation_results/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/evaluation/handling_of_unachievable_tasks/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/evaluation/network_event_based_evaluation/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/evaluation/removing_llm_based_evaluation/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/configuration/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/data_format/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/data_reader/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/hard_subset/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/subset_manager/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/usage/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://servicenow.github.io/webarena-verified/dev/getting_started/utilities/</loc>
-         <lastmod>2026-02-02</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
 </urlset>
