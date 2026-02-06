@@ -87,46 +87,6 @@ def bump_version(ctx: Context, bump: str) -> None:
     logging_utils.print_success(f"Updated pyproject.toml to version {new_version}")
 
 
-@task(name="lint")
-@logging_utils.with_banner()
-def lint(ctx: Context) -> None:
-    """Run linting and type checking."""
-    logging_utils.print_info("Running ruff check...")
-    ctx.run("uv run ruff check")
-
-    logging_utils.print_info("Running ruff format check...")
-    ctx.run("uv run ruff format --check")
-
-    logging_utils.print_info("Running ty check...")
-    ctx.run("uv run ty check src dev tests")
-
-    logging_utils.print_success("All checks passed")
-
-
-@task(name="test")
-@logging_utils.with_banner()
-def run_tests(ctx: Context, docker_img: str = "webarena-verified:test") -> None:
-    """Run tests.
-
-    Args:
-        docker_img: Docker image to use for tests.
-    """
-    logging_utils.print_info("Installing Playwright browsers...")
-    ctx.run("uv run playwright install chromium --with-deps")
-
-    logging_utils.print_info("Building Docker image...")
-    ctx.run(f"docker build -t {docker_img} .")
-
-    logging_utils.print_info("Running tests...")
-    ctx.run(
-        f"uv run pytest --webarena-verified-docker-img {docker_img} "
-        "--ignore=tests/integration/environment_control/ "
-        "--ignore=tests/integration/environments/"
-    )
-
-    logging_utils.print_success("All tests passed")
-
-
 @task(name="tag")
 @logging_utils.with_banner()
 def create_tag(ctx: Context, version: str | None = None) -> None:
@@ -170,54 +130,3 @@ def create_release(ctx: Context, version: str | None = None) -> None:
     ctx.run(f'gh release create "{tag}" --generate-notes --title "{tag}"')
 
     logging_utils.print_success(f"Created GitHub release {tag}")
-
-
-@task(name="release", pre=[lint])
-@logging_utils.with_banner()
-def release(ctx: Context, bump: str, skip_tests: bool = False) -> None:
-    """Run full release workflow: bump, lint, test, commit, tag, release.
-
-    Args:
-        bump: Version bump type (patch, minor, major).
-        skip_tests: Skip running tests (for CI where tests run separately).
-    """
-    try:
-        bump_type = BumpType(bump)
-    except ValueError:
-        logging_utils.print_error(f"Invalid bump type: {bump}. Must be one of: patch, minor, major")
-        sys.exit(1)
-
-    # Calculate versions
-    current = _get_current_version()
-    new_version = _bump_version(current, bump_type)
-    tag = f"v{new_version}"
-
-    # Check tag doesn't exist
-    if _tag_exists(ctx, tag):
-        logging_utils.print_error(f"Tag {tag} already exists")
-        sys.exit(1)
-
-    # Bump version
-    logging_utils.print_info(f"Bumping version: {current} -> {new_version}")
-    _update_pyproject_version(new_version)
-
-    # Run tests (unless skipped)
-    if not skip_tests:
-        run_tests(ctx)
-
-    # Commit version bump
-    logging_utils.print_info("Committing version bump...")
-    ctx.run("git add pyproject.toml")
-    ctx.run(f'git commit -m "Bump version to {new_version}"')
-    ctx.run("git push")
-
-    # Create and push tag
-    logging_utils.print_info(f"Creating tag {tag}...")
-    ctx.run(f'git tag -a "{tag}" -m "Release {tag}"')
-    ctx.run(f'git push origin "{tag}"')
-
-    # Create GitHub release
-    logging_utils.print_info(f"Creating GitHub release {tag}...")
-    ctx.run(f'gh release create "{tag}" --generate-notes --title "{tag}"')
-
-    logging_utils.print_success(f"Released {tag}")
