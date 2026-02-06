@@ -11,16 +11,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - name: Setup environment
+        uses: ./.github/actions/setup
         with:
-          enable-cache: true
-
-      - name: Set up Python
-        run: uv python install 3.11
-
-      - name: Install all dependencies
-        run: uv sync --all-extras
-
-      - name: Install Playwright browsers
-        run: uv run playwright install chromium --with-deps
+          install-playwright: 'true'

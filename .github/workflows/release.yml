@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        run: uv run inv dev.release.bump-version --bump ${{ inputs.bump }}
+
+      - name: Commit and push version bump
+        run: |
+          git add pyproject.toml
+          git commit -m "Bump version"
+          git push origin HEAD:main
+
+      - name: Create and push tag
+        run: uv run inv dev.release.tag
+
+      - name: Create GitHub release
+        run: uv run inv dev.release.create-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

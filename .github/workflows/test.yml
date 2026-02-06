@@ -3,6 +3,11 @@ name: Test
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -12,22 +17,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - name: Setup environment
+        uses: ./.github/actions/setup
         with:
-          enable-cache: true
-
-      - name: Set up Python
-        run: uv python install 3.11
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
-      - name: Install Playwright browsers
-        run: uv run playwright install chromium --with-deps
-
-      - name: Build Docker image
-        run: docker build -t webarena-verified:test .
+          install-playwright: 'true'
 
       - name: Run tests
-        run: uv run pytest --webarena-verified-docker-img webarena-verified:test --ignore=tests/integration/environment_control/ --ignore=tests/integration/environments/
+        run: uv run inv dev.code.test

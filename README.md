@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/webarena-verified/"><img src="https://img.shields.io/pypi/v/webarena-verified.svg" alt="PyPI version"></a>
-  <a href="https://hub.docker.com/r/am1n3e/webarena-verified"><img src="https://img.shields.io/docker/pulls/am1n3e/webarena-verified.svg" alt="Docker Hub"></a>
+  <a href="https://github.com/ServiceNow/webarena-verified/pkgs/container/webarena-verified"><img src="https://img.shields.io/badge/Docker-GHCR-blue.svg" alt="GitHub Container Registry"></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg" alt="Python 3.11+"></a>
   <a href="tests"><img src="https://img.shields.io/badge/Tests-Pytest-6B2F8.svg" alt="Tests: Pytest"></a>
   <a href="https://servicenow.github.io/webarena-verified/"><img src="https://img.shields.io/badge/Docs-MkDocs-0288D1.svg" alt="Docs: MkDocs"></a>
@@ -17,7 +17,7 @@ WebArena-Verified is the verified release of the WebArena benchmark. It distribu
 ## 📢 Announcements
 
 - **February 2, 2026**: Optimized Docker images for all WebArena environments are now available on [Docker Hub](https://hub.docker.com/u/am1n3e)! Images are up to 92% smaller than originals, include auto-login headers, plus a single container for Map (beta) (previously 5 separate containers). See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/).
-- **February 2, 2026**: WebArena-Verified is now available via Docker and uvx! Run `uvx webarena-verified --help` or `docker run am1n3e/webarena-verified:latest --help` to get started.
+- **February 2, 2026**: WebArena-Verified is now available via Docker and uvx! Run `uvx webarena-verified --help` or `docker run ghcr.io/servicenow/webarena-verified:latest --help` to get started.
 - **January 7, 2026**: WebArena-Verified is now available on PyPI! Install it easily with `pip install webarena-verified`.
 - **December 2, 2025**: We are presenting WebArena-Verified at the [Scaling Environments for Agents (SEA) Workshop](https://sea-workshop.github.io/) at NeurIPS 2025 on December 7th in San Diego. Come see us!
 - **November 12, 2024**: Started initial release with collaborators to gather early feedback, catch any issues, and clarify the documentation. **Public release scheduled for December 4th, 2025.**
@@ -54,7 +54,7 @@ Run evaluation using the Docker image by mounting your output directory:
 ```bash
 docker run --rm \
   -v /path/to/output:/data \
-  am1n3e/webarena-verified:latest \
+  ghcr.io/servicenow/webarena-verified:latest \
   eval-tasks --output-dir /data
 ```
 

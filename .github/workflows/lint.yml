@@ -3,6 +3,11 @@ name: Lint
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   lint:
@@ -12,22 +17,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
+      - name: Setup environment
+        uses: ./.github/actions/setup
 
-      - name: Set up Python
-        run: uv python install 3.11
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
-      - name: Run ruff check
-        run: uv run ruff check
-
-      - name: Run ruff format check
-        run: uv run ruff format --check
-
-      - name: Run ty check
-        run: uv run ty check src dev
+      - name: Run lint
+        run: uv run inv dev.code.lint

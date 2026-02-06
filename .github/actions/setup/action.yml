@@ -1,0 +1,33 @@
+name: 'Setup Environment'
+description: 'Install uv, Python, and project dependencies'
+
+inputs:
+  python-version:
+    description: 'Python version to install'
+    required: false
+    default: '3.11'
+  install-playwright:
+    description: 'Install Playwright browsers'
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+
+    - name: Set up Python
+      run: uv python install ${{ inputs.python-version }}
+      shell: bash
+
+    - name: Install dependencies
+      run: uv sync --all-extras
+      shell: bash
+
+    - name: Install Playwright browsers
+      if: inputs.install-playwright == 'true'
+      run: uv run playwright install chromium --with-deps
+      shell: bash

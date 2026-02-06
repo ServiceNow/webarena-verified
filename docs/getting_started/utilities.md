@@ -21,7 +21,7 @@ The `trim-network-logs` command removes entries for skipped resource types while
     ```bash
     docker run --rm \
       -v ./logs:/logs \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       trim-network-logs \
         --input /logs/task_123.har \
         --output /logs/task_123_trimmed.har
@@ -88,7 +88,7 @@ You can trim multiple files in a loop:
       task_id=$(basename "$task_dir")
       docker run --rm \
         -v ./"$task_dir":/data \
-        am1n3e/webarena-verified:latest \
+        ghcr.io/servicenow/webarena-verified:latest \
         trim-network-logs \
           --input /data/network.har \
           --output /data/network_trimmed.har

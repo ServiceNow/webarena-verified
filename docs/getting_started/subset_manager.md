@@ -15,7 +15,7 @@ View all predefined subsets in the repository:
 === "Docker"
 
     ```bash
-    docker run --rm am1n3e/webarena-verified:latest subsets-ls
+    docker run --rm ghcr.io/servicenow/webarena-verified:latest subsets-ls
     ```
 
 === "CLI"
@@ -52,7 +52,7 @@ Export task definitions from a subset to a standalone JSON file:
     # By name
     docker run --rm \
       -v ./:/output \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       subset-export \
         --name webarena-verified-hard \
         --output /output/webarena-verified-hard.json
@@ -60,7 +60,7 @@ Export task definitions from a subset to a standalone JSON file:
     # By path
     docker run --rm \
       -v ./:/data \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       subset-export \
         --path /data/assets/dataset/subsets/custom-subset.json \
         --output /data/custom-tasks.json
@@ -100,7 +100,7 @@ Create a new subset from a custom task list:
     ```bash
     docker run --rm \
       -v ./:/data \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       subsets-create \
         --src /data/custom_tasks.json \
         --name my-subset \
