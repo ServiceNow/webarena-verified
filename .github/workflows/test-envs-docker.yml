@@ -25,7 +25,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  test-all:
+    if: github.event.inputs.site == '' || github.event.inputs.site == 'all'
     name: Test ${{ matrix.site }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -40,31 +41,20 @@ jobs:
           - shopping_admin
           - wikipedia
     steps:
-      - name: Select matrix site
-        id: select-site
-        run: |
-          if [ "${{ github.event.inputs.site }}" = "" ] || [ "${{ github.event.inputs.site }}" = "all" ] || [ "${{ github.event.inputs.site }}" = "${{ matrix.site }}" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout code
-        if: steps.select-site.outputs.run == 'true'
         uses: actions/checkout@v4
 
       - name: Setup environment
-        if: steps.select-site.outputs.run == 'true'
         uses: ./.github/actions/setup
         with:
           install-playwright: 'true'
 
       - name: Download CI ZIM
-        if: steps.select-site.outputs.run == 'true' && matrix.site == 'wikipedia'
+        if: matrix.site == 'wikipedia'
         run: uv run invoke dev.ci.setup-wikipedia
 
       - name: Restore map test data cache
-        if: steps.select-site.outputs.run == 'true' && matrix.site == 'map'
+        if: matrix.site == 'map'
         id: map-data-cache
         uses: actions/cache@v4
         with:
@@ -72,21 +62,65 @@ jobs:
           key: map-monaco-data-v1
 
       - name: Generate map test data
-        if: steps.select-site.outputs.run == 'true' && matrix.site == 'map' && steps.map-data-cache.outputs.cache-hit != 'true'
+        if: matrix.site == 'map' && steps.map-data-cache.outputs.cache-hit != 'true'
         run: uv run invoke dev.ci.generate-map-data
 
       - name: Build Docker image
-        if: steps.select-site.outputs.run == 'true'
         run: uv run invoke envs.docker.build --site=${{ matrix.site }} --tag=test
 
       - name: Run integration tests (default sites)
-        if: steps.select-site.outputs.run == 'true' && matrix.site != 'wikipedia' && matrix.site != 'map'
+        if: matrix.site != 'wikipedia' && matrix.site != 'map'
         run: uv run invoke envs.docker.test --site=${{ matrix.site }} --tag=test
 
       - name: Run integration tests (wikipedia)
-        if: steps.select-site.outputs.run == 'true' && matrix.site == 'wikipedia'
+        if: matrix.site == 'wikipedia'
         run: uv run invoke envs.docker.test --site=wikipedia --tag=test --data-dir=data/wikipedia
 
       - name: Run integration tests (map)
-        if: steps.select-site.outputs.run == 'true' && matrix.site == 'map'
+        if: matrix.site == 'map'
+        run: uv run invoke envs.docker.test --site=map --tag=test --data-dir=data/map
+
+  test-one:
+    if: github.event.inputs.site != '' && github.event.inputs.site != 'all'
+    name: Test ${{ github.event.inputs.site }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          install-playwright: 'true'
+
+      - name: Download CI ZIM
+        if: github.event.inputs.site == 'wikipedia'
+        run: uv run invoke dev.ci.setup-wikipedia
+
+      - name: Restore map test data cache
+        if: github.event.inputs.site == 'map'
+        id: map-data-cache
+        uses: actions/cache@v4
+        with:
+          path: data/map
+          key: map-monaco-data-v1
+
+      - name: Generate map test data
+        if: github.event.inputs.site == 'map' && steps.map-data-cache.outputs.cache-hit != 'true'
+        run: uv run invoke dev.ci.generate-map-data
+
+      - name: Build Docker image
+        run: uv run invoke envs.docker.build --site=${{ github.event.inputs.site }} --tag=test
+
+      - name: Run integration tests (default sites)
+        if: github.event.inputs.site != 'wikipedia' && github.event.inputs.site != 'map'
+        run: uv run invoke envs.docker.test --site=${{ github.event.inputs.site }} --tag=test
+
+      - name: Run integration tests (wikipedia)
+        if: github.event.inputs.site == 'wikipedia'
+        run: uv run invoke envs.docker.test --site=wikipedia --tag=test --data-dir=data/wikipedia
+
+      - name: Run integration tests (map)
+        if: github.event.inputs.site == 'map'
         run: uv run invoke envs.docker.test --site=map --tag=test --data-dir=data/map
