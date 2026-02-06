@@ -104,6 +104,8 @@ def _docker_run(
         host_env_ctrl_port = env_ctrl_port
     else:
         result = ctx.run(f"docker port {name} {env_ctrl_container_port}", hide=True)
+        if result is None:
+            raise RuntimeError(f"Failed to get port mapping for container {name}")
         # Output format: "0.0.0.0:12345" or ":::12345"
         port_mapping = result.stdout.strip().split(":")[-1]
         host_env_ctrl_port = int(port_mapping)

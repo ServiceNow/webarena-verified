@@ -38,10 +38,9 @@ def _bump_version(current: semver.Version, bump: BumpType) -> semver.Version:
     """Calculate new version based on bump type."""
     if bump == BumpType.MAJOR:
         return current.bump_major()
-    elif bump == BumpType.MINOR:
+    if bump == BumpType.MINOR:
         return current.bump_minor()
-    else:
-        return current.bump_patch()
+    return current.bump_patch()
 
 
 def _update_pyproject_version(new_version: semver.Version) -> None:
@@ -61,6 +60,8 @@ def _update_pyproject_version(new_version: semver.Version) -> None:
 def _tag_exists(ctx: Context, tag: str) -> bool:
     """Check if a git tag exists on remote."""
     result = ctx.run(f"git ls-remote --tags origin refs/tags/{tag}", hide=True, warn=True)
+    if result is None:
+        return False
     return bool(result.stdout.strip())
 
 
@@ -104,7 +105,7 @@ def lint(ctx: Context) -> None:
 
 @task(name="test")
 @logging_utils.with_banner()
-def test(ctx: Context, docker_img: str = "webarena-verified:test") -> None:
+def run_tests(ctx: Context, docker_img: str = "webarena-verified:test") -> None:
     """Run tests.
 
     Args:
@@ -202,7 +203,7 @@ def release(ctx: Context, bump: str, skip_tests: bool = False) -> None:
 
     # Run tests (unless skipped)
     if not skip_tests:
-        test(ctx)
+        run_tests(ctx)
 
     # Commit version bump
     logging_utils.print_info("Committing version bump...")
