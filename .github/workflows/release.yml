@@ -3,14 +3,10 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      bump:
-        description: 'Version bump type'
+      version:
+        description: 'Release version (e.g. 1.2.3 or 1.2.3-rc.1)'
         required: true
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
+        type: string
 
 jobs:
   release:
@@ -24,28 +20,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
 
       - name: Setup environment
         uses: ./.github/actions/setup
 
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Bump version
-        run: uv run inv dev.release.bump-version --bump ${{ inputs.bump }}
-
-      - name: Commit and push version bump
-        run: |
-          git add pyproject.toml
-          git commit -m "Bump version"
-          git push origin HEAD:main
-
-      - name: Create and push tag
-        run: uv run inv dev.release.tag
-
       - name: Create GitHub release
-        run: uv run inv dev.release.create-release
+        run: uv run inv dev.release.create-release --version "${{ inputs.version }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
