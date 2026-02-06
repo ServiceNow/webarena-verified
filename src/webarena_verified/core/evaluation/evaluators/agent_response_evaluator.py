@@ -96,6 +96,10 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
                 k = "performed_operation"  # Support legacy field name
 
             if k not in value:
+                if k == "retrieved_data":
+                    # When retrieved_data key is missing, treat it as None for comparison
+                    # This allows missing key to match expected None (e.g., NOT_FOUND_ERROR tasks)
+                    _normalized_values[k] = None
                 continue
 
             if k == "retrieved_data":
@@ -179,11 +183,24 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
             return assertions
 
         expected_retrieved_data = expected_normalized.get("retrieved_data", None)
-        if expected_retrieved_data is None:
-            raise ValueError("Expected retrieved_data must be set in config for retrieve tasks.")
 
-        # Handle None actual_retrieved_data - should fail if expected is not None
-        if actual_retrieved_data is None and expected_retrieved_data is not None:
+        if expected_retrieved_data is None and actual_retrieved_data is None:
+            # Both None - success, no data expected and none provided
+            return assertions
+
+        if expected_retrieved_data is None and actual_retrieved_data is not None:
+            # Expected None but got data - failure
+            assertions.append(
+                EvalAssertion.create(
+                    assertion_name="retrieved_data_unexpected",
+                    status=EvalStatus.FAILURE,
+                    assertion_msgs=[f"Expected no retrieved_data, but got {actual_retrieved_data}"],
+                )
+            )
+            return assertions
+
+        if actual_retrieved_data is None:
+            # Expected data but got None - failure
             assertions.append(
                 EvalAssertion.create(
                     assertion_name="retrieved_data_missing_or_null",
@@ -193,6 +210,7 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
             )
             return assertions
 
+        # Both have data - compare them
         assertions.extend(
             self.value_comparator.compare(
                 expected=tuple(expected_retrieved_data),

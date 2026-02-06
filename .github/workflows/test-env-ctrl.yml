@@ -7,12 +7,6 @@ on:
       - "packages/environment_control/**"
       - "tests/integration/environment_control/**"
       - "src/webarena_verified/environments/env_ctrl_client/**"
-  push:
-    branches: [main]
-    paths:
-      - "packages/environment_control/**"
-      - "tests/integration/environment_control/**"
-      - "src/webarena_verified/environments/env_ctrl_client/**"
 
 jobs:
   test:
