@@ -1,0 +1,60 @@
+{
+  "startedDateTime": "2025-10-18T19:54:47.896Z",
+  "time": 1.512,
+  "request": {
+    "method": "{{METHOD}}",
+    "url": "{{URL}}",
+    "httpVersion": "HTTP/1.1",
+    "cookies": [],
+    "headers": [
+      { "name": "Accept", "value": "application/json, text/javascript, */*; q=0.01" },
+      { "name": "Accept-Encoding", "value": "gzip, deflate, br, zstd" },
+      { "name": "Accept-Language", "value": "en-US,en;q=0.9" },
+      { "name": "Connection", "value": "keep-alive" },
+      { "name": "Cookie", "value": "admin=b3a94f26f6f0a463951fbd781e01b95d" },
+      { "name": "Referer", "value": "{{REFERER}}" },
+      { "name": "Host", "value": "localhost:7780" },
+      { "name": "User-Agent", "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" },
+      { "name": "sec-ch-ua", "value": "\"Google Chrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"" },
+      { "name": "sec-ch-ua-mobile", "value": "?0" },
+      { "name": "sec-ch-ua-platform", "value": "\"macOS\"" }
+    ],
+    "queryString": [],
+    "headersSize": -1,
+    "bodySize": -1
+  },
+  "response": {
+    "status": "{{STATUS_CODE}}",
+    "statusText": "{{STATUS_TEXT}}",
+    "httpVersion": "HTTP/1.1",
+    "cookies": [],
+    "headers": [
+      { "name": "Cache-Control", "value": "max-age=0, must-revalidate, no-cache, no-store" },
+      { "name": "Connection", "value": "keep-alive" },
+      { "name": "Content-Encoding", "value": "gzip" },
+      { "name": "Content-Security-Policy-Report-Only", "value": "font-src fonts.gstatic.com data: 'self';" },
+      { "name": "Date", "value": "Sat, 18 Oct 2025 19:54:48 GMT" },
+      { "name": "Expires", "value": "Fri, 18 Oct 2024 19:54:47 GMT" },
+      { "name": "Pragma", "value": "no-cache" },
+      { "name": "Server", "value": "nginx/1.22.1" },
+      { "name": "Set-Cookie", "value": "admin=b3a94f26f6f0a463951fbd781e01b95d; expires=Wed, 22-Oct-2025 23:54:47 GMT; Max-Age=360000; path=/admin; domain=localhost; HttpOnly; SameSite=Lax" },
+      { "name": "Set-Cookie", "value": "admin=b3a94f26f6f0a463951fbd781e01b95d; expires=Wed, 22-Oct-2025 23:54:47 GMT; Max-Age=360000; path=/admin; domain=localhost; HttpOnly; SameSite=Lax" },
+      { "name": "Transfer-Encoding", "value": "chunked" },
+      { "name": "Vary", "value": "Accept-Encoding" },
+      { "name": "X-Content-Type-Options", "value": "nosniff" },
+      { "name": "X-Frame-Options", "value": "SAMEORIGIN" },
+      { "name": "X-Powered-By", "value": "PHP/8.1.17" },
+      { "name": "X-XSS-Protection", "value": "1; mode=block" }
+    ],
+    "content": {
+      "size": -1,
+      "mimeType": "{{MIME_TYPE}}",
+      "_file": "1913d0d479a57459678a2f79ab5659e19893f4b3.json"
+    },
+    "headersSize": -1,
+    "bodySize": -1,
+    "redirectURL": ""
+  },
+  "cache": {},
+  "timings": { "send": -1, "wait": -1, "receive": 1.512 }
+}

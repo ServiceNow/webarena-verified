@@ -1,0 +1,3268 @@
+{
+  "0": {
+    "exact_match": [
+      "Quest Lumaflex\u2122 Band"
+    ],
+    "valid": {
+      "fmt_original": [
+        "Quest Lumaflex\u2122 Band"
+      ]
+    },
+    "invalid": {}
+  },
+  "1": {
+    "exact_match": [
+      "Sprite"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "sprite"
+      ]
+    },
+    "invalid": {}
+  },
+  "2": {
+    "exact_match": [
+      [
+        "Digital Watch",
+        "Band",
+        "Stasis Ball",
+        "Yoga Strap"
+      ]
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        [
+          "DIGITAL WATCH",
+          "BAND",
+          "STASIS BALL",
+          "YOGA STRAP"
+        ]
+      ]
+    },
+    "invalid": {}
+  },
+  "3": {
+    "exact_match": [
+      "Quest Lumaflex\u2122 Band",
+      [
+        "Sprite Stasis Ball 65 cm",
+        "Cruise Stasis Ball 65 cm",
+        "Sprite Stasis Ball 55 cm"
+      ]
+    ],
+    "valid": {
+      "fmt_trim_whitespace": [
+        " Quest Lumaflex\u2122 Band ",
+        [
+          " Sprite Stasis Ball 65 cm ",
+          " Cruise Stasis Ball 65 cm ",
+          " Sprite Stasis Ball 55 cm "
+        ]
+      ]
+    },
+    "invalid": {}
+  },
+  "4": {
+    "exact_match": [
+      "Impulse Duffle",
+      "Overnight Duffle",
+      "Hawkeye Yoga Short-32-Blue"
+    ],
+    "valid": {
+      "fmt_extra_spaces": [
+        "Impulse  Duffle",
+        "Overnight  Duffle",
+        "Hawkeye  Yoga  Short-32-Blue"
+      ]
+    },
+    "invalid": {}
+  },
+  "5": {
+    "exact_match": [
+      "Duffle"
+    ],
+    "valid": {
+      "fmt_with_quotes": [
+        "\"Duffle\""
+      ]
+    },
+    "invalid": {}
+  },
+  "6": {
+    "exact_match": [
+      "Sprite Yoga Strap 6 foot",
+      [
+        "Overnight Duffle",
+        "Ida Workout Parachute Pant-29-Purple"
+      ]
+    ],
+    "valid": {
+      "fmt_with_period": [
+        "Sprite Yoga Strap 6 foot.",
+        [
+          "Overnight Duffle.",
+          "Ida Workout Parachute Pant-29-Purple."
+        ]
+      ]
+    },
+    "invalid": {}
+  },
+  "11": {
+    "exact_match": [
+      6
+    ],
+    "valid": {
+      "fmt_int": [
+        6
+      ]
+    },
+    "invalid": {}
+  },
+  "12": {
+    "exact_match": [
+      2
+    ],
+    "valid": {
+      "fmt_float": [
+        2.0
+      ]
+    },
+    "invalid": {}
+  },
+  "13": {
+    "exact_match": [
+      2
+    ],
+    "valid": {
+      "fmt_string_int": [
+        "2"
+      ]
+    },
+    "invalid": {}
+  },
+  "14": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_string_float": [
+        "0.0"
+      ]
+    },
+    "invalid": {}
+  },
+  "15": {
+    "exact_match": [
+      2
+    ],
+    "valid": {
+      "fmt_word_form": [
+        "two"
+      ]
+    },
+    "invalid": {}
+  },
+  "21": {
+    "exact_match": [
+      "Catso",
+      "Dibbins",
+      [
+        "Anglebert Dinkherhump",
+        "Anglebert",
+        "Dinkherhump"
+      ],
+      [
+        "Michelle Davis",
+        "Michelle DavisMichelle Davis"
+      ]
+    ],
+    "valid": {
+      "fmt_tabs_to_spaces": [
+        "Catso",
+        "Dibbins",
+        [
+          "Anglebert\tDinkherhump",
+          "Anglebert",
+          "Dinkherhump"
+        ],
+        [
+          "Michelle\tDavis",
+          "Michelle\tDavisMichelle\tDavis"
+        ]
+      ]
+    },
+    "invalid": {}
+  },
+  "23": {
+    "exact_match": [
+      "Rachel",
+      "T. Gannon"
+    ],
+    "valid": {
+      "fmt_en_dash": [
+        "Rachel",
+        "T.\u2013Gannon"
+      ]
+    },
+    "invalid": {}
+  },
+  "25": {
+    "exact_match": [
+      "Roxanne Brandon Coffey",
+      "Nelson"
+    ],
+    "valid": {
+      "fmt_em_dash": [
+        "Roxanne\u2014Brandon\u2014Coffey",
+        "Nelson"
+      ]
+    },
+    "invalid": {}
+  },
+  "26": {
+    "exact_match": [
+      "RemyRRemyR",
+      "Bob in Vegas"
+    ],
+    "valid": {
+      "fmt_hyphen_minus": [
+        "RemyRRemyR",
+        "Bob-in-Vegas"
+      ]
+    },
+    "invalid": {}
+  },
+  "36": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_bool_literal": [
+        true
+      ]
+    },
+    "invalid": {}
+  },
+  "37": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_numeric": [
+        1
+      ]
+    },
+    "invalid": {}
+  },
+  "38": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_string_lowercase": [
+        "true"
+      ]
+    },
+    "invalid": {}
+  },
+  "39": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_string_uppercase": [
+        "TRUE"
+      ]
+    },
+    "invalid": {}
+  },
+  "40": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_string_yes_no": [
+        "yes"
+      ]
+    },
+    "invalid": {}
+  },
+  "41": {
+    "exact_match": [
+      "hollister"
+    ],
+    "valid": {
+      "fmt_original": [
+        "hollister"
+      ]
+    },
+    "invalid": {}
+  },
+  "42": {
+    "exact_match": [
+      "hollister",
+      "Joust Bag"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "hollister",
+        "joust bag"
+      ]
+    },
+    "invalid": {}
+  },
+  "43": {
+    "exact_match": [
+      "hollister",
+      "Joust Bag",
+      "nike"
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        "HOLLISTER",
+        "JOUST BAG",
+        "NIKE"
+      ]
+    },
+    "invalid": {}
+  },
+  "52": {
+    "exact_match": [
+      "7min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "7min"
+      ],
+      "tol_plus_1min": [
+        "8m"
+      ],
+      "tol_minus_1min": [
+        "6m"
+      ],
+      "tol_plus_2min": [
+        "9m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "11m"
+      ]
+    }
+  },
+  "53": {
+    "exact_match": [
+      "18min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "18 minutes"
+      ],
+      "tol_plus_1min": [
+        "19m"
+      ],
+      "tol_minus_1min": [
+        "17m"
+      ],
+      "tol_plus_2min": [
+        "20m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "22m"
+      ]
+    }
+  },
+  "54": {
+    "exact_match": [
+      "25min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "25m"
+      ],
+      "tol_plus_1min": [
+        "26m"
+      ],
+      "tol_minus_1min": [
+        "24m"
+      ],
+      "tol_plus_2min": [
+        "27m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "29m"
+      ]
+    }
+  },
+  "55": {
+    "exact_match": [
+      "30min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "30min"
+      ],
+      "tol_plus_1min": [
+        "31m"
+      ],
+      "tol_minus_1min": [
+        "29m"
+      ],
+      "tol_plus_2min": [
+        "32m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "34m"
+      ]
+    }
+  },
+  "56": {
+    "exact_match": [
+      "11min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "11 minutes"
+      ],
+      "tol_plus_1min": [
+        "12m"
+      ],
+      "tol_minus_1min": [
+        "10m"
+      ],
+      "tol_plus_2min": [
+        "13m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "15m"
+      ]
+    }
+  },
+  "57": {
+    "exact_match": [
+      "El Gallo de Oro",
+      "Back Bar Grill",
+      "Grano",
+      "Beefsteak",
+      "Nourish",
+      "Schatz Dining Room",
+      "Au Bon Pain"
+    ],
+    "valid": {
+      "fmt_exact": [
+        "El Gallo de Oro",
+        "Back Bar Grill",
+        "Grano",
+        "Beefsteak",
+        "Nourish",
+        "Schatz Dining Room",
+        "Au Bon Pain"
+      ]
+    },
+    "invalid": {}
+  },
+  "58": {
+    "exact_match": [
+      "De Fer Coffee & Tea"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "de fer coffee & tea"
+      ]
+    },
+    "invalid": {}
+  },
+  "59": {
+    "exact_match": [
+      "The exchange"
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        "THE EXCHANGE"
+      ]
+    },
+    "invalid": {}
+  },
+  "60": {
+    "exact_match": [
+      "The exchange"
+    ],
+    "valid": {
+      "fmt_abbreviation": [
+        "The exchange"
+      ]
+    },
+    "invalid": {}
+  },
+  "61": {
+    "exact_match": [
+      "La Prima Espresso"
+    ],
+    "valid": {
+      "fmt_ampersand_to_and": [
+        "La Prima Espresso"
+      ]
+    },
+    "invalid": {}
+  },
+  "62": {
+    "exact_match": [
+      "janesmith456@yahoo.com"
+    ],
+    "valid": {
+      "fmt_trim_whitespace": [
+        " janesmith456@yahoo.com "
+      ]
+    },
+    "invalid": {}
+  },
+  "63": {
+    "exact_match": [
+      "helloworld@yahoo.com",
+      "michael.nguyen@yahoo.com"
+    ],
+    "valid": {
+      "fmt_extra_spaces": [
+        "helloworld@yahoo.com",
+        "michael.nguyen@yahoo.com"
+      ]
+    },
+    "invalid": {}
+  },
+  "64": {
+    "exact_match": [
+      "musiclover99@hotmail.com",
+      "roni_cost@example.com"
+    ],
+    "valid": {
+      "fmt_with_quotes": [
+        "\"musiclover99@hotmail.com\"",
+        "\"roni_cost@example.com\""
+      ]
+    },
+    "invalid": {}
+  },
+  "65": {
+    "exact_match": [
+      "adam.garcia@gmail.com",
+      "jason.miller@yahoo.com",
+      "jennifer.white@yahoo.com"
+    ],
+    "valid": {
+      "fmt_with_period": [
+        "adam.garcia@gmail.com.",
+        "jason.miller@yahoo.com.",
+        "jennifer.white@yahoo.com."
+      ]
+    },
+    "invalid": {}
+  },
+  "66": {
+    "exact_match": [
+      "I just finished reading The Hobbit to my 6 year old daughter, and she loved it!",
+      "Apple Books has a free audiobook of A Christmas Carol narrated by LeVar Burton!"
+    ],
+    "valid": {
+      "fmt_tabs_to_spaces": [
+        "I\tjust\tfinished\treading\tThe\tHobbit\tto\tmy\t6\tyear\told\tdaughter,\tand\tshe\tloved\tit!",
+        "Apple\tBooks\thas\ta\tfree\taudiobook\tof\tA\tChristmas\tCarol\tnarrated\tby\tLeVar\tBurton!"
+      ]
+    },
+    "invalid": {}
+  },
+  "67": {
+    "exact_match": [
+      "The Hobbit",
+      "A Christmas Carol"
+    ],
+    "valid": {
+      "fmt_en_dash": [
+        "The\u2013Hobbit",
+        "A\u2013Christmas\u2013Carol"
+      ]
+    },
+    "invalid": {}
+  },
+  "69": {
+    "exact_match": [
+      [
+        "bookshop.org",
+        "https://bookshop.org"
+      ]
+    ],
+    "valid": {
+      "fmt_em_dash": [
+        [
+          "bookshop.org",
+          "https://bookshop.org"
+        ]
+      ]
+    },
+    "invalid": {}
+  },
+  "70": {
+    "exact_match": [
+      "15213"
+    ],
+    "valid": {
+      "fmt_hyphen_minus": [
+        "15213"
+      ]
+    },
+    "invalid": {}
+  },
+  "71": {
+    "exact_match": [
+      "15232"
+    ],
+    "valid": {
+      "fmt_original": [
+        "15232"
+      ]
+    },
+    "invalid": {}
+  },
+  "72": {
+    "exact_match": [
+      "06516"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "06516"
+      ]
+    },
+    "invalid": {}
+  },
+  "73": {
+    "exact_match": [
+      "10027"
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        "10027"
+      ]
+    },
+    "invalid": {}
+  },
+  "74": {
+    "exact_match": [
+      "Carnegie Mellon University",
+      "starbucks on craig street",
+      "apple store shadyside"
+    ],
+    "valid": {
+      "fmt_and_to_ampersand": [
+        "Carnegie Mellon University",
+        "starbucks on craig street",
+        "apple store shadyside"
+      ]
+    },
+    "invalid": {}
+  },
+  "75": {
+    "exact_match": [
+      "Massachusetts Institute of Technology",
+      "Harvard University",
+      "Boston Logan International Airport"
+    ],
+    "valid": {
+      "fmt_word_order_swap": [
+        "Technology Institute of Massachusetts",
+        "University Harvard",
+        "Airport Logan International Boston"
+      ]
+    },
+    "invalid": {}
+  },
+  "76": {
+    "exact_match": [
+      "Princeton University",
+      "Yale University",
+      "Harvard University"
+    ],
+    "valid": {
+      "fmt_extra_whitespace": [
+        "  Princeton University  ",
+        "  Yale University  ",
+        "  Harvard University  "
+      ]
+    },
+    "invalid": {}
+  },
+  "77": {
+    "exact_match": [
+      5
+    ],
+    "valid": {
+      "fmt_int": [
+        5
+      ]
+    },
+    "invalid": {}
+  },
+  "78": {
+    "exact_match": [
+      346
+    ],
+    "valid": {
+      "fmt_float": [
+        346.0
+      ]
+    },
+    "invalid": {}
+  },
+  "79": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_string_int": [
+        "0"
+      ]
+    },
+    "invalid": {}
+  },
+  "80": {
+    "exact_match": [
+      "38min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "38m"
+      ],
+      "tol_plus_1min": [
+        "39m"
+      ],
+      "tol_minus_1min": [
+        "37m"
+      ],
+      "tol_plus_2min": [
+        "40m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "43m"
+      ]
+    }
+  },
+  "81": {
+    "exact_match": [
+      "49min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "49min"
+      ],
+      "tol_plus_1min": [
+        "50m"
+      ],
+      "tol_minus_1min": [
+        "48m"
+      ],
+      "tol_plus_2min": [
+        "51m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "55m"
+      ]
+    }
+  },
+  "82": {
+    "exact_match": [
+      "63min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "63 minutes"
+      ],
+      "tol_plus_1min": [
+        "1h4m"
+      ],
+      "tol_minus_1min": [
+        "1h2m"
+      ],
+      "tol_plus_2min": [
+        "1h5m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "1h11m"
+      ]
+    }
+  },
+  "83": {
+    "exact_match": [
+      "22min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "22m"
+      ],
+      "tol_plus_1min": [
+        "23m"
+      ],
+      "tol_minus_1min": [
+        "21m"
+      ],
+      "tol_plus_2min": [
+        "24m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "26m"
+      ]
+    }
+  },
+  "84": {
+    "exact_match": [
+      "14min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "14min"
+      ],
+      "tol_plus_1min": [
+        "15m"
+      ],
+      "tol_minus_1min": [
+        "13m"
+      ],
+      "tol_plus_2min": [
+        "16m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "18m"
+      ]
+    }
+  },
+  "85": {
+    "exact_match": [
+      "30min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "30 minutes"
+      ],
+      "tol_plus_1min": [
+        "31m"
+      ],
+      "tol_minus_1min": [
+        "29m"
+      ],
+      "tol_plus_2min": [
+        "32m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "34m"
+      ]
+    }
+  },
+  "86": {
+    "exact_match": [
+      "29min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "29m"
+      ],
+      "tol_plus_1min": [
+        "30m"
+      ],
+      "tol_minus_1min": [
+        "28m"
+      ],
+      "tol_plus_2min": [
+        "31m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "33m"
+      ]
+    }
+  },
+  "87": {
+    "exact_match": [
+      "20min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "20min"
+      ],
+      "tol_plus_1min": [
+        "21m"
+      ],
+      "tol_minus_1min": [
+        "19m"
+      ],
+      "tol_plus_2min": [
+        "22m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "24m"
+      ]
+    }
+  },
+  "88": {
+    "exact_match": [
+      "34min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "34 minutes"
+      ],
+      "tol_plus_1min": [
+        "35m"
+      ],
+      "tol_minus_1min": [
+        "33m"
+      ],
+      "tol_plus_2min": [
+        "36m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "38m"
+      ]
+    }
+  },
+  "89": {
+    "exact_match": [
+      "Rhode Island",
+      "Massachusetts",
+      "New York"
+    ],
+    "valid": {
+      "fmt_trim_whitespace": [
+        " Rhode Island ",
+        " Massachusetts ",
+        " New York "
+      ]
+    },
+    "invalid": {}
+  },
+  "90": {
+    "exact_match": [
+      "Ohio",
+      "Maryland",
+      "New York",
+      "New Jersey",
+      "Delaware",
+      "West Virginia"
+    ],
+    "valid": {
+      "fmt_extra_spaces": [
+        "Ohio",
+        "Maryland",
+        "New  York",
+        "New  Jersey",
+        "Delaware",
+        "West  Virginia"
+      ]
+    },
+    "invalid": {}
+  },
+  "91": {
+    "exact_match": [
+      "Rhode Island",
+      "Connecticut",
+      "New York",
+      "New Hampshire",
+      "Vermont"
+    ],
+    "valid": {
+      "fmt_with_quotes": [
+        "\"Rhode Island\"",
+        "\"Connecticut\"",
+        "\"New York\"",
+        "\"New Hampshire\"",
+        "\"Vermont\""
+      ]
+    },
+    "invalid": {}
+  },
+  "92": {
+    "exact_match": [
+      "New York",
+      "New Hampshire",
+      "Massachusetts"
+    ],
+    "valid": {
+      "fmt_with_period": [
+        "New York.",
+        "New Hampshire.",
+        "Massachusetts."
+      ]
+    },
+    "invalid": {}
+  },
+  "93": {
+    "exact_match": [
+      "Massachusetts",
+      "Vermont",
+      "Maine"
+    ],
+    "valid": {
+      "fmt_tabs_to_spaces": [
+        "Massachusetts",
+        "Vermont",
+        "Maine"
+      ]
+    },
+    "invalid": {}
+  },
+  "94": {
+    "exact_match": [
+      36.39
+    ],
+    "valid": {
+      "fmt_with_symbol": [
+        "$36.39"
+      ]
+    },
+    "invalid": {}
+  },
+  "95": {
+    "exact_match": [
+      39.64
+    ],
+    "valid": {
+      "fmt_no_symbol": [
+        "39.64"
+      ]
+    },
+    "invalid": {}
+  },
+  "97": {
+    "exact_match": [
+      "914km"
+    ],
+    "valid": {
+      "fmt_km": [
+        "914.0km"
+      ],
+      "tol_plus_5m": [
+        "914005.0m"
+      ],
+      "tol_minus_5m": [
+        "913995.0m"
+      ],
+      "tol_plus_1_percent": [
+        "923140.0m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "935023.0m"
+      ],
+      "tol_double": [
+        "1828000.0m"
+      ]
+    }
+  },
+  "112": {
+    "exact_match": [
+      "Hannah Lim"
+    ],
+    "valid": {
+      "fmt_en_dash": [
+        "Hannah\u2013Lim"
+      ]
+    },
+    "invalid": {}
+  },
+  "113": {
+    "exact_match": [
+      "Emma",
+      "Seam Miller"
+    ],
+    "valid": {
+      "fmt_em_dash": [
+        "Emma",
+        "Seam\u2014Miller"
+      ]
+    },
+    "invalid": {}
+  },
+  "114": {
+    "exact_match": [
+      "Shaunte",
+      "Merrie"
+    ],
+    "valid": {
+      "fmt_hyphen_minus": [
+        "Shaunte",
+        "Merrie"
+      ]
+    },
+    "invalid": {}
+  },
+  "116": {
+    "exact_match": [
+      "Dominic",
+      "Trey",
+      "Edmund",
+      "Merrie",
+      "Shaunte",
+      "Teofila",
+      "Carma",
+      "Yan",
+      "Valorie",
+      "Mikkel",
+      "Matthew",
+      "Monroe",
+      "Scotty",
+      "Alexander",
+      "Tracey",
+      "Joey"
+    ],
+    "valid": {
+      "fmt_original": [
+        "Dominic",
+        "Trey",
+        "Edmund",
+        "Merrie",
+        "Shaunte",
+        "Teofila",
+        "Carma",
+        "Yan",
+        "Valorie",
+        "Mikkel",
+        "Matthew",
+        "Monroe",
+        "Scotty",
+        "Alexander",
+        "Tracey",
+        "Joey"
+      ]
+    },
+    "invalid": {}
+  },
+  "117": {
+    "exact_match": [
+      "March 2, 2022"
+    ],
+    "valid": {
+      "fmt_iso": [
+        "2022-03-02"
+      ]
+    },
+    "invalid": {}
+  },
+  "127": {
+    "exact_match": [
+      "Hollister",
+      "Joust Bag",
+      "Antonia Racer Tank"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "hollister",
+        "joust bag",
+        "antonia racer tank"
+      ]
+    },
+    "invalid": {}
+  },
+  "128": {
+    "exact_match": [
+      3
+    ],
+    "valid": {
+      "fmt_string_float": [
+        "3.0"
+      ]
+    },
+    "invalid": {}
+  },
+  "129": {
+    "exact_match": [
+      9
+    ],
+    "valid": {
+      "fmt_word_form": [
+        "nine"
+      ]
+    },
+    "invalid": {}
+  },
+  "130": {
+    "exact_match": [
+      12
+    ],
+    "valid": {
+      "fmt_int": [
+        12
+      ]
+    },
+    "invalid": {}
+  },
+  "131": {
+    "exact_match": [
+      17
+    ],
+    "valid": {
+      "fmt_float": [
+        17.0
+      ]
+    },
+    "invalid": {}
+  },
+  "132": {
+    "exact_match": [
+      1
+    ],
+    "valid": {
+      "fmt_string_int": [
+        "1"
+      ]
+    },
+    "invalid": {}
+  },
+  "133": {
+    "exact_match": [
+      2
+    ],
+    "valid": {
+      "fmt_string_float": [
+        "2.0"
+      ]
+    },
+    "invalid": {}
+  },
+  "134": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_word_form": [
+        "zero"
+      ]
+    },
+    "invalid": {}
+  },
+  "135": {
+    "exact_match": [
+      1
+    ],
+    "valid": {
+      "fmt_int": [
+        1
+      ]
+    },
+    "invalid": {}
+  },
+  "136": {
+    "exact_match": [
+      5
+    ],
+    "valid": {
+      "fmt_float": [
+        5.0
+      ]
+    },
+    "invalid": {}
+  },
+  "137": {
+    "exact_match": [
+      "5h 47min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "5h47m"
+      ],
+      "tol_plus_1min": [
+        "5h48m"
+      ],
+      "tol_minus_1min": [
+        "5h46m"
+      ],
+      "tol_plus_2min": [
+        "5h49m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "6h27m"
+      ]
+    }
+  },
+  "138": {
+    "exact_match": [
+      "1h 58min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "1hr 58min"
+      ],
+      "tol_plus_1min": [
+        "1h59m"
+      ],
+      "tol_minus_1min": [
+        "1h57m"
+      ],
+      "tol_plus_2min": [
+        "2h0m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "2h12m"
+      ]
+    }
+  },
+  "139": {
+    "exact_match": [
+      "3h 20min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "3 hours 20 minutes"
+      ],
+      "tol_plus_1min": [
+        "3h21m"
+      ],
+      "tol_minus_1min": [
+        "3h19m"
+      ],
+      "tol_plus_2min": [
+        "3h22m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "3h44m"
+      ]
+    }
+  },
+  "140": {
+    "exact_match": [
+      "8h 33min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "8h33m"
+      ],
+      "tol_plus_1min": [
+        "8h34m"
+      ],
+      "tol_minus_1min": [
+        "8h32m"
+      ],
+      "tol_plus_2min": [
+        "8h35m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "9h32m"
+      ]
+    }
+  },
+  "141": {
+    "exact_match": [
+      32.41
+    ],
+    "valid": {
+      "fmt_comma_thousands": [
+        "$32.41"
+      ]
+    },
+    "invalid": {}
+  },
+  "142": {
+    "exact_match": [
+      68.51
+    ],
+    "valid": {
+      "fmt_euro_format": [
+        "\u20ac68,51"
+      ]
+    },
+    "invalid": {}
+  },
+  "143": {
+    "exact_match": [
+      260.69
+    ],
+    "valid": {
+      "fmt_with_symbol": [
+        "$260.69"
+      ]
+    },
+    "invalid": {}
+  },
+  "144": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_string_int": [
+        "0"
+      ]
+    },
+    "invalid": {}
+  },
+  "145": {
+    "exact_match": [
+      42.35
+    ],
+    "valid": {
+      "fmt_no_symbol": [
+        "42.35"
+      ]
+    },
+    "invalid": {}
+  },
+  "148": {
+    "exact_match": [
+      "Mist 16*24"
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        "MIST 16*24"
+      ]
+    },
+    "invalid": {}
+  },
+  "149": {
+    "exact_match": [
+      "Green-vines"
+    ],
+    "valid": {
+      "fmt_trim_whitespace": [
+        " Green-vines "
+      ]
+    },
+    "invalid": {}
+  },
+  "150": {
+    "exact_match": [
+      260.69
+    ],
+    "valid": {
+      "fmt_comma_thousands": [
+        "$260.69"
+      ]
+    },
+    "invalid": {}
+  },
+  "151": {
+    "exact_match": [
+      "4min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "4min"
+      ],
+      "tol_plus_1min": [
+        "5m"
+      ],
+      "tol_minus_1min": [
+        "3m"
+      ],
+      "tol_plus_2min": [
+        "6m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "8m"
+      ]
+    }
+  },
+  "152": {
+    "exact_match": [
+      "4min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "4 minutes"
+      ],
+      "tol_plus_1min": [
+        "5m"
+      ],
+      "tol_minus_1min": [
+        "3m"
+      ],
+      "tol_plus_2min": [
+        "6m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "8m"
+      ]
+    }
+  },
+  "153": {
+    "exact_match": [
+      "7min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "7m"
+      ],
+      "tol_plus_1min": [
+        "8m"
+      ],
+      "tol_minus_1min": [
+        "6m"
+      ],
+      "tol_plus_2min": [
+        "9m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "11m"
+      ]
+    }
+  },
+  "154": {
+    "exact_match": [
+      "4min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "4min"
+      ],
+      "tol_plus_1min": [
+        "5m"
+      ],
+      "tol_minus_1min": [
+        "3m"
+      ],
+      "tol_plus_2min": [
+        "6m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "8m"
+      ]
+    }
+  },
+  "155": {
+    "exact_match": [
+      "9min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "9 minutes"
+      ],
+      "tol_plus_1min": [
+        "10m"
+      ],
+      "tol_minus_1min": [
+        "8m"
+      ],
+      "tol_plus_2min": [
+        "11m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "13m"
+      ]
+    }
+  },
+  "163": {
+    "exact_match": [
+      "Memory Card Came Defective"
+    ],
+    "valid": {
+      "fmt_extra_spaces": [
+        "Memory  Card  Came  Defective"
+      ]
+    },
+    "invalid": {}
+  },
+  "164": {
+    "exact_match": [
+      "Meh"
+    ],
+    "valid": {
+      "fmt_with_quotes": [
+        "\"Meh\""
+      ]
+    },
+    "invalid": {}
+  },
+  "165": {
+    "exact_match": [
+      "So cute but too small",
+      "Toe rubbed"
+    ],
+    "valid": {
+      "fmt_with_period": [
+        "So cute but too small.",
+        "Toe rubbed."
+      ]
+    },
+    "invalid": {}
+  },
+  "167": {
+    "exact_match": [
+      "Waste of big money"
+    ],
+    "valid": {
+      "fmt_tabs_to_spaces": [
+        "Waste\tof\tbig\tmoney"
+      ]
+    },
+    "invalid": {}
+  },
+  "169": {
+    "exact_match": [
+      187,
+      183
+    ],
+    "valid": {
+      "fmt_string_float": [
+        "187.0",
+        "183.0"
+      ]
+    },
+    "invalid": {}
+  },
+  "170": {
+    "exact_match": [
+      193,
+      190,
+      189,
+      188,
+      184,
+      181
+    ],
+    "valid": {
+      "fmt_word_form": [
+        "193",
+        "190",
+        "189",
+        "188",
+        "184",
+        "181"
+      ]
+    },
+    "invalid": {}
+  },
+  "171": {
+    "exact_match": [
+      182,
+      179,
+      186,
+      185,
+      193,
+      190,
+      189,
+      188,
+      184,
+      181
+    ],
+    "valid": {
+      "fmt_int": [
+        182,
+        179,
+        186,
+        185,
+        193,
+        190,
+        189,
+        188,
+        184,
+        181
+      ]
+    },
+    "invalid": {}
+  },
+  "172": {
+    "exact_match": [
+      193,
+      190,
+      189,
+      188,
+      184,
+      181
+    ],
+    "valid": {
+      "fmt_float": [
+        193.0,
+        190.0,
+        189.0,
+        188.0,
+        184.0,
+        181.0
+      ]
+    },
+    "invalid": {}
+  },
+  "173": {
+    "exact_match": [
+      false
+    ],
+    "valid": {
+      "fmt_string_abbrev": [
+        "n"
+      ]
+    },
+    "invalid": {}
+  },
+  "174": {
+    "exact_match": [
+      false
+    ],
+    "valid": {
+      "fmt_string_on_off": [
+        "off"
+      ]
+    },
+    "invalid": {}
+  },
+  "175": {
+    "exact_match": [
+      false
+    ],
+    "valid": {
+      "fmt_string_numeric": [
+        "0"
+      ]
+    },
+    "invalid": {}
+  },
+  "176": {
+    "exact_match": [
+      false
+    ],
+    "valid": {
+      "fmt_bool_literal": [
+        false
+      ]
+    },
+    "invalid": {}
+  },
+  "177": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_numeric": [
+        1
+      ]
+    },
+    "invalid": {}
+  },
+  "178": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_string_lowercase": [
+        "true"
+      ]
+    },
+    "invalid": {}
+  },
+  "179": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_string_uppercase": [
+        "TRUE"
+      ]
+    },
+    "invalid": {}
+  },
+  "180": {
+    "exact_match": [
+      false
+    ],
+    "valid": {
+      "fmt_string_yes_no": [
+        "no"
+      ]
+    },
+    "invalid": {}
+  },
+  "181": {
+    "exact_match": [
+      false
+    ],
+    "valid": {
+      "fmt_string_abbrev": [
+        "n"
+      ]
+    },
+    "invalid": {}
+  },
+  "182": {
+    "exact_match": [
+      true
+    ],
+    "valid": {
+      "fmt_string_on_off": [
+        "on"
+      ]
+    },
+    "invalid": {}
+  },
+  "185": {
+    "exact_match": [
+      "Cotton",
+      "Fleece"
+    ],
+    "valid": {
+      "fmt_en_dash": [
+        "Cotton",
+        "Fleece"
+      ]
+    },
+    "invalid": {}
+  },
+  "187": {
+    "exact_match": [
+      "WH11-S-Blue",
+      "WS08-XS-Blue"
+    ],
+    "valid": {
+      "fmt_em_dash": [
+        "WH11-S-Blue",
+        "WS08-XS-Blue"
+      ]
+    },
+    "invalid": {}
+  },
+  "188": {
+    "exact_match": [
+      365.42
+    ],
+    "valid": {
+      "fmt_euro_format": [
+        "\u20ac365,42"
+      ]
+    },
+    "invalid": {}
+  },
+  "189": {
+    "exact_match": [
+      754.99
+    ],
+    "valid": {
+      "fmt_with_symbol": [
+        "$754.99"
+      ]
+    },
+    "invalid": {}
+  },
+  "190": {
+    "exact_match": [
+      65.32
+    ],
+    "valid": {
+      "fmt_no_symbol": [
+        "65.32"
+      ]
+    },
+    "invalid": {}
+  },
+  "192": {
+    "exact_match": [
+      754.99
+    ],
+    "valid": {
+      "fmt_comma_thousands": [
+        "$754.99"
+      ]
+    },
+    "invalid": {}
+  },
+  "193": {
+    "exact_match": [
+      182.4
+    ],
+    "valid": {
+      "fmt_euro_format": [
+        "\u20ac182,40"
+      ]
+    },
+    "invalid": {}
+  },
+  "194": {
+    "exact_match": [
+      555.2
+    ],
+    "valid": {
+      "fmt_with_symbol": [
+        "$555.20"
+      ]
+    },
+    "invalid": {}
+  },
+  "195": {
+    "exact_match": [
+      885.4
+    ],
+    "valid": {
+      "fmt_no_symbol": [
+        "885.40"
+      ]
+    },
+    "invalid": {}
+  },
+  "196": {
+    "exact_match": [
+      194.25
+    ],
+    "valid": {
+      "fmt_comma_thousands": [
+        "$194.25"
+      ]
+    },
+    "invalid": {}
+  },
+  "197": {
+    "exact_match": [
+      778.2
+    ],
+    "valid": {
+      "fmt_euro_format": [
+        "\u20ac778,20"
+      ]
+    },
+    "invalid": {}
+  },
+  "198": {
+    "exact_match": [
+      "harrypotterfan1@gmail.com"
+    ],
+    "valid": {
+      "fmt_hyphen_minus": [
+        "harrypotterfan1@gmail.com"
+      ]
+    },
+    "invalid": {}
+  },
+  "199": {
+    "exact_match": [
+      299
+    ],
+    "valid": {
+      "fmt_string_int": [
+        "299"
+      ]
+    },
+    "invalid": {}
+  },
+  "200": {
+    "exact_match": [
+      "John Lee"
+    ],
+    "valid": {
+      "fmt_original": [
+        "John Lee"
+      ]
+    },
+    "invalid": {}
+  },
+  "202": {
+    "exact_match": [
+      "May 23 2023"
+    ],
+    "valid": {
+      "fmt_us": [
+        "05/23/2023"
+      ]
+    },
+    "invalid": {}
+  },
+  "205": {
+    "exact_match": [
+      1
+    ],
+    "valid": {
+      "fmt_string_float": [
+        "1.0"
+      ]
+    },
+    "invalid": {}
+  },
+  "206": {
+    "exact_match": [
+      2
+    ],
+    "valid": {
+      "fmt_word_form": [
+        "two"
+      ]
+    },
+    "invalid": {}
+  },
+  "207": {
+    "exact_match": [
+      1
+    ],
+    "valid": {
+      "fmt_int": [
+        1
+      ]
+    },
+    "invalid": {}
+  },
+  "222": {
+    "exact_match": [
+      "3min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "3m"
+      ],
+      "tol_plus_1min": [
+        "4m"
+      ],
+      "tol_minus_1min": [
+        "2m"
+      ],
+      "tol_plus_2min": [
+        "5m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "7m"
+      ]
+    }
+  },
+  "223": {
+    "exact_match": [
+      "4min"
+    ],
+    "valid": {
+      "fmt_hms_colon": [
+        "4min"
+      ],
+      "tol_plus_1min": [
+        "5m"
+      ],
+      "tol_minus_1min": [
+        "3m"
+      ],
+      "tol_plus_2min": [
+        "6m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "8m"
+      ]
+    }
+  },
+  "224": {
+    "exact_match": [
+      "3min"
+    ],
+    "valid": {
+      "fmt_text_long": [
+        "3 minutes"
+      ],
+      "tol_plus_1min": [
+        "4m"
+      ],
+      "tol_minus_1min": [
+        "2m"
+      ],
+      "tol_plus_2min": [
+        "5m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "7m"
+      ]
+    }
+  },
+  "231": {
+    "exact_match": [
+      "^#?\\s*0*170$"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "^#?\\s*0*170$"
+      ],
+      "with_hash": [
+        "#170"
+      ],
+      "without_hash": [
+        "170"
+      ],
+      "with_leading_zeros": [
+        "#0170"
+      ],
+      "with_spaces": [
+        "# 170"
+      ]
+    },
+    "invalid": {
+      "wrong_number": [
+        "#171"
+      ],
+      "space_in_middle": [
+        "#17 0"
+      ],
+      "text_in_middle": [
+        "#17test0"
+      ],
+      "prefix_text": [
+        "Order #170"
+      ]
+    }
+  },
+  "232": {
+    "exact_match": [
+      "^#?\\s*0*189$"
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        "^#?\\s*0*189$"
+      ],
+      "with_hash": [
+        "#189"
+      ],
+      "without_hash": [
+        "189"
+      ],
+      "with_leading_zeros": [
+        "#0189"
+      ],
+      "with_spaces": [
+        "# 189"
+      ]
+    },
+    "invalid": {
+      "wrong_number": [
+        "#190"
+      ],
+      "space_in_middle": [
+        "#18 9"
+      ],
+      "text_in_middle": [
+        "#18test9"
+      ],
+      "prefix_text": [
+        "Order #189"
+      ]
+    }
+  },
+  "233": {
+    "exact_match": [
+      "^#?\\s*0*180$"
+    ],
+    "valid": {
+      "fmt_trim_whitespace": [
+        "^#?\\s*0*180$"
+      ],
+      "with_hash": [
+        "#180"
+      ],
+      "without_hash": [
+        "180"
+      ],
+      "with_leading_zeros": [
+        "#0180"
+      ],
+      "with_spaces": [
+        "# 180"
+      ]
+    },
+    "invalid": {
+      "wrong_number": [
+        "#181"
+      ],
+      "space_in_middle": [
+        "#18 0"
+      ],
+      "text_in_middle": [
+        "#18test0"
+      ],
+      "prefix_text": [
+        "Order #180"
+      ]
+    }
+  },
+  "243": {
+    "exact_match": [
+      "hannah.lim@gmail.com"
+    ],
+    "valid": {
+      "fmt_extra_spaces": [
+        "hannah.lim@gmail.com"
+      ]
+    },
+    "invalid": {}
+  },
+  "244": {
+    "exact_match": [
+      "emma.lopez@gmail.com"
+    ],
+    "valid": {
+      "fmt_with_quotes": [
+        "\"emma.lopez@gmail.com\""
+      ]
+    },
+    "invalid": {}
+  },
+  "245": {
+    "exact_match": [
+      "Shaunte"
+    ],
+    "valid": {
+      "fmt_with_period": [
+        "Shaunte."
+      ]
+    },
+    "invalid": {}
+  },
+  "246": {
+    "exact_match": [
+      "Teofila"
+    ],
+    "valid": {
+      "fmt_tabs_to_spaces": [
+        "Teofila"
+      ]
+    },
+    "invalid": {}
+  },
+  "248": {
+    "exact_match": [
+      {
+        "latitude": "40.4424191",
+        "longitude": "-79.9397388"
+      }
+    ],
+    "valid": {
+      "fmt_dict_full_keys": [
+        {
+          "latitude": "40.4424191",
+          "longitude": "-79.9397388"
+        }
+      ]
+    },
+    "invalid": {}
+  },
+  "249": {
+    "exact_match": [
+      {
+        "latitude": "40.46076",
+        "longitude": "-79.94666"
+      }
+    ],
+    "valid": {
+      "fmt_dict_short_keys": [
+        {
+          "latitude": "40.46076",
+          "longitude": "-79.94666"
+        }
+      ]
+    },
+    "invalid": {}
+  },
+  "250": {
+    "exact_match": [
+      {
+        "latitude": "40.4511693",
+        "longitude": "-79.9334241"
+      }
+    ],
+    "valid": {
+      "fmt_dict_string_values": [
+        {
+          "latitude": "40.4511693",
+          "longitude": "-79.9334241"
+        }
+      ]
+    },
+    "invalid": {}
+  },
+  "251": {
+    "exact_match": [
+      {
+        "latitude": "40.4443",
+        "longitude": "-79.94889"
+      }
+    ],
+    "valid": {
+      "fmt_array": [
+        {
+          "latitude": "40.4443",
+          "longitude": "-79.94889"
+        }
+      ]
+    },
+    "invalid": {}
+  },
+  "252": {
+    "exact_match": [
+      {
+        "latitude": "40.45761",
+        "longitude": "-79.92934"
+      }
+    ],
+    "valid": {
+      "fmt_string_comma": [
+        {
+          "latitude": "40.45761",
+          "longitude": "-79.92934"
+        }
+      ]
+    },
+    "invalid": {}
+  },
+  "254": {
+    "exact_match": [
+      "4125785000"
+    ],
+    "valid": {
+      "fmt_en_dash": [
+        "4125785000"
+      ]
+    },
+    "invalid": {}
+  },
+  "255": {
+    "exact_match": [
+      "Allegheny County Airport Authority"
+    ],
+    "valid": {
+      "fmt_exact": [
+        "Allegheny County Airport Authority"
+      ]
+    },
+    "invalid": {}
+  },
+  "256": {
+    "exact_match": [
+      "http://web.cmoa.org/"
+    ],
+    "valid": {
+      "fmt_em_dash": [
+        "http://web.cmoa.org/"
+      ]
+    },
+    "invalid": {}
+  },
+  "259": {
+    "exact_match": [
+      "TMN_bBn9Z48qVbUFZV45"
+    ],
+    "valid": {
+      "fmt_hyphen_minus": [
+        "TMN_bBn9Z48qVbUFZV45"
+      ]
+    },
+    "invalid": {}
+  },
+  "287": {
+    "exact_match": [
+      "5h 47min"
+    ],
+    "valid": {
+      "fmt_short_abbrev": [
+        "5h47m"
+      ],
+      "tol_plus_1min": [
+        "5h48m"
+      ],
+      "tol_minus_1min": [
+        "5h46m"
+      ],
+      "tol_plus_2min": [
+        "5h49m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "6h27m"
+      ]
+    }
+  },
+  "288": {
+    "exact_match": [
+      "coolcat321@hotmail.com"
+    ],
+    "valid": {
+      "fmt_original": [
+        "coolcat321@hotmail.com"
+      ]
+    },
+    "invalid": {}
+  },
+  "290": {
+    "exact_match": [
+      "WSH09-29-White",
+      "WSH09-28-Green",
+      "MSH11-34-Blue",
+      "WP09-29-Purple"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "wsh09-29-white",
+        "wsh09-28-green",
+        "msh11-34-blue",
+        "wp09-29-purple"
+      ]
+    },
+    "invalid": {}
+  },
+  "291": {
+    "exact_match": [
+      148.8
+    ],
+    "valid": {
+      "fmt_with_symbol": [
+        "$148.80"
+      ]
+    },
+    "invalid": {}
+  },
+  "292": {
+    "exact_match": [
+      9
+    ],
+    "valid": {
+      "fmt_float": [
+        9.0
+      ]
+    },
+    "invalid": {}
+  },
+  "293": {
+    "exact_match": [
+      "git@__SSH_HOST__:convexegg/super_awesome_robot.git"
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        "GIT@__SSH_HOST__:CONVEXEGG/SUPER_AWESOME_ROBOT.GIT"
+      ],
+      "exact_match": [
+        "git@__ssh_host__:convexegg/super_awesome_robot.git"
+      ],
+      "with_standard_port_22": [
+        "git@__ssh_host__:convexegg/super_awesome_robot.git"
+      ],
+      "no_port": [
+        "git@__ssh_host__:convexegg/super_awesome_robot.git"
+      ]
+    },
+    "invalid": {
+      "wrong_repo_name": [
+        "git@__ssh_host__:convexegg/super_awesome_robots.git"
+      ],
+      "wrong_owner": [
+        "git@__ssh_host__:convexeggs/super_awesome_robot.git"
+      ],
+      "https_protocol": [
+        "https://__GITLAB__/convexegg/super_awesome_robot.git"
+      ],
+      "missing_git_extension": [
+        "git@__ssh_host__:convexegg/super_awesome_robot"
+      ]
+    }
+  },
+  "294": {
+    "exact_match": [
+      "git@__SSH_HOST__:convexegg/chatgpt.git"
+    ],
+    "valid": {
+      "fmt_trim_whitespace": [
+        " git@__SSH_HOST__:convexegg/chatgpt.git "
+      ]
+    },
+    "invalid": {}
+  },
+  "295": {
+    "exact_match": [
+      "git@__SSH_HOST__:root/metaseq.git"
+    ],
+    "valid": {
+      "fmt_extra_spaces": [
+        "git@__SSH_HOST__:root/metaseq.git"
+      ]
+    },
+    "invalid": {}
+  },
+  "296": {
+    "exact_match": [
+      "git@__SSH_HOST__:eriklindernoren/PyTorch-GAN.git"
+    ],
+    "valid": {
+      "fmt_with_quotes": [
+        "\"git@__SSH_HOST__:eriklindernoren/PyTorch-GAN.git\""
+      ],
+      "exact_match": [
+        "git@__ssh_host__:eriklindernoren/PyTorch-GAN.git"
+      ],
+      "with_standard_port_22": [
+        "git@__ssh_host__:eriklindernoren/PyTorch-GAN.git"
+      ],
+      "no_port": [
+        "git@__ssh_host__:eriklindernoren/PyTorch-GAN.git"
+      ]
+    },
+    "invalid": {
+      "wrong_repo_name": [
+        "git@__ssh_host__:eriklindernoren/PyTorch-GANs.git"
+      ],
+      "wrong_owner": [
+        "git@__ssh_host__:erik/PyTorch-GAN.git"
+      ],
+      "https_protocol": [
+        "https://__GITLAB__/eriklindernoren/PyTorch-GAN.git"
+      ],
+      "missing_git_extension": [
+        "git@__ssh_host__:eriklindernoren/PyTorch-GAN"
+      ]
+    }
+  },
+  "297": {
+    "exact_match": [
+      "git@__SSH_HOST__:covid19india/covid19india-react.git"
+    ],
+    "valid": {
+      "fmt_with_period": [
+        "git@__SSH_HOST__:covid19india/covid19india-react.git."
+      ],
+      "exact_match": [
+        "git@__ssh_host__:covid19india/covid19india-react.git"
+      ],
+      "with_standard_port_22": [
+        "git@__ssh_host__:covid19india/covid19india-react.git"
+      ],
+      "no_port": [
+        "git@__ssh_host__:covid19india/covid19india-react.git"
+      ]
+    },
+    "invalid": {
+      "wrong_repo_name": [
+        "git@__ssh_host__:covid19india/covid19-react.git"
+      ],
+      "wrong_owner": [
+        "git@__ssh_host__:covid19/covid19india-react.git"
+      ],
+      "https_protocol": [
+        "https://__GITLAB__/covid19india/covid19india-react.git"
+      ],
+      "missing_git_extension": [
+        "git@__ssh_host__:covid19india/covid19india-react"
+      ]
+    }
+  },
+  "303": {
+    "exact_match": [
+      1
+    ],
+    "valid": {
+      "fmt_string_int": [
+        "1"
+      ]
+    },
+    "invalid": {}
+  },
+  "304": {
+    "exact_match": [
+      14
+    ],
+    "valid": {
+      "fmt_string_float": [
+        "14.0"
+      ]
+    },
+    "invalid": {}
+  },
+  "305": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_word_form": [
+        "zero"
+      ]
+    },
+    "invalid": {}
+  },
+  "306": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_int": [
+        0
+      ]
+    },
+    "invalid": {}
+  },
+  "307": {
+    "exact_match": [
+      5
+    ],
+    "valid": {
+      "fmt_float": [
+        5.0
+      ]
+    },
+    "invalid": {}
+  },
+  "308": {
+    "exact_match": [
+      "shawn.allen@github.com"
+    ],
+    "valid": {
+      "fmt_tabs_to_spaces": [
+        "shawn.allen@github.com"
+      ]
+    },
+    "invalid": {}
+  },
+  "309": {
+    "exact_match": [
+      "wright.grayson@gmail.com"
+    ],
+    "valid": {
+      "fmt_en_dash": [
+        "wright.grayson@gmail.com"
+      ]
+    },
+    "invalid": {}
+  },
+  "310": {
+    "exact_match": [
+      "antonlopyrev@gmail.com"
+    ],
+    "valid": {
+      "fmt_em_dash": [
+        "antonlopyrev@gmail.com"
+      ]
+    },
+    "invalid": {}
+  },
+  "311": {
+    "exact_match": [
+      "eriklindernoren@live.se"
+    ],
+    "valid": {
+      "fmt_hyphen_minus": [
+        "eriklindernoren@live.se"
+      ]
+    },
+    "invalid": {}
+  },
+  "312": {
+    "exact_match": [
+      "staringmonkey@gmail.com"
+    ],
+    "valid": {
+      "fmt_original": [
+        "staringmonkey@gmail.com"
+      ]
+    },
+    "invalid": {}
+  },
+  "314": {
+    "exact_match": [
+      "Shawn Allen",
+      "Inayaili Le\u00f3n",
+      "Aurora Pleguezuelo"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "shawn allen",
+        "inayaili le\u00f3n",
+        "aurora pleguezuelo"
+      ]
+    },
+    "invalid": {}
+  },
+  "315": {
+    "exact_match": [
+      "eriklindernoren@live.se",
+      "eriklindernoren@gmail.com",
+      "pinnacle.chen@qq.com"
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        "ERIKLINDERNOREN@LIVE.SE",
+        "ERIKLINDERNOREN@GMAIL.COM",
+        "PINNACLE.CHEN@QQ.COM"
+      ]
+    },
+    "invalid": {}
+  },
+  "316": {
+    "exact_match": [
+      "dan.abramov@gmail.com",
+      "timer150@gmail.com",
+      "ian@iansutherland.ca"
+    ],
+    "valid": {
+      "fmt_trim_whitespace": [
+        " dan.abramov@gmail.com ",
+        " timer150@gmail.com ",
+        " ian@iansutherland.ca "
+      ]
+    },
+    "invalid": {}
+  },
+  "318": {
+    "exact_match": [
+      "Lo",
+      "Chen",
+      "Chu"
+    ],
+    "valid": {
+      "fmt_extra_spaces": [
+        "Lo",
+        "Chen",
+        "Chu"
+      ]
+    },
+    "invalid": {}
+  },
+  "320": {
+    "exact_match": [
+      406.53
+    ],
+    "valid": {
+      "fmt_no_symbol": [
+        "406.53"
+      ]
+    },
+    "invalid": {}
+  },
+  "321": {
+    "exact_match": [
+      3053.97
+    ],
+    "valid": {
+      "fmt_comma_thousands": [
+        "$3,053.97"
+      ]
+    },
+    "invalid": {}
+  },
+  "322": {
+    "exact_match": [
+      350.42
+    ],
+    "valid": {
+      "fmt_euro_format": [
+        "\u20ac350,42"
+      ]
+    },
+    "invalid": {}
+  },
+  "323": {
+    "exact_match": [
+      264.49
+    ],
+    "valid": {
+      "fmt_with_symbol": [
+        "$264.49"
+      ]
+    },
+    "invalid": {}
+  },
+  "329": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_no_symbol": [
+        "0.00"
+      ]
+    },
+    "invalid": {}
+  },
+  "330": {
+    "exact_match": [
+      53.31
+    ],
+    "valid": {
+      "fmt_comma_thousands": [
+        "$53.31"
+      ]
+    },
+    "invalid": {}
+  },
+  "331": {
+    "exact_match": [
+      25.16
+    ],
+    "valid": {
+      "fmt_euro_format": [
+        "\u20ac25,16"
+      ]
+    },
+    "invalid": {}
+  },
+  "333": {
+    "exact_match": [
+      358.18
+    ],
+    "valid": {
+      "fmt_with_symbol": [
+        "$358.18"
+      ]
+    },
+    "invalid": {}
+  },
+  "334": {
+    "exact_match": [
+      "03/11/2023"
+    ],
+    "valid": {
+      "fmt_us_short": [
+        "3/11/2023"
+      ]
+    },
+    "invalid": {}
+  },
+  "335": {
+    "exact_match": [
+      "01/16/2023"
+    ],
+    "valid": {
+      "fmt_eu": [
+        "16/01/2023"
+      ]
+    },
+    "invalid": {}
+  },
+  "336": {
+    "exact_match": [
+      "01/16/2023"
+    ],
+    "valid": {
+      "fmt_text_full": [
+        "January 16, 2023"
+      ]
+    },
+    "invalid": {}
+  },
+  "337": {
+    "exact_match": [
+      "12/12/2022"
+    ],
+    "valid": {
+      "fmt_text_short": [
+        "Dec 12, 2022"
+      ]
+    },
+    "invalid": {}
+  },
+  "338": {
+    "exact_match": [
+      "12/04/2022"
+    ],
+    "valid": {
+      "fmt_text_no_comma": [
+        "Dec 04 2022"
+      ]
+    },
+    "invalid": {}
+  },
+  "344": {
+    "exact_match": [
+      351
+    ],
+    "valid": {
+      "fmt_string_int": [
+        "351"
+      ]
+    },
+    "invalid": {}
+  },
+  "345": {
+    "exact_match": [
+      351
+    ],
+    "valid": {
+      "fmt_string_float": [
+        "351.0"
+      ]
+    },
+    "invalid": {}
+  },
+  "346": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_word_form": [
+        "zero"
+      ]
+    },
+    "invalid": {}
+  },
+  "347": {
+    "exact_match": [
+      351
+    ],
+    "valid": {
+      "fmt_int": [
+        351
+      ]
+    },
+    "invalid": {}
+  },
+  "348": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_float": [
+        0.0
+      ]
+    },
+    "invalid": {}
+  },
+  "349": {
+    "exact_match": [
+      "^@?yjlou$"
+    ],
+    "valid": {
+      "fmt_with_quotes": [
+        "^@?yjlou$"
+      ]
+    },
+    "invalid": {}
+  },
+  "350": {
+    "exact_match": [
+      "^@?abisubramanya27$"
+    ],
+    "valid": {
+      "fmt_with_period": [
+        "^@?abisubramanya27$"
+      ]
+    },
+    "invalid": {}
+  },
+  "358": {
+    "exact_match": [
+      "^flat rate[^a-z0-9]*(?:fixed)$"
+    ],
+    "valid": {
+      "fmt_tabs_to_spaces": [
+        "^flat rate[^a-z0-9]*(?:fixed)$"
+      ]
+    },
+    "invalid": {}
+  },
+  "359": {
+    "exact_match": [
+      "January 29, 2023"
+    ],
+    "valid": {
+      "fmt_iso": [
+        "2023-01-29"
+      ]
+    },
+    "invalid": {}
+  },
+  "360": {
+    "exact_match": [
+      "Bornbridge Artificial Spiral Topiary Tree - Indoor / Outdoor Topiary Trees - Artificial Outdoor Plants (2 Pack, 4' Cypress)",
+      "Russound 5B45W 4\" Indoor Outdoor Speakers White"
+    ],
+    "valid": {
+      "fmt_en_dash": [
+        "Bornbridge\u2013Artificial\u2013Spiral\u2013Topiary\u2013Tree\u2013-\u2013Indoor\u2013/\u2013Outdoor\u2013Topiary\u2013Trees\u2013-\u2013Artificial\u2013Outdoor\u2013Plants\u2013(2\u2013Pack,\u20134'\u2013Cypress)",
+        "Russound\u20135B45W\u20134\"\u2013Indoor\u2013Outdoor\u2013Speakers\u2013White"
+      ]
+    },
+    "invalid": {}
+  },
+  "363": {
+    "exact_match": [
+      "748m"
+    ],
+    "valid": {
+      "fmt_miles": [
+        "0.464786mi"
+      ],
+      "tol_plus_5m": [
+        "753.0m"
+      ],
+      "tol_minus_5m": [
+        "743.0m"
+      ],
+      "tol_plus_1_percent": [
+        "755.48m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "766.204m"
+      ],
+      "tol_double": [
+        "1496.0m"
+      ]
+    }
+  },
+  "364": {
+    "exact_match": [
+      "1.7km"
+    ],
+    "valid": {
+      "fmt_meters": [
+        "1700.0m"
+      ],
+      "tol_plus_5m": [
+        "1705.0m"
+      ],
+      "tol_minus_5m": [
+        "1695.0m"
+      ],
+      "tol_plus_1_percent": [
+        "1717.0m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "1740.1m"
+      ],
+      "tol_double": [
+        "3400.0m"
+      ]
+    }
+  },
+  "365": {
+    "exact_match": [
+      "2.2km"
+    ],
+    "valid": {
+      "fmt_space_separated": [
+        "2.2 km"
+      ],
+      "tol_plus_5m": [
+        "2205.0m"
+      ],
+      "tol_minus_5m": [
+        "2195.0m"
+      ],
+      "tol_plus_1_percent": [
+        "2222.0m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "2251.6m"
+      ],
+      "tol_double": [
+        "4400.0m"
+      ]
+    }
+  },
+  "366": {
+    "exact_match": [
+      "1.2km"
+    ],
+    "valid": {
+      "fmt_km": [
+        "1.2km"
+      ],
+      "tol_plus_5m": [
+        "1205.0m"
+      ],
+      "tol_minus_5m": [
+        "1195.0m"
+      ],
+      "tol_plus_1_percent": [
+        "1212.0m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "1228.6m"
+      ],
+      "tol_double": [
+        "2400.0m"
+      ]
+    }
+  },
+  "367": {
+    "exact_match": [
+      "1.4km"
+    ],
+    "valid": {
+      "fmt_miles": [
+        "0.869919mi"
+      ],
+      "tol_plus_5m": [
+        "1405.0m"
+      ],
+      "tol_minus_5m": [
+        "1395.0m"
+      ],
+      "tol_plus_1_percent": [
+        "1414.0m"
+      ]
+    },
+    "invalid": {
+      "tol_outside_tolerance": [
+        "1433.2m"
+      ],
+      "tol_double": [
+        "2800.0m"
+      ]
+    }
+  },
+  "384": {
+    "exact_match": [
+      "Lisa Lee",
+      "Evelyn Kurver",
+      "Amanda",
+      "N Randall"
+    ],
+    "valid": {
+      "fmt_em_dash": [
+        "Lisa\u2014Lee",
+        "Evelyn\u2014Kurver",
+        "Amanda",
+        "N\u2014Randall"
+      ]
+    },
+    "invalid": {}
+  },
+  "385": {
+    "exact_match": [
+      "Lisa Lee",
+      "MH",
+      "Misba009",
+      "Amanda",
+      "Cally",
+      "Bethany Robertson"
+    ],
+    "valid": {
+      "fmt_hyphen_minus": [
+        "Lisa-Lee",
+        "MH",
+        "Misba009",
+        "Amanda",
+        "Cally",
+        "Bethany-Robertson"
+      ]
+    },
+    "invalid": {}
+  },
+  "386": {
+    "exact_match": [
+      65
+    ],
+    "valid": {
+      "fmt_string_int": [
+        "65"
+      ]
+    },
+    "invalid": {}
+  },
+  "387": {
+    "exact_match": [
+      "MH",
+      "Misba009",
+      "Amanda",
+      "Amazon Customer",
+      "Cally",
+      "Bethany Robertson"
+    ],
+    "valid": {
+      "fmt_original": [
+        "MH",
+        "Misba009",
+        "Amanda",
+        "Amazon Customer",
+        "Cally",
+        "Bethany Robertson"
+      ]
+    },
+    "invalid": {}
+  },
+  "388": {
+    "exact_match": [
+      "Evelyn Kurver",
+      "N Randall"
+    ],
+    "valid": {
+      "fmt_lowercase": [
+        "evelyn kurver",
+        "n randall"
+      ]
+    },
+    "invalid": {}
+  },
+  "784": {
+    "exact_match": [
+      "secupwn@users.noreply.github.com"
+    ],
+    "valid": {
+      "fmt_uppercase": [
+        "SECUPWN@USERS.NOREPLY.GITHUB.COM"
+      ]
+    },
+    "invalid": {}
+  },
+  "785": {
+    "exact_match": [
+      "secupwn@users.noreply.github.com"
+    ],
+    "valid": {
+      "fmt_trim_whitespace": [
+        " secupwn@users.noreply.github.com "
+      ]
+    },
+    "invalid": {}
+  },
+  "786": {
+    "exact_match": [
+      414
+    ],
+    "valid": {
+      "fmt_string_float": [
+        "414.0"
+      ]
+    },
+    "invalid": {}
+  },
+  "787": {
+    "exact_match": [
+      0
+    ],
+    "valid": {
+      "fmt_word_form": [
+        "zero"
+      ]
+    },
+    "invalid": {}
+  }
+}

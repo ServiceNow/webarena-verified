@@ -1,0 +1,189 @@
+{
+  "type": "resource-snapshot",
+  "snapshot": {
+    "_frameref": "frame@31b566f21b1483d059bafaa3540fd598",
+    "_monotonicTime": 5664.38,
+    "startedDateTime": "2025-10-15T15:24:56.804Z",
+    "time": 93.34899999999999,
+    "request": {
+      "method": "GET",
+      "url": "http://localhost:7780/admin",
+      "httpVersion": "HTTP/1.1",
+      "cookies": [
+        {
+          "name": "admin",
+          "value": "4597479228344bed0760ac8d8d1b7b92"
+        }
+      ],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+        },
+        {
+          "name": "Accept-Encoding",
+          "value": "gzip, deflate, br, zstd"
+        },
+        {
+          "name": "Connection",
+          "value": "keep-alive"
+        },
+        {
+          "name": "Cookie",
+          "value": "admin=4597479228344bed0760ac8d8d1b7b92"
+        },
+        {
+          "name": "Host",
+          "value": "localhost:7780"
+        },
+        {
+          "name": "Sec-Fetch-Dest",
+          "value": "document"
+        },
+        {
+          "name": "Sec-Fetch-Mode",
+          "value": "navigate"
+        },
+        {
+          "name": "Sec-Fetch-Site",
+          "value": "none"
+        },
+        {
+          "name": "Sec-Fetch-User",
+          "value": "?1"
+        },
+        {
+          "name": "Upgrade-Insecure-Requests",
+          "value": "1"
+        },
+        {
+          "name": "User-Agent",
+          "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/140.0.7339.16 Safari/537.36"
+        },
+        {
+          "name": "sec-ch-ua",
+          "value": "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"HeadlessChrome\";v=\"140\""
+        },
+        {
+          "name": "sec-ch-ua-mobile",
+          "value": "?0"
+        },
+        {
+          "name": "sec-ch-ua-platform",
+          "value": "\"macOS\""
+        }
+      ],
+      "queryString": [],
+      "headersSize": -1,
+      "bodySize": 0
+    },
+    "response": {
+      "status": 302,
+      "statusText": "Found",
+      "httpVersion": "HTTP/1.1",
+      "cookies": [
+        {
+          "name": "admin",
+          "value": "4597479228344bed0760ac8d8d1b7b92",
+          "expires": "2025-10-19T19:24:56.898Z",
+          "httpOnly": true,
+          "sameSite": "Lax"
+        },
+        {
+          "name": "admin",
+          "value": "4597479228344bed0760ac8d8d1b7b92",
+          "expires": "2025-10-19T19:24:56.898Z",
+          "httpOnly": true,
+          "sameSite": "Lax"
+        }
+      ],
+      "headers": [
+        {
+          "name": "Cache-Control",
+          "value": "max-age=0, must-revalidate, no-cache, no-store"
+        },
+        {
+          "name": "Connection",
+          "value": "keep-alive"
+        },
+        {
+          "name": "Content-Security-Policy-Report-Only",
+          "value": "font-src fonts.gstatic.com data: 'self' 'unsafe-inline'; form-action geostag.cardinalcommerce.com geo.cardinalcommerce.com 1eafstag.cardinalcommerce.com 1eaf.cardinalcommerce.com centinelapistag.cardinalcommerce.com centinelapi.cardinalcommerce.com pilot-payflowlink.paypal.com www.paypal.com www.sandbox.paypal.com *.cardinalcommerce.com *.paypal.com 3ds-secure.cardcomplete.com www.clicksafe.lloydstsb.com pay.activa-card.com *.wirecard.com acs.sia.eu *.touchtechpayments.com www.securesuite.co.uk rsa3dsauth.com *.monzo.com *.arcot.com *.wlp-acs.com 'self' 'unsafe-inline'; frame-ancestors 'self'; frame-src fast.amc.demdex.net *.adobe.com bid.g.doubleclick.net geostag.cardinalcommerce.com geo.cardinalcommerce.com 1eafstag.cardinalcommerce.com 1eaf.cardinalcommerce.com centinelapistag.cardinalcommerce.com centinelapi.cardinalcommerce.com *.youtube.com *.youtube-nocookie.com www.paypal.com www.sandbox.paypal.com pilot-payflowlink.paypal.com player.vimeo.com https://www.google.com/recaptcha/ c.paypal.com checkout.paypal.com assets.braintreegateway.com pay.google.com *.cardinalcommerce.com *.paypal.com * 'self' 'unsafe-inline'; img-src assets.adobedtm.com amcglobal.sc.omtrdc.net dpm.demdex.net cm.everesttech.net *.adobe.com widgets.magentocommerce.com data: www.googleadservices.com www.google-analytics.com googleads.g.doubleclick.net www.google.com bid.g.doubleclick.net analytics.google.com www.googletagmanager.com *.ftcdn.net *.behance.net t.paypal.com www.paypal.com www.paypalobjects.com fpdbs.paypal.com fpdbs.sandbox.paypal.com *.vimeocdn.com i.ytimg.com *.youtube.com validator.swagger.io www.sandbox.paypal.com b.stats.paypal.com dub.stats.paypal.com assets.braintreegateway.com c.paypal.com checkout.paypal.com *.paypal.com *.aptrinsic.com storage.googleapis.com data: 'self' 'unsafe-inline'; script-src assets.adobedtm.com *.adobe.com www.googleadservices.com www.google-analytics.com googleads.g.doubleclick.net analytics.google.com www.googletagmanager.com geostag.cardinalcommerce.com 1eafstag.cardinalcommerce.com geoapi.cardinalcommerce.com 1eafapi.cardinalcommerce.com songbird.cardinalcommerce.com includestest.ccdc02.com *.newrelic.com *.nr-data.net www.paypal.com www.sandbox.paypal.com www.paypalobjects.com t.paypal.com s.ytimg.com www.googleapis.com vimeo.com www.vimeo.com *.vimeocdn.com *.youtube.com https://www.gstatic.com/recaptcha/ https://www.google.com/recaptcha/ js.braintreegateway.com assets.braintreegateway.com c.paypal.com pay.google.com api.braintreegateway.com api.sandbox.braintreegateway.com client-analytics.braintreegateway.com client-analytics.sandbox.braintreegateway.com *.paypal.com songbirdstag.cardinalcommerce.com *.aptrinsic.com 'self' 'unsafe-inline' 'unsafe-eval'; style-src *.adobe.com unsafe-inline assets.braintreegateway.com *.aptrinsic.com fonts.googleapis.com 'self' 'unsafe-inline'; object-src 'self' 'unsafe-inline'; media-src *.adobe.com 'self' 'unsafe-inline'; manifest-src 'self' 'unsafe-inline'; connect-src dpm.demdex.net amcglobal.sc.omtrdc.net www.google-analytics.com www.googleadservices.com analytics.google.com www.googletagmanager.com geostag.cardinalcommerce.com geo.cardinalcommerce.com 1eafstag.cardinalcommerce.com 1eaf.cardinalcommerce.com centinelapistag.cardinalcommerce.com centinelapi.cardinalcommerce.com *.newrelic.com *.nr-data.net vimeo.com www.sandbox.paypal.com www.paypalobjects.com www.paypal.com pilot-payflowlink.paypal.com api.braintreegateway.com api.sandbox.braintreegateway.com client-analytics.braintreegateway.com client-analytics.sandbox.braintreegateway.com *.braintree-api.com *.paypal.com *.cardinalcommerce.com *.aptrinsic.com 'self' 'unsafe-inline'; child-src assets.braintreegateway.com c.paypal.com *.paypal.com http: https: blob: 'self' 'unsafe-inline'; default-src 'self' 'unsafe-inline' 'unsafe-eval'; base-uri 'self' 'unsafe-inline';"
+        },
+        {
+          "name": "Content-Type",
+          "value": "text/html; charset=UTF-8"
+        },
+        {
+          "name": "Date",
+          "value": "Wed, 15 Oct 2025 15:24:56 GMT"
+        },
+        {
+          "name": "Expires",
+          "value": "Tue, 15 Oct 2024 15:24:56 GMT"
+        },
+        {
+          "name": "Location",
+          "value": "http://localhost:7780/admin/admin/dashboard/"
+        },
+        {
+          "name": "Pragma",
+          "value": "no-cache"
+        },
+        {
+          "name": "Server",
+          "value": "nginx/1.22.1"
+        },
+        {
+          "name": "Set-Cookie",
+          "value": "admin=4597479228344bed0760ac8d8d1b7b92; expires=Sun, 19-Oct-2025 19:24:56 GMT; Max-Age=360000; path=/admin; domain=localhost; HttpOnly; SameSite=Lax"
+        },
+        {
+          "name": "Set-Cookie",
+          "value": "admin=4597479228344bed0760ac8d8d1b7b92; expires=Sun, 19-Oct-2025 19:24:56 GMT; Max-Age=360000; path=/admin; domain=localhost; HttpOnly; SameSite=Lax"
+        },
+        {
+          "name": "Transfer-Encoding",
+          "value": "chunked"
+        },
+        {
+          "name": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "name": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "name": "X-Powered-By",
+          "value": "PHP/8.1.17"
+        },
+        {
+          "name": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ],
+      "content": {
+        "size": -1,
+        "mimeType": "text/html; charset=UTF-8"
+      },
+      "headersSize": -1,
+      "bodySize": -1,
+      "redirectURL": "http://localhost:7780/admin/admin/dashboard/",
+      "_transferSize": -1
+    },
+    "cache": {},
+    "timings": {
+      "dns": -1,
+      "connect": -1,
+      "ssl": -1,
+      "send": 0,
+      "wait": 92.689,
+      "receive": 0.66
+    },
+    "pageref": "page@d881125a8291dc7934e310257aedd9a7",
+    "serverIPAddress": "[::1]",
+    "_serverPort": 7780,
+    "_securityDetails": {}
+  }
+}
