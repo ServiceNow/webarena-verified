@@ -28,13 +28,13 @@ This guide walks you through using WebArena-Verified to evaluate web agents. You
     Pull the Docker image:
 
     ```bash
-    docker pull am1n3e/webarena-verified:latest
+    docker pull ghcr.io/servicenow/webarena-verified:latest
     ```
 
     Verify the installation:
 
     ```bash
-    docker run --rm am1n3e/webarena-verified:latest --help
+    docker run --rm ghcr.io/servicenow/webarena-verified:latest --help
     ```
 
 === "uv"
@@ -189,7 +189,7 @@ Score one or more runs. When no filters are provided, the CLI discovers every ta
     ```bash
     docker run --rm \
       -v /path/to/output:/data \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks --output-dir /data
     ```
 
@@ -258,49 +258,49 @@ You can filter which tasks to evaluate:
     docker run --rm \
       -v /path/to/output:/data \
       -v /path/to/config.json:/config.json \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks --config /config.json --output-dir /data --task-ids 1,2,3
 
     # Single task
     docker run --rm \
       -v /path/to/output:/data \
       -v /path/to/config.json:/config.json \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks --config /config.json --output-dir /data --task-ids 42
 
     # By site
     docker run --rm \
       -v /path/to/output:/data \
       -v /path/to/config.json:/config.json \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks --config /config.json --output-dir /data --sites shopping
 
     # By task type
     docker run --rm \
       -v /path/to/output:/data \
       -v /path/to/config.json:/config.json \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks --config /config.json --output-dir /data --task-type mutate
 
     # By template ID
     docker run --rm \
       -v /path/to/output:/data \
       -v /path/to/config.json:/config.json \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks --config /config.json --output-dir /data --template-id 5
 
     # Combined filters
     docker run --rm \
       -v /path/to/output:/data \
       -v /path/to/config.json:/config.json \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks --config /config.json --output-dir /data --sites shopping,reddit --task-type mutate
 
     # Dry run (no scoring)
     docker run --rm \
       -v /path/to/output:/data \
       -v /path/to/config.json:/config.json \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks --config /config.json --output-dir /data --sites reddit --dry-run
     ```
 

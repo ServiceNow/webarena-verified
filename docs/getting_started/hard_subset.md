@@ -62,7 +62,7 @@ Export the hard subset tasks to a JSON file:
     ```bash
     docker run --rm \
       -v ./:/output \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       subset-export \
         --name webarena-verified-hard \
         --output /output/webarena-verified-hard.json

@@ -48,13 +48,13 @@ Clone the repository and install dependencies:
     ```bash
     git clone https://github.com/ServiceNow/webarena-verified.git
     cd webarena-verified
-    docker pull am1n3e/webarena-verified:latest
+    docker pull ghcr.io/servicenow/webarena-verified:latest
     ```
 
     Verify the CLI is working:
 
     ```bash
-    docker run --rm am1n3e/webarena-verified:latest --help
+    docker run --rm ghcr.io/servicenow/webarena-verified:latest --help
     ```
 
 === "uv"
@@ -205,7 +205,7 @@ Captures all network activity between the browser frontend and the backend in [H
     ```bash
     docker run --rm \
       -v ./examples:/examples \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks \
         --task-ids 108 \
         --output-dir /examples/agent_logs/demo \
@@ -385,7 +385,7 @@ Export the task information that the agent needs:
     docker run --rm \
       -v ./examples:/examples \
       -v ./output:/output \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       agent-input-get \
         --task-ids 44 \
         --config /examples/configs/config.demo.json \
@@ -502,7 +502,7 @@ Now let's evaluate your performance:
     docker run --rm \
       -v ./examples:/examples \
       -v ./output:/output \
-      am1n3e/webarena-verified:latest \
+      ghcr.io/servicenow/webarena-verified:latest \
       eval-tasks \
         --config /examples/configs/config.demo.json \
         --task-ids 44 \
