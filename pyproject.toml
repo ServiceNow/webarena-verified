@@ -82,6 +82,7 @@ dev = [
     "ruff>=0.14.1",
     "twine>=6.0.1",
     "ty>=0.0.13",
+    "actionlint-py>=1.7.10.24",
 ]
 
 [tool.uv]

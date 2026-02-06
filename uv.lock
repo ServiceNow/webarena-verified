@@ -7,6 +7,12 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "actionlint-py"
+version = "1.7.10.24"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/01/790379bf4cab91a272421a39b3d80f4a0d1a1ed753c00176be28b7d6adc6/actionlint_py-1.7.10.24.tar.gz", hash = "sha256:bac4e74e944c692fc7c65661009caebf14621bb33d937127ee5df8ac0693736a", size = 12057, upload-time = "2026-01-01T17:06:36.282Z" }
+
+[[package]]
 name = "aiofiles"
 version = "25.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -6972,6 +6978,7 @@ examples = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "actionlint-py" },
     { name = "click" },
     { name = "docker-squash" },
     { name = "environment-control" },
@@ -7027,6 +7034,7 @@ provides-extras = ["examples"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "actionlint-py", specifier = ">=1.7.10.24" },
     { name = "click", specifier = ">=8.3.0" },
     { name = "docker-squash", specifier = ">=1.2.2" },
     { name = "environment-control", editable = "packages/environment_control" },
