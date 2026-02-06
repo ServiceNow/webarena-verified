@@ -1,6 +1,6 @@
 [project]
 name = "webarena-verified"
-version = "1.1.1"
+version = "1.1.2"
 description = "A verified version of the WebArena Benchmark"
 readme = "README.md"
 authors = [
