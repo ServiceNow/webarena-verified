@@ -1,23 +1,15 @@
 name: Release Publish
 
 on:
-  workflow_call:
-    inputs:
-      tag:
-        description: Release tag (e.g. v1.2.3)
-        required: true
-        type: string
   workflow_dispatch:
     inputs:
       tag:
         description: Release tag (e.g. v1.2.3)
         required: true
         type: string
-  release:
-    types: [published]
 
 concurrency:
-  group: release-publish-${{ inputs.tag || github.event.inputs.tag || github.event.release.tag_name || github.run_id }}
+  group: release-publish-${{ github.event.inputs.tag || github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -35,9 +27,9 @@ jobs:
       - name: Validate and derive release metadata
         id: release-meta
         run: |
-          TAG="${{ inputs.tag || github.event.inputs.tag || github.event.release.tag_name }}"
+          TAG="${{ github.event.inputs.tag }}"
           if [[ -z "$TAG" ]]; then
-            echo "::error::Missing tag. Provide a tag input or trigger from a release event."
+            echo "::error::Missing tag input."
             exit 1
           fi
           if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
@@ -46,9 +38,7 @@ jobs:
             exit 1
           fi
           VERSION="${TAG#v}"
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            PRERELEASE="${{ github.event.release.prerelease }}"
-          elif [[ "$TAG" == *-* ]]; then
+          if [[ "$TAG" == *-* ]]; then
             PRERELEASE="true"
           else
             PRERELEASE="false"
@@ -118,7 +108,7 @@ jobs:
       - name: Compute image tags
         id: image-tags
         run: |
-          IMAGE="ghcr.io/${{ github.repository }}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
           VERSION="${{ needs.prepare.outputs.version }}"
           TAGS="$IMAGE:$VERSION"
           if [ "${{ needs.prepare.outputs.prerelease }}" = "false" ]; then
