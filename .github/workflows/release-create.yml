@@ -37,3 +37,16 @@ jobs:
         run: uv run inv dev.release.create-release --version "${{ inputs.version }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Publish Release Artifacts
+    needs: release
+    permissions:
+      contents: write
+      actions: write
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/release-publish.yml
+    with:
+      tag: ${{ startsWith(inputs.version, 'v') && inputs.version || format('v{0}', inputs.version) }}
+    secrets: inherit
