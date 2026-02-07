@@ -71,6 +71,7 @@ dev = [
     "click>=8.3.0",
     "docker-squash>=1.2.2",
     "environment-control",
+    "filelock>=3.16.1",
     "pydantic-settings>=2.11.0",
     "litellm>=1.80.5",
     "invoke>=2.2.0",
