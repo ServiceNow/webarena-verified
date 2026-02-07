@@ -41,6 +41,11 @@ jobs:
   publish:
     name: Publish Release Artifacts
     needs: release
+    permissions:
+      contents: write
+      actions: write
+      packages: write
+      id-token: write
     uses: ./.github/workflows/release-publish.yml
     with:
       tag: ${{ startsWith(inputs.version, 'v') && inputs.version || format('v{0}', inputs.version) }}
