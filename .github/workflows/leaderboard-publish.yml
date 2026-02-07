@@ -1,0 +1,129 @@
+name: Leaderboard Publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "leaderboard/data/submissions/processed/**"
+      - "dev/leaderboard/**"
+      - "dev/leaderboard_tasks.py"
+      - "src/webarena_verified/types/leaderboard/**"
+      - ".github/workflows/leaderboard-publish.yml"
+  workflow_dispatch:
+    inputs:
+      processed_dir:
+        description: "Processed submission records directory"
+        required: false
+        default: "leaderboard/data/submissions/processed"
+      generation_id:
+        description: "Optional generation id override"
+        required: false
+        default: ""
+      generated_at_utc:
+        description: "Optional RFC3339 UTC timestamp override"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Generate and publish leaderboard data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve publish parameters
+        id: params
+        run: |
+          set -euo pipefail
+
+          PROCESSED_DIR="${{ github.event.inputs.processed_dir }}"
+          if [ -z "$PROCESSED_DIR" ]; then
+            PROCESSED_DIR="leaderboard/data/submissions/processed"
+          fi
+
+          GENERATION_ID="${{ github.event.inputs.generation_id }}"
+          if [ -z "$GENERATION_ID" ]; then
+            GENERATION_ID="gen-${GITHUB_SHA::12}"
+          fi
+
+          GENERATED_AT_UTC="${{ github.event.inputs.generated_at_utc }}"
+          if [ -z "$GENERATED_AT_UTC" ]; then
+            GENERATED_AT_UTC="$(git show -s --format=%cI "$GITHUB_SHA")"
+          fi
+
+          echo "processed_dir=$PROCESSED_DIR" >> "$GITHUB_OUTPUT"
+          echo "generation_id=$GENERATION_ID" >> "$GITHUB_OUTPUT"
+          echo "generated_at_utc=$GENERATED_AT_UTC" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare gh-pages worktree
+        run: |
+          set -euo pipefail
+          rm -rf gh-pages
+
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null; then
+            git fetch origin gh-pages --depth=1
+            git worktree add gh-pages origin/gh-pages
+          else
+            git worktree add --detach gh-pages
+            cd gh-pages
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+          fi
+
+      - name: Generate and atomically publish leaderboard files
+        run: |
+          set -euo pipefail
+          uv run inv dev.leaderboard.publish-from-processed \
+            --processed-dir "${{ steps.params.outputs.processed_dir }}" \
+            --staging-dir ".tmp/leaderboard-staging" \
+            --gh-pages-root "gh-pages" \
+            --generation-id "${{ steps.params.outputs.generation_id }}" \
+            --generated-at-utc "${{ steps.params.outputs.generated_at_utc }}"
+
+      - name: Commit and push gh-pages updates
+        id: push
+        run: |
+          set -euo pipefail
+          cd gh-pages
+
+          git add leaderboard/data
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No leaderboard data changes to publish"
+            exit 0
+          fi
+
+          GENERATION_ID="$(jq -r '.generation_id' leaderboard/data/leaderboard_manifest.json)"
+          git commit -m "Publish leaderboard generation ${GENERATION_ID}"
+          git push origin HEAD:gh-pages
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "generation_id=$GENERATION_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Publish summary
+        run: |
+          echo "processed_dir=${{ steps.params.outputs.processed_dir }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "generation_id=${{ steps.push.outputs.generation_id || steps.params.outputs.generation_id }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "changed=${{ steps.push.outputs.changed || 'false' }}" >> "$GITHUB_STEP_SUMMARY"
