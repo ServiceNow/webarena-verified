@@ -7,6 +7,11 @@ FROM ghcr.io/astral-sh/uv:0.9-python3.11-bookworm-slim AS builder
 
 WORKDIR /app
 
+# hatch-vcs needs an explicit version when .git metadata is unavailable in build context.
+ARG WBV_VERSION=0.0.0+local
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=${WBV_VERSION}
+ENV SETUPTOOLS_SCM_PRETEND_VERSION_FOR_WEBARENA_VERIFIED=${WBV_VERSION}
+
 # Copy dependency files first (for layer caching)
 COPY pyproject.toml uv.lock ./
 
