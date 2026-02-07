@@ -1,0 +1,47 @@
+---
+configs:
+- config_name: default
+  data_files:
+  - split: full
+    path: full.parquet
+  - split: hard
+    path: hard.parquet
+---
+
+# WebArena-Verified
+
+## Dataset description
+
+WebArena-Verified is a curated benchmark dataset of web tasks designed for reproducible
+evaluation of web agents across multiple realistic websites.
+
+## Splits
+
+- `full`: {{ full_count }} rows
+- `hard`: {{ hard_count }} rows
+
+## Schema notes
+
+The table below reflects inferred column types from the `full` split during artifact generation.
+
+| Column | Type |
+| --- | --- |
+{% for column_name, column_type in schema -%}
+| `{{ column_name }}` | `{{ column_type }}` |
+{% endfor %}
+
+## Metadata
+
+- Version: `{{ version }}`
+- Git commit: `{{ git_commit }}`
+- Generated at (UTC): `{{ generated_at }}`
+- Dataset hash: `{{ dataset_hash }}`
+- License: `Apache-2.0`
+- Language: `en`
+- Task categories: `web-navigation`, `information-retrieval`
+
+## Notes
+
+- Expected split counts: `full=812`, `hard=258`
+- If custom split names are not supported by the Dataset Viewer, use one config per split
+  mapped to `train` as a compatibility fallback.

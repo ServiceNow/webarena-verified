@@ -69,9 +69,12 @@ include = ["src/**", "assets/**"]
 [dependency-groups]
 dev = [
     "click>=8.3.0",
+    "datasets>=4.1.1",
     "docker-squash>=1.2.2",
+    "huggingface-hub>=0.34.4",
     "environment-control",
     "pydantic-settings>=2.11.0",
+    "jinja2>=3.1.6",
     "litellm>=1.80.5",
     "invoke>=2.2.0",
     "semver>=3.0.0",
@@ -91,6 +94,7 @@ dev = [
     "twine>=6.0.1",
     "ty>=0.0.13",
     "actionlint-py>=1.7.10.24",
+    "deepdiff>=8.6.1",
 ]
 
 [tool.uv]

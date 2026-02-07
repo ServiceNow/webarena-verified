@@ -10,9 +10,26 @@ permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Test
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+
+      - name: Run lint
+        run: uv run inv dev.code.lint
+
+  unit_tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

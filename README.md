@@ -29,121 +29,156 @@ WebArena-Verified is the verified release of the WebArena benchmark. It distribu
 - **Deterministic scoring**: Removed LLM-as-a-judge evaluation and substring matching in favor of type-aware normalization and structural comparison
 - **WebArena-Verified Hard subset**: A difficulty-prioritized 258-task subset for cost-effective evaluation
 
-## 🚀 Quick Start
+## Usage
 
-### Using uvx (Recommended)
-
-The fastest way to try WebArena-Verified without installing anything:
+### uvx (no install)
 
 ```bash
-uvx webarena-verified --help
+uvx webarena-verified COMMAND [ARGS]
 ```
 
-Run evaluation directly:
+### pip / uv (project dependency)
 
 ```bash
-uvx webarena-verified eval-tasks \
-  --task-ids 108 \
-  --output-dir examples/agent_logs/demo
-```
-
-### Using Docker
-
-Run evaluation using the Docker image by mounting your output directory:
-
-```bash
-docker run --rm \
-  -v /path/to/output:/data \
-  ghcr.io/servicenow/webarena-verified:latest \
-  eval-tasks --output-dir /data
-```
-
-Your output directory should contain task subdirectories with `agent_response.json` and `network.har` files:
-```
-output/
-├── 1/
-│   ├── agent_response.json
-│   └── network.har
-├── 2/
-│   └── ...
-```
-
-### Using pip
-
-Install from PyPI:
-
-```bash
+# Setup (choose one)
 pip install webarena-verified
+# uv add webarena-verified
+
+# Usage
+webarena-verified COMMAND [ARGS]
+# or (inside uv-managed project)
+uv run webarena-verified COMMAND [ARGS]
 ```
 
-Verify the CLI is working:
+### Docker
 
 ```bash
-webarena-verified --help
+# Usage
+docker run --rm ghcr.io/servicenow/webarena-verified:latest COMMAND [ARGS]
 ```
 
-For development, clone and install from source:
+Example:
 
 ```bash
-git clone https://github.com/ServiceNow/webarena-verified.git
-cd webarena-verified
-uv sync
+uvx webarena-verified eval-tasks --task-ids 108 --output-dir examples/agent_logs/demo
 ```
 
-## 🌐 Run WebArena Environments
+## Dataset
 
-### Using the CLI (Recommended)
+WebArena-Verified provides:
 
-Start and manage WebArena environments using the built-in CLI:
+- Full dataset: the complete benchmark with all 812 verified tasks across supported sites.
+- Hard subset: a difficulty-prioritized subset of 258 tasks for faster, lower-cost evaluation.
+
+### Full dataset
 
 ```bash
-# Start a site (waits for services to be ready)
-webarena-verified env start --site shopping
-webarena-verified env start --site shopping_admin
-webarena-verified env start --site reddit
-webarena-verified env start --site gitlab
+# From the repo
+cat assets/dataset/webarena-verified.json > webarena-verified.json
 
-# Check status
-webarena-verified env status --site shopping
+# From the CLI
+webarena-verified dataset-get --output webarena-verified.json
 
-# Stop a site
-webarena-verified env stop --site shopping
-
-# Stop all running sites
-webarena-verified env stop-all
+# From Docker
+docker run --rm \
+  -v "$PWD:/data" \
+  ghcr.io/servicenow/webarena-verified:latest \
+  dataset-get --output /data/webarena-verified.json
 ```
 
-For sites requiring data setup (Wikipedia, Map):
+From Hugging Face dataset:
+
+```python
+from datasets import load_dataset
+
+dataset = load_dataset("AmineHA/WebArena-Verified", split="full")
+```
+
+### Hard subset
 
 ```bash
-# Wikipedia - download data first (~100GB)
-webarena-verified env setup init --site wikipedia --data-dir ./downloads
+# From the CLI
+webarena-verified subset-export --name webarena-verified-hard --output webarena-verified-hard.json
+
+# From Docker
+docker run --rm \
+  -v "$PWD:/data" \
+  ghcr.io/servicenow/webarena-verified:latest \
+  subset-export --name webarena-verified-hard --output /data/webarena-verified-hard.json
+```
+
+From Hugging Face dataset:
+
+```python
+from datasets import load_dataset
+
+dataset = load_dataset("AmineHA/WebArena-Verified", split="hard")
+```
+
+## 🌐 Environments
+
+> Note: We have fixed multiple known issues in several environments. See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/) for details on fixes and current behavior.
+
+### Start and Stop Sites
+
+Run sites with the built-in CLI, or run site containers directly with Docker.
+
+```bash
+# CLI
+webarena-verified env start --site <site>  # sites: shopping, shopping_admin, reddit, gitlab, wikipedia, map
+webarena-verified env setup init --site wikipedia --data-dir ./downloads  # data download required
 webarena-verified env start --site wikipedia --data-dir ./downloads
-
-# Map - download data first (~60GB)
-webarena-verified env setup init --site map --data-dir ./downloads
+webarena-verified env setup init --site map --data-dir ./downloads  # data download required
 webarena-verified env start --site map
+webarena-verified env stop --site <site>
+webarena-verified env stop-all
+
+# Docker
+docker run -d --name webarena-verified-shopping -p 7770:80 -p 7771:8877 am1n3e/webarena-verified-shopping
+docker run -d --name webarena-verified-shopping_admin -p 7780:80 -p 7781:8877 am1n3e/webarena-verified-shopping_admin
+docker run -d --name webarena-verified-reddit -p 9999:80 -p 9998:8877 am1n3e/webarena-verified-reddit
+docker run -d --name webarena-verified-gitlab -p 8023:8023 -p 8024:8877 am1n3e/webarena-verified-gitlab
+
+# Wikipedia: requires --data-dir setup and a mounted data volume
+docker run -d --name webarena-verified-wikipedia \
+  -p 8888:8080 -p 8889:8874 \
+  -v /path/to/downloads:/data:ro \
+  am1n3e/webarena-verified-wikipedia
+
+# Map: run setup first (webarena-verified env setup init --site map --data-dir ./downloads)
+docker run -d --name webarena-verified-map \
+  -p 3030:3000 -p 3031:8877 \
+  -v webarena-verified-map-tile-db:/data/database \
+  -v webarena-verified-map-routing-car:/data/routing/car \
+  -v webarena-verified-map-routing-bike:/data/routing/bike \
+  -v webarena-verified-map-routing-foot:/data/routing/foot \
+  -v webarena-verified-map-nominatim-db:/data/nominatim/postgres \
+  -v webarena-verified-map-nominatim-flatnode:/data/nominatim/flatnode \
+  -v webarena-verified-map-website-db:/var/lib/postgresql/14/main \
+  -v webarena-verified-map-tiles:/data/tiles \
+  -v webarena-verified-map-style:/data/style \
+  am1n3e/webarena-verified-map
 ```
 
-### Using Docker Directly
+### Environment Control
 
-You can also run environments directly with Docker:
+Check status and initialize environments via env-ctrl using CLI or HTTP API.
 
 ```bash
-# Shopping (Magento)
-docker run -d --name webarena-verified-shopping -p 7770:80 -p 7771:8877 am1n3e/webarena-verified-shopping
+# CLI (inside a running site container)
+docker exec <container> env-ctrl status
+docker exec <container> env-ctrl init
 
-# Shopping Admin
-docker run -d --name webarena-verified-shopping_admin -p 7780:80 -p 7781:8877 am1n3e/webarena-verified-shopping_admin
-
-# Reddit (Postmill)
-docker run -d --name webarena-verified-reddit -p 9999:80 -p 9998:8877 am1n3e/webarena-verified-reddit
-
-# GitLab
-docker run -d --name webarena-verified-gitlab -p 8023:8023 -p 8024:8877 am1n3e/webarena-verified-gitlab
+# HTTP
+curl http://localhost:8877/status
+curl -X POST http://localhost:8877/init
 ```
 
-See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/) for detailed setup instructions, credentials, and configuration options.
+<p align="center">
+  <img src="docs/assets/env-ctrl-dashboard-cropped.png" alt="Environment Control Dashboard" />
+</p>
+
+See the [Environments documentation](https://servicenow.github.io/webarena-verified/environments/) and [Environment Control docs](https://servicenow.github.io/webarena-verified/environments/environment_control/) for site-specific Docker commands, ports, and credentials.
 
 ## 🧪 Evaluate A Task
 
