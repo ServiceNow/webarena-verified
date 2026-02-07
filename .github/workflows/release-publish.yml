@@ -108,7 +108,8 @@ jobs:
       - name: Compute image tags
         id: image-tags
         run: |
-          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          REPO_LC="$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          IMAGE="ghcr.io/${REPO_LC}"
           VERSION="${{ needs.prepare.outputs.version }}"
           TAGS="$IMAGE:$VERSION"
           if [ "${{ needs.prepare.outputs.prerelease }}" = "false" ]; then
