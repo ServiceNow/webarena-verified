@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - leaderboard/data/submissions/**
+      - leaderboard/data/submissions/pending/**
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          uv run python -m webarena_verified.leaderboard.submission_pr_validator \
+          uv run python -m dev.leaderboard.submission_pr_validator \
             --base-sha "${{ github.event.pull_request.base.sha }}" \
             --head-sha "${{ github.event.pull_request.head.sha }}" \
             --repo "${{ github.repository }}" \
@@ -81,4 +81,63 @@ jobs:
                 issue_number,
                 body,
               });
+            }
+
+      - name: Request CODEOWNERS review on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            function readCodeowners() {
+              for (const p of ['.github/CODEOWNERS', 'CODEOWNERS']) {
+                if (fs.existsSync(p)) {
+                  return fs.readFileSync(p, 'utf8');
+                }
+              }
+              return '';
+            }
+
+            const content = readCodeowners();
+            const reviewers = new Set();
+            const teamReviewers = new Set();
+
+            for (const line of content.split('\n')) {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith('#')) continue;
+              const parts = trimmed.split(/\s+/);
+              if (parts.length < 2) continue;
+              const [pattern, ...owners] = parts;
+              if (!pattern.startsWith('leaderboard/data/submissions/pending/') && pattern !== '*') continue;
+              for (const owner of owners) {
+                if (!owner.startsWith('@')) continue;
+                const handle = owner.slice(1);
+                if (!handle) continue;
+                if (handle.includes('/')) {
+                  teamReviewers.add(handle.split('/')[1]);
+                } else {
+                  reviewers.add(handle);
+                }
+              }
+            }
+
+            if (reviewers.size === 0 && teamReviewers.size === 0) {
+              core.warning('No CODEOWNERS reviewers found for submission paths.');
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner,
+                repo,
+                pull_number,
+                reviewers: [...reviewers],
+                team_reviewers: [...teamReviewers],
+              });
+            } catch (err) {
+              core.warning(`Failed to request CODEOWNERS review: ${err.message}`);
             }

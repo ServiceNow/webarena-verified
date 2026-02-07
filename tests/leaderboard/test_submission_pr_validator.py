@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from webarena_verified.leaderboard import submission_pr_validator as validator
+from dev.leaderboard import submission_pr_validator as validator
 from webarena_verified.types.leaderboard import SubmissionRecord
 
 
@@ -55,13 +55,6 @@ def test_path_status_invariant_pending_rejects_terminal_status():
         validator._validate_path_status_invariants(record, "leaderboard/data/submissions/pending/sub-123.json")
 
 
-def test_path_status_invariant_processed_requires_terminal_status():
-    record = _record(status="pending")
-
-    with pytest.raises(validator.SubmissionPRValidationError, match=r"processed/<id>\.json"):
-        validator._validate_path_status_invariants(record, "leaderboard/data/submissions/processed/sub-123.json")
-
-
 def test_validate_task_dir_rejects_missing_plus_files(tmp_path: Path):
     task_dir = tmp_path / "1"
     task_dir.mkdir()
@@ -78,13 +71,13 @@ def test_enforce_github_rate_limits_rejects_existing_open_submission_pr(monkeypa
             {
                 "number": 101,
                 "state": "open",
-                "title": "Leaderboard Submission: TeamX/ModelY",
                 "created_at": "2026-02-07T01:00:00Z",
                 "user": {"login": "alice"},
             }
         ]
 
     monkeypatch.setattr(validator, "_list_all_repo_pulls", fake_list_all_repo_pulls)
+    monkeypatch.setattr(validator, "_is_submission_pr", lambda repo, number, token: True)
 
     with pytest.raises(validator.SubmissionPRValidationError, match="already has an open submission PR"):
         validator._enforce_github_rate_limits(
@@ -102,13 +95,13 @@ def test_enforce_github_rate_limits_rejects_recent_submission_with_next_allowed(
             {
                 "number": 201,
                 "state": "closed",
-                "title": "Leaderboard Submission: TeamX/ModelY",
                 "created_at": "2026-02-07T03:15:00Z",
                 "user": {"login": "alice"},
             }
         ]
 
     monkeypatch.setattr(validator, "_list_all_repo_pulls", fake_list_all_repo_pulls)
+    monkeypatch.setattr(validator, "_is_submission_pr", lambda repo, number, token: True)
 
     with pytest.raises(validator.SubmissionPRValidationError, match="Next allowed UTC timestamp: 2026-02-08T03:15:00Z"):
         validator._enforce_github_rate_limits(
@@ -142,13 +135,36 @@ def test_enforce_github_rate_limits_allows_when_no_violations(monkeypatch):
             {
                 "number": 301,
                 "state": "closed",
-                "title": "Leaderboard Submission: TeamX/ModelY",
                 "created_at": "2026-02-05T00:00:00Z",
                 "user": {"login": "alice"},
             }
         ]
 
     monkeypatch.setattr(validator, "_list_all_repo_pulls", fake_list_all_repo_pulls)
+    monkeypatch.setattr(validator, "_is_submission_pr", lambda repo, number, token: True)
+
+    validator._enforce_github_rate_limits(
+        repo="owner/repo",
+        actor="alice",
+        current_pr_number=999,
+        token="token",
+        now_utc=dt.datetime(2026, 2, 7, 12, 0, tzinfo=dt.UTC),
+    )
+
+
+def test_enforce_github_rate_limits_skips_non_submission_prs(monkeypatch):
+    def fake_list_all_repo_pulls(repo: str, token: str):
+        return [
+            {
+                "number": 401,
+                "state": "open",
+                "created_at": "2026-02-07T03:15:00Z",
+                "user": {"login": "alice"},
+            }
+        ]
+
+    monkeypatch.setattr(validator, "_list_all_repo_pulls", fake_list_all_repo_pulls)
+    monkeypatch.setattr(validator, "_is_submission_pr", lambda repo, number, token: False)
 
     validator._enforce_github_rate_limits(
         repo="owner/repo",

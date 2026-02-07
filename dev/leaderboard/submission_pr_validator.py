@@ -26,7 +26,6 @@ from webarena_verified.types.leaderboard import (
 
 PR_TITLE_PREFIX = "Leaderboard Submission: "
 PENDING_PREFIX = "leaderboard/data/submissions/pending/"
-PROCESSED_PREFIX = "leaderboard/data/submissions/processed/"
 REQUIRED_HF_FILES = ("payload.tar.zst", "payload.sha256", "metadata.json", "manifest.json")
 SHA256_PATTERN = re.compile(r"([0-9a-f]{64})")
 
@@ -101,11 +100,11 @@ def _validate_changed_files(changed_files: list[ChangedFile]) -> str:
     if not changed_files:
         raise SubmissionPRValidationError("No files changed in PR diff")
 
-    invalid_scope = [cf.path for cf in changed_files if not cf.path.startswith((PENDING_PREFIX, PROCESSED_PREFIX))]
+    invalid_scope = [cf.path for cf in changed_files if not cf.path.startswith(PENDING_PREFIX)]
     if invalid_scope:
         joined = ", ".join(sorted(invalid_scope))
         raise SubmissionPRValidationError(
-            "Submission PRs may only change control records under leaderboard/data/submissions/. "
+            "Submission PRs may only change control records under leaderboard/data/submissions/pending/. "
             f"Invalid paths: {joined}"
         )
 
@@ -126,16 +125,8 @@ def _validate_changed_files(changed_files: list[ChangedFile]) -> str:
 
 def _validate_path_status_invariants(record: SubmissionRecord, control_path: str) -> None:
     """Validate path/status invariants from the spec."""
-    if control_path.startswith(PENDING_PREFIX) and record.status != SubmissionStatus.PENDING:
+    if record.status != SubmissionStatus.PENDING:
         raise SubmissionPRValidationError("Path/status invariant failed: pending/<id>.json must have status='pending'")
-
-    if control_path.startswith(PROCESSED_PREFIX) and record.status not in {
-        SubmissionStatus.ACCEPTED,
-        SubmissionStatus.REJECTED,
-    }:
-        raise SubmissionPRValidationError(
-            "Path/status invariant failed: processed/<id>.json must have status in {'accepted','rejected'}"
-        )
 
 
 def _load_submission_record(repo_root: Path, control_path: str) -> SubmissionRecord:
@@ -336,6 +327,32 @@ def _list_all_repo_pulls(repo: str, token: str) -> list[dict[str, Any]]:
     return pulls
 
 
+def _list_pull_files(repo: str, pr_number: int, token: str) -> list[str]:
+    """List changed file paths for a GitHub PR."""
+    file_paths: list[str] = []
+    page = 1
+    while True:
+        url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files?per_page=100&page={page}"
+        data = _http_get_json(url, token=token)
+        if not isinstance(data, list):
+            raise SubmissionPRValidationError(f"Unexpected GitHub API response while listing PR #{pr_number} files")
+
+        for item in data:
+            filename = item.get("filename")
+            if isinstance(filename, str):
+                file_paths.append(filename)
+        if len(data) < 100:
+            break
+        page += 1
+    return file_paths
+
+
+def _is_submission_pr(repo: str, pr_number: int, token: str) -> bool:
+    """Classify PR as submission PR based on changed file scope."""
+    paths = _list_pull_files(repo, pr_number, token)
+    return any(path.startswith(PENDING_PREFIX) for path in paths)
+
+
 def _enforce_github_rate_limits(
     repo: str,
     actor: str,
@@ -351,11 +368,19 @@ def _enforce_github_rate_limits(
             f"Unable to evaluate GitHub actor rate limits due to API error (fail-closed): {exc}"
         ) from exc
 
-    actor_submission_prs = [
-        pr
-        for pr in pulls
-        if pr.get("user", {}).get("login") == actor and str(pr.get("title", "")).startswith(PR_TITLE_PREFIX)
-    ]
+    actor_prs = [pr for pr in pulls if pr.get("user", {}).get("login") == actor]
+    actor_submission_prs = []
+    for pr in actor_prs:
+        number = pr.get("number")
+        if not isinstance(number, int):
+            continue
+        try:
+            if _is_submission_pr(repo, number, token):
+                actor_submission_prs.append(pr)
+        except Exception as exc:
+            raise SubmissionPRValidationError(
+                f"Unable to classify PR #{number} for submission rate limiting (fail-closed): {exc}"
+            ) from exc
 
     open_submission_prs = [
         pr for pr in actor_submission_prs if pr.get("state") == "open" and pr.get("number") != current_pr_number
@@ -415,7 +440,7 @@ def _build_failure_report(error_message: str) -> str:
         "## Submission PR Validation Failed\n\n"
         f"- Error: {error_message}\n"
         "- Required: exactly one submission control JSON change under "
-        "`leaderboard/data/submissions/`, valid path/status invariants, valid linked HF payload PR (open), "
+        "`leaderboard/data/submissions/pending/`, valid path/status invariants, valid linked HF payload PR (open), "
         "checksum/archive/task/HAR checks, and GitHub actor rate-limit compliance.\n"
     )
 
