@@ -1,1 +1,1 @@
-"""Dev-only leaderboard helpers."""
+"""Leaderboard development tooling."""
