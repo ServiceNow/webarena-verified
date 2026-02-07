@@ -371,6 +371,7 @@ def upload_hf_dataset(
     token: str | None = None,
     create_pr: bool = False,
     dry_run: bool = False,
+    skip_tag_check: bool = False,
 ) -> None:
     """Upload HF dataset release artifacts and enforce matching HF tag.
 
@@ -381,10 +382,21 @@ def upload_hf_dataset(
         token: Optional HF token. If omitted, uses cached login/session.
         create_pr: Whether to open a PR instead of direct commit upload.
         dry_run: Validate and compute upload mode, but skip HF write operations.
+        skip_tag_check: Skip git tag-on-HEAD verification (only allowed with dry_run).
     """
     try:
         _ = ctx
-        resolved_version = _resolve_release_version(version)
+        if skip_tag_check and not dry_run:
+            raise ReleaseSpecError("--skip-tag-check can only be used with --dry-run")
+
+        if skip_tag_check:
+            if version is None:
+                raise ReleaseSpecError("--skip-tag-check requires --version")
+            _validate_release_version(version)
+            resolved_version = version
+        else:
+            resolved_version = _resolve_release_version(version)
+
         folder = Path(folder_path)
         _assert_hf_release_files_exist(folder, ["version.json", "README.md"])
 
