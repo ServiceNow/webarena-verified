@@ -37,6 +37,12 @@ def pytest_addoption(parser):
         default="am1n3e/webarena-verified:latest",
         help="Docker image to test (default: am1n3e/webarena-verified:latest)",
     )
+    parser.addoption(
+        "--hf-dataset-ref",
+        action="store",
+        default="AmineHA/WebArena-Verified",
+        help="HF dataset reference (repo id or local path) for HF dataset tests",
+    )
 
 
 @pytest.fixture(scope="session")

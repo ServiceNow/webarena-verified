@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import semver
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
+from datasets.exceptions import DatasetGenerationError
 from huggingface_hub import HfApi, hf_hub_download, upload_folder
 from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError, RevisionNotFoundError
 from invoke import task
@@ -153,8 +154,8 @@ def _build_hf_dataset_files(ctx: Context, output_dir: Path) -> tuple[int, int, l
         hide=True,
     )
 
-    full = load_dataset("json", data_files=str(full_json), split="train")
-    hard = load_dataset("json", data_files=str(hard_json), split="train")
+    full = _load_hf_json_dataset(full_json)
+    hard = _load_hf_json_dataset(hard_json)
 
     full_count = len(full)
     hard_count = len(hard)
@@ -179,9 +180,67 @@ def _build_hf_dataset_files(ctx: Context, output_dir: Path) -> tuple[int, int, l
     return full_count, hard_count, schema
 
 
+def _load_hf_json_dataset(path: Path) -> Dataset:
+    """Load a JSON split with a fallback for mixed nested types.
+
+    The fallback keeps row order and normalizes nested dict/list values to JSON strings,
+    which avoids Arrow schema inference failures on heterogeneous nested objects.
+    """
+    try:
+        return load_dataset("json", data_files=str(path), split="train")
+    except DatasetGenerationError:
+        rows = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(rows, list):
+            raise ReleaseSpecError(f"Expected JSON array in {path}") from None
+
+        for row in rows:
+            if not isinstance(row, dict):
+                raise ReleaseSpecError(f"Expected object rows in {path}") from None
+            for key, value in list(row.items()):
+                if isinstance(value, dict | list):
+                    row[key] = json.dumps(value, sort_keys=True)
+
+        return Dataset.from_list(rows)
+
+
+def _generate_hf_release_artifacts(ctx: Context, resolved_version: str, build_dir: Path) -> None:
+    """Generate all HF release artifacts into build_dir."""
+    build_dir.mkdir(parents=True, exist_ok=True)
+    full_count, hard_count, schema = _build_hf_dataset_files(ctx, build_dir)
+    git_commit = _run_capture(["git", "rev-parse", "HEAD"])
+    generated_at = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    dataset_hash = _compute_dataset_hash()
+
+    _write_json(
+        build_dir / "version.json",
+        {
+            "version": resolved_version,
+            "git_commit": git_commit,
+            "generated_at": generated_at,
+            "dataset_hash": dataset_hash,
+        },
+    )
+
+    _render_hf_readme(
+        output_readme=build_dir / "README.md",
+        version=resolved_version,
+        git_commit=git_commit,
+        generated_at=generated_at,
+        dataset_hash=dataset_hash,
+        full_count=full_count,
+        hard_count=hard_count,
+        schema=schema,
+    )
+
+
+def _missing_release_files(folder: Path, required: list[str]) -> list[str]:
+    """Return missing required files in folder."""
+    return [name for name in required if not (folder / name).exists()]
+
+
 def _assert_hf_release_files_exist(folder: Path, required: list[str]) -> None:
     """Ensure required release files are present before upload."""
-    missing = [name for name in required if not (folder / name).exists()]
+    missing = _missing_release_files(folder, required)
     if missing:
         msg = f"Missing required files in {folder}: {', '.join(missing)}"
         raise ReleaseSpecError(msg)
@@ -321,40 +380,16 @@ def build_hf_dataset(ctx: Context, version: str | None = None, output_dir: str =
     try:
         resolved_version = _resolve_release_version(version)
         build_dir = Path(output_dir)
-        build_dir.mkdir(parents=True, exist_ok=True)
-
-        full_count, hard_count, schema = _build_hf_dataset_files(ctx, build_dir)
-        git_commit = _run_capture(["git", "rev-parse", "HEAD"])
-        generated_at = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-        dataset_hash = _compute_dataset_hash()
-
-        _write_json(
-            build_dir / "version.json",
-            {
-                "version": resolved_version,
-                "git_commit": git_commit,
-                "generated_at": generated_at,
-                "dataset_hash": dataset_hash,
-            },
-        )
-
-        _render_hf_readme(
-            output_readme=build_dir / "README.md",
-            version=resolved_version,
-            git_commit=git_commit,
-            generated_at=generated_at,
-            dataset_hash=dataset_hash,
-            full_count=full_count,
-            hard_count=hard_count,
-            schema=schema,
-        )
+        _generate_hf_release_artifacts(ctx, resolved_version, build_dir)
+        full = load_dataset("parquet", data_files=str(build_dir / "full.parquet"), split="train")
+        hard = load_dataset("parquet", data_files=str(build_dir / "hard.parquet"), split="train")
 
         logging_utils.print_success(
             "HF dataset artifacts generated",
             version=resolved_version,
             output=str(build_dir),
-            full=full_count,
-            hard=hard_count,
+            full=len(full),
+            hard=len(hard),
         )
     except (ReleaseSpecError, subprocess.CalledProcessError) as exc:
         logging_utils.print_error(str(exc))
@@ -398,6 +433,15 @@ def upload_hf_dataset(
             resolved_version = _resolve_release_version(version)
 
         folder = Path(folder_path)
+        required_preflight = ["version.json", "README.md", "full.parquet", "hard.parquet"]
+        if dry_run:
+            missing = _missing_release_files(folder, required_preflight)
+            if missing:
+                logging_utils.print_info(
+                    "Dry run detected missing artifacts; building locally before validation..."
+                )
+                _generate_hf_release_artifacts(ctx, resolved_version, folder)
+
         _assert_hf_release_files_exist(folder, ["version.json", "README.md"])
 
         version_payload = json.loads((folder / "version.json").read_text(encoding="utf-8"))
