@@ -126,7 +126,7 @@ compose_ns.add_task(down)
 ns = Collection()
 
 # Add top-level tasks
-ns.add_task(docker_build)
+ns.add_task(docker_build)  # ty: ignore[invalid-argument-type]
 
 # Add namespaces
 dev_ns = Collection("dev")
