@@ -19,6 +19,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
+      actions: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
