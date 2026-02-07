@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shlex
 import shutil
 import subprocess
 from datetime import UTC, datetime
@@ -90,11 +91,21 @@ def resolve_release_version(version: str | None) -> str:
 def compute_dataset_hash(paths: list[Path]) -> str:
     """Compute a stable hash over dataset-defining JSON sources only."""
     hasher = hashlib.sha256()
-    for path in paths:
-        data = path.read_bytes()
+    for path in sorted(paths, key=lambda path: path.as_posix()):
+        raw_bytes = path.read_bytes()
         hasher.update(path.as_posix().encode("utf-8"))
         hasher.update(b"\0")
-        hasher.update(data)
+        canonical_bytes: bytes
+        try:
+            payload = json.loads(raw_bytes.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            canonical_bytes = raw_bytes
+        else:
+            canonical_bytes = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
+                "utf-8"
+            )
+
+        hasher.update(canonical_bytes)
         hasher.update(b"\0")
     return hasher.hexdigest()
 
@@ -102,7 +113,7 @@ def compute_dataset_hash(paths: list[Path]) -> str:
 def write_json(path: Path, payload: dict[str, str]) -> None:
     """Write JSON payload with stable formatting."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"{json.dumps(payload, indent=2)}\n", encoding="utf-8")
+    path.write_text(f"{json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False)}\n", encoding="utf-8")
 
 
 def render_hf_readme(
@@ -172,7 +183,18 @@ def build_hf_dataset_files(ctx: Context, output_dir: Path) -> tuple[int, int, li
     shutil.copy2(DATASET_SRC, full_json)
 
     ctx.run(
-        f"uv run webarena-verified subset-export --path {HARD_SUBSET_PATH} --output {hard_json}",
+        " ".join(
+            [
+                "uv",
+                "run",
+                "webarena-verified",
+                "subset-export",
+                "--path",
+                shlex.quote(str(HARD_SUBSET_PATH)),
+                "--output",
+                shlex.quote(str(hard_json)),
+            ]
+        ),
         hide=True,
     )
 

@@ -136,7 +136,6 @@ def upload_hf_dataset(
     repo_id: str = "AmineHA/WebArena-Verified",
     folder_path: str = str(hf_dataset_utils.HF_BUILD_DIR),
     token: str | None = None,
-    create_pr: bool = False,
     dry_run: bool = False,
     skip_tag_check: bool = False,
 ) -> None:
@@ -147,7 +146,6 @@ def upload_hf_dataset(
         repo_id: HF dataset repository id.
         folder_path: Folder containing release artifacts.
         token: Optional HF token. If omitted, uses cached login/session.
-        create_pr: Whether to open a PR instead of direct commit upload.
         dry_run: Validate and compute upload mode, but skip HF write operations.
         skip_tag_check: Skip git tag-on-HEAD verification (only allowed with dry_run).
     """
@@ -155,8 +153,6 @@ def upload_hf_dataset(
         _ = ctx
         if skip_tag_check and not dry_run:
             raise RuntimeError("--skip-tag-check can only be used with --dry-run")
-        if create_pr and not dry_run:
-            raise RuntimeError("--create-pr is not compatible with tagging; upload after merge without --create-pr")
 
         if skip_tag_check:
             if version is None:
@@ -204,27 +200,20 @@ def upload_hf_dataset(
                 version=resolved_version,
                 repo_id=repo_id,
                 folder_path=str(folder),
-                create_pr=create_pr,
+                create_pr=True,
                 upload_mode=upload_mode,
                 dataset_hash=local_hash,
                 remote_dataset_hash=remote_hash or "none",
             )
             return
 
-        commit_info = upload_folder(
+        upload_folder(
             folder_path=str(folder),
             repo_id=repo_id,
             repo_type="dataset",
             allow_patterns=allow_patterns,
             commit_message=f"dataset: {resolved_version}",
-            create_pr=create_pr,
-            token=token,
-        )
-
-        hf_dataset_utils.ensure_hf_tag(
-            repo_id=repo_id,
-            version=resolved_version,
-            revision=commit_info.oid,
+            create_pr=True,
             token=token,
         )
 
@@ -233,9 +222,10 @@ def upload_hf_dataset(
             version=resolved_version,
             repo_id=repo_id,
             folder_path=str(folder),
-            create_pr=create_pr,
+            create_pr=True,
             upload_mode=upload_mode,
             dataset_hash=local_hash,
+            tag_created=False,
         )
     except (RuntimeError, subprocess.CalledProcessError, UnexpectedExit) as exc:
         logging_utils.print_error(str(exc))
