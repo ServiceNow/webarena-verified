@@ -1,0 +1,65 @@
+---
+import "tabulator-tables/dist/css/tabulator.min.css";
+import SiteLayout from "../layouts/SiteLayout.astro";
+---
+
+<SiteLayout
+  title="WebArena-Verified Leaderboard"
+  description="Compare benchmark submissions on Full and Hard leaderboards for WebArena-Verified."
+>
+  <section id="blocking-error" class="blocking-error" hidden>
+    <h2>Leaderboard data is currently unavailable</h2>
+    <p id="blocking-error-text"></p>
+    <button id="retry-button" class="btn-primary" type="button">Retry</button>
+  </section>
+
+  <section id="loading-state" class="loading-state">
+    <p>Loading leaderboard</p>
+  </section>
+
+  <section id="content" hidden>
+    <section class="kpi-grid">
+      <article>
+        <h2>Evaluator Version</h2>
+        <p>
+          <a
+            class="version-link"
+            href="https://github.com/ServiceNow/webarena-verified/releases/tag/v1.1.2"
+            target="_blank"
+            rel="noreferrer"
+          >
+            1.1.2 (February 7, 2026) <span aria-hidden="true">↗</span>
+          </a>
+        </p>
+      </article>
+      <article>
+        <h2>Total Submissions</h2>
+        <p id="kpi-total-submissions">0</p>
+      </article>
+      <article>
+        <h2>Last Submission</h2>
+        <p id="kpi-last-submission">-</p>
+      </article>
+    </section>
+
+    <section class="controls">
+      <div class="board-switch" role="tablist" aria-label="Leaderboard view">
+        <button type="button" data-board="full" aria-pressed="true" class="board-tab">WebArena-Verified</button>
+        <button type="button" data-board="hard" aria-pressed="false" class="board-tab">WebArena-Verified-Hard</button>
+      </div>
+
+      <label class="search-control">
+        <input id="search-input" type="search" placeholder="Seach submission name or ID" aria-label="Search leaderboard" />
+      </label>
+    </section>
+
+    <p id="inline-error" class="inline-error" hidden></p>
+    <section class="table-wrap">
+      <div id="leaderboard-table" aria-live="polite"></div>
+    </section>
+  </section>
+
+  <script>
+    import "../scripts/leaderboard.js";
+  </script>
+</SiteLayout>

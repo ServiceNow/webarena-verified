@@ -1,0 +1,67 @@
+---
+import "../styles/global.css";
+
+const { title, description = "WebArena-Verified leaderboard and benchmark resources." } = Astro.props;
+const pathname = Astro.url.pathname;
+
+const navLinks = [
+  { href: "/", label: "Leaderboard" },
+  { href: "/submission", label: "Submission Guidelines" },
+  { href: "/faq", label: "FAQ / Help" },
+  { href: "https://servicenow.github.io/webarena-verified/", label: "Documentation", external: true },
+  { href: "https://github.com/ServiceNow/webarena-verified", label: "GitHub", external: true },
+  { href: "/contact", label: "Contact" }
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-shell site-header-inner">
+        <a class="brand" href="/">
+          <span>WebArena-Verified</span>
+        </a>
+        <nav class="top-nav" aria-label="Main">
+          {
+            navLinks.map((link) => {
+              const isActive = !link.external && (pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href)));
+              return (
+                <a
+                  href={link.href}
+                  class={isActive ? "active" : ""}
+                  target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noreferrer" : undefined}
+                >
+                  {link.label}
+                </a>
+              );
+            })
+          }
+        </nav>
+      </div>
+    </header>
+
+    <main class="site-shell page-shell">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-shell footer-inner">
+        <p>WebArena-Verified benchmark leaderboard and submission portal.</p>
+        <p>
+          <a href="https://servicenow.github.io/webarena-verified/" target="_blank" rel="noreferrer">Documentation</a>
+          <span>·</span>
+          <a href="https://github.com/ServiceNow/webarena-verified" target="_blank" rel="noreferrer">GitHub</a>
+          <span>·</span>
+          <a href="mailto:amine.elhattami@servicenow.com">Contact Maintainers</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
