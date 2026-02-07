@@ -88,12 +88,20 @@ a {
 }
 
 .top-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
   text-decoration: none;
   color: var(--muted);
   padding: 0.45rem 0.65rem;
   border-radius: 8px;
   font-size: 0.92rem;
   font-weight: 600;
+}
+
+.top-nav a .external-link-icon {
+  font-size: 0.86em;
+  line-height: 1;
 }
 
 .top-nav a:hover,
@@ -284,8 +292,25 @@ a {
 }
 
 .search-control {
+  width: 100%;
+}
+
+.search-actions {
   justify-self: end;
-  width: min(100%, 560px);
+  width: min(100%, 700px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.export-button {
+  min-width: 40px;
+  width: 40px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  font-size: 1.05rem;
 }
 
 label {
@@ -516,8 +541,13 @@ button {
   }
 
   .search-control {
+    width: 100%;
+  }
+
+  .search-actions {
     justify-self: start;
     width: 100%;
+    grid-template-columns: 1fr;
   }
 
   .board-switch {

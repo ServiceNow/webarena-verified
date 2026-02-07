@@ -23,7 +23,9 @@ describe("validateManifest", () => {
       generation_id: "gen-1",
       generated_at_utc: "2026-02-07T12:00:00Z",
       full_file: "leaderboard_full.gen-1.json",
-      hard_file: "leaderboard_hard.gen-1.json"
+      hard_file: "leaderboard_hard.gen-1.json",
+      full_sha256: "a".repeat(64),
+      hard_sha256: "b".repeat(64)
     });
 
     expect(manifest.generation_id).toBe("gen-1");
@@ -31,6 +33,20 @@ describe("validateManifest", () => {
 
   it("rejects malformed manifest payload", () => {
     expect(() => validateManifest({ full_file: "x" })).toThrow("missing required fields");
+  });
+
+  it("rejects invalid hash fields", () => {
+    expect(() =>
+      validateManifest({
+        schema_version: "1.0",
+        generation_id: "gen-1",
+        generated_at_utc: "2026-02-07T12:00:00Z",
+        full_file: "leaderboard_full.gen-1.json",
+        hard_file: "leaderboard_hard.gen-1.json",
+        full_sha256: "A".repeat(64),
+        hard_sha256: "b".repeat(63)
+      })
+    ).toThrow("Manifest hash fields");
   });
 });
 

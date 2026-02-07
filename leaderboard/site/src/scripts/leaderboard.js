@@ -10,6 +10,7 @@ import {
 let table;
 let datasets;
 let tableReadyPromise;
+let activeBoard = "full";
 
 const dom = {
   loading: document.getElementById("loading-state"),
@@ -19,6 +20,7 @@ const dom = {
   retryButton: document.getElementById("retry-button"),
   inlineError: document.getElementById("inline-error"),
   searchInput: document.getElementById("search-input"),
+  exportCsvButton: document.getElementById("export-csv-button"),
   boardTabs: document.querySelectorAll("[data-board]"),
   totalSubmissions: document.getElementById("kpi-total-submissions"),
   lastSubmission: document.getElementById("kpi-last-submission")
@@ -29,6 +31,7 @@ const SCORE_COLUMNS = [
   "reddit_score",
   "shopping_admin_score",
   "shopping_score",
+  "wikipedia_score",
   "map_score"
 ];
 
@@ -37,6 +40,7 @@ const SITE_COLUMN_LABELS = {
   reddit_score: "Reddit",
   shopping_admin_score: "Shopping Admin",
   shopping_score: "Shopping",
+  wikipedia_score: "Wikipedia",
   map_score: "Map"
 };
 
@@ -188,12 +192,25 @@ async function loadBoard(boardName) {
 }
 
 async function setBoard(boardName) {
+  activeBoard = boardName;
   dom.boardTabs.forEach((button) => {
     const isActive = button.dataset.board === boardName;
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 
   await loadBoard(boardName);
+}
+
+function exportCurrentViewToCsv() {
+  if (!table) {
+    return;
+  }
+
+  const boardSuffix = activeBoard === "hard" ? "hard" : "full";
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  const filename = `webarena-verified-${boardSuffix}-${dateStamp}.csv`;
+
+  table.download("csv", filename, { bom: true });
 }
 
 function attachInteractions() {
@@ -204,6 +221,7 @@ function attachInteractions() {
   });
 
   dom.searchInput.addEventListener("input", applySearchAndFilter);
+  dom.exportCsvButton?.addEventListener("click", exportCurrentViewToCsv);
 
   dom.retryButton.addEventListener("click", () => {
     start();

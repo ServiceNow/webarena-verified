@@ -3,14 +3,16 @@ import "../styles/global.css";
 
 const { title, description = "WebArena-Verified leaderboard and benchmark resources." } = Astro.props;
 const pathname = Astro.url.pathname;
+const baseUrl = import.meta.env.BASE_URL;
+const withBase = (path) => new URL(path.replace(/^\//, ""), `https://dummy${baseUrl}`).pathname;
 
 const navLinks = [
-  { href: "/", label: "Leaderboard" },
-  { href: "/submission", label: "Submission Guidelines" },
-  { href: "/faq", label: "FAQ / Help" },
+  { href: withBase("/"), label: "Leaderboard" },
+  { href: withBase("/submission"), label: "Submission Guidelines" },
+  { href: withBase("/faq"), label: "FAQ / Help" },
   { href: "https://servicenow.github.io/webarena-verified/", label: "Documentation", external: true },
   { href: "https://github.com/ServiceNow/webarena-verified", label: "GitHub", external: true },
-  { href: "/contact", label: "Contact" }
+  { href: withBase("/contact"), label: "Contact" }
 ];
 ---
 
@@ -24,7 +26,7 @@ const navLinks = [
   <body>
     <header class="site-header">
       <div class="site-shell site-header-inner">
-        <a class="brand" href="/">
+        <a class="brand" href={withBase("/")}>
           <span>WebArena-Verified</span>
         </a>
         <nav class="top-nav" aria-label="Main">
@@ -39,6 +41,7 @@ const navLinks = [
                   rel={link.external ? "noreferrer" : undefined}
                 >
                   {link.label}
+                  {link.external ? <span class="external-link-icon" aria-hidden="true">↗</span> : null}
                 </a>
               );
             })

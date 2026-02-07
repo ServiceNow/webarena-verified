@@ -1,11 +1,15 @@
-const MANIFEST_URL = "/leaderboard/data/leaderboard_manifest.json";
+const baseUrl = import.meta.env.BASE_URL || "/";
+const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+const MANIFEST_URL = `${normalizedBaseUrl}data/leaderboard_manifest.json`;
 
 const REQUIRED_MANIFEST_FIELDS = [
   "schema_version",
   "generation_id",
   "generated_at_utc",
   "full_file",
-  "hard_file"
+  "hard_file",
+  "full_sha256",
+  "hard_sha256"
 ];
 
 const REQUIRED_ROW_FIELDS = [
@@ -69,6 +73,11 @@ export function validateManifest(payload) {
 
   if (typeof payload.full_file !== "string" || typeof payload.hard_file !== "string") {
     throw new Error("Manifest file fields must be strings.");
+  }
+
+  const isSha256 = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+  if (!isSha256(payload.full_sha256) || !isSha256(payload.hard_sha256)) {
+    throw new Error("Manifest hash fields must be lowercase 64-char SHA256 hex.");
   }
 
   return payload;

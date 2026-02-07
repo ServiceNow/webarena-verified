@@ -48,9 +48,20 @@ import SiteLayout from "../layouts/SiteLayout.astro";
         <button type="button" data-board="hard" aria-pressed="false" class="board-tab">WebArena-Verified-Hard</button>
       </div>
 
-      <label class="search-control">
-        <input id="search-input" type="search" placeholder="Seach submission name or ID" aria-label="Search leaderboard" />
-      </label>
+      <div class="search-actions">
+        <label class="search-control">
+          <input id="search-input" type="search" placeholder="Seach submission name or ID" aria-label="Search leaderboard" />
+        </label>
+        <button
+          id="export-csv-button"
+          type="button"
+          class="btn-secondary export-button"
+          aria-label="Export Leaderboard Data"
+          title="Export Leaderboard Data"
+        >
+          <span aria-hidden="true">⤓</span>
+        </button>
+      </div>
     </section>
 
     <p id="inline-error" class="inline-error" hidden></p>
