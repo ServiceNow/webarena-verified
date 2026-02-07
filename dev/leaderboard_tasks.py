@@ -1,4 +1,4 @@
-"""Invoke tasks for leaderboard control-plane operations."""
+"""Invoke tasks for leaderboard control-plane and publish operations."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from invoke import task
 
+from dev.leaderboard.publish import publish_from_processed
 from dev.leaderboard.submission_control_plane import (
     DEFAULT_SUBMISSIONS_ROOT,
     process_pending_submission,
@@ -62,3 +63,27 @@ def submission_process(
         f"processed_at_utc={record.processed_at_utc}"
     )
     print(json.dumps(record.model_dump(mode="json"), indent=2))
+
+
+@task(name="publish-from-processed")
+def publish_from_processed_task(
+    _ctx: Context,
+    gh_pages_root: str,
+    processed_dir: str = "leaderboard/data/submissions/processed",
+    staging_dir: str = ".tmp/leaderboard-publish-staging",
+    generation_id: str = "",
+    generated_at_utc: str = "",
+    dry_run: bool = False,
+) -> None:
+    """Generate and publish leaderboard files from processed submission records."""
+    manifest = publish_from_processed(
+        gh_pages_root=Path(gh_pages_root),
+        processed_dir=Path(processed_dir),
+        staging_dir=Path(staging_dir),
+        generation_id=generation_id or None,
+        generated_at_utc=generated_at_utc or None,
+        dry_run=dry_run,
+    )
+    print(f"generation_id={manifest.generation_id}")
+    print(f"full_file={manifest.full_file}")
+    print(f"hard_file={manifest.hard_file}")
