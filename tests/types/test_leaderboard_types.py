@@ -5,6 +5,8 @@ from webarena_verified.types.leaderboard import (
     LeaderboardManifest,
     LeaderboardRow,
     LeaderboardTableFile,
+    SubmissionMetadata,
+    SubmissionPayloadManifest,
     SubmissionRecord,
     SubmissionStatus,
 )
@@ -129,6 +131,55 @@ def test_table_file_valid():
         generation_id="gen-abc",
         generated_at_utc="2026-02-07T12:00:00Z",
         leaderboard="full",
-        rows=[_valid_row()],
+        rows=[LeaderboardRow(**_valid_row())],
     )
     assert table.leaderboard == "full"
+
+
+def test_submission_metadata_valid():
+    metadata = SubmissionMetadata(
+        submission_id="sub-123",
+        name="TeamX/ModelY",
+        leaderboard="both",
+        reference="https://example.com/paper",
+        created_at_utc="2026-02-07T12:00:00Z",
+        contact_info="team@example.com",
+    )
+    assert metadata.submission_id == "sub-123"
+
+
+def test_submission_metadata_rejects_invalid_name():
+    with pytest.raises(ValidationError, match="name must match"):
+        SubmissionMetadata(
+            submission_id="sub-123",
+            name="Invalid Name With Spaces",
+            leaderboard="hard",
+            reference="https://example.com",
+            created_at_utc="2026-02-07T12:00:00Z",
+        )
+
+
+def test_submission_payload_manifest_valid():
+    manifest = SubmissionPayloadManifest(
+        submission_id="sub-123",
+        archive_file="payload.tar.zst",
+        archive_sha256="d" * 64,
+        archive_size_bytes=42,
+        created_at_utc="2026-02-07T12:00:00Z",
+        hf_pr_id=10,
+        hf_pr_url="https://huggingface.co/datasets/org/repo/discussions/10",
+    )
+    assert manifest.archive_file == "payload.tar.zst"
+
+
+def test_submission_payload_manifest_rejects_bad_hash():
+    with pytest.raises(ValidationError, match="64-character SHA256"):
+        SubmissionPayloadManifest(
+            submission_id="sub-123",
+            archive_file="payload.tar.zst",
+            archive_sha256="bad-hash",
+            archive_size_bytes=42,
+            created_at_utc="2026-02-07T12:00:00Z",
+            hf_pr_id=10,
+            hf_pr_url="https://huggingface.co/datasets/org/repo/discussions/10",
+        )
