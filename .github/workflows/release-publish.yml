@@ -31,9 +31,11 @@ jobs:
           fi
           VERSION="${TAG#v}"
           PRERELEASE="${{ github.event.release.prerelease }}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          {
+            echo "tag=$TAG"
+            echo "version=$VERSION"
+            echo "prerelease=$PRERELEASE"
+          } >> "$GITHUB_OUTPUT"
 
   publish_pypi:
     name: Publish to PyPI
