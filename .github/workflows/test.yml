@@ -43,11 +43,10 @@ jobs:
       - name: Run tests
         run: uv run inv dev.code.test
 
-  env_ctrl_changes:
-    name: Detect Env Ctrl Changes
+  env_ctrl_tests:
+    name: Test Environment Control
     runs-on: ubuntu-latest
-    outputs:
-      run_env_ctrl: ${{ steps.filter.outputs.env_ctrl }}
+    timeout-minutes: 60
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,23 +61,20 @@ jobs:
               - "tests/integration/environment_control/**"
               - "src/webarena_verified/environments/env_ctrl_client/**"
 
-  env_ctrl_tests:
-    if: needs.env_ctrl_changes.outputs.run_env_ctrl == 'true'
-    name: Test Environment Control
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: env_ctrl_changes
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Skip message
+        if: steps.filter.outputs.env_ctrl != 'true'
+        run: echo "No env_ctrl-related changes detected; skipping environment control tests."
 
       - name: Setup environment
+        if: steps.filter.outputs.env_ctrl == 'true'
         uses: ./.github/actions/setup
         with:
           install-playwright: 'true'
 
       - name: Build Docker image
+        if: steps.filter.outputs.env_ctrl == 'true'
         run: docker build -t webarena-verified:test .
 
       - name: Run environment control tests
+        if: steps.filter.outputs.env_ctrl == 'true'
         run: uv run pytest tests/integration/environment_control/ -m docker --webarena-verified-docker-img webarena-verified:test

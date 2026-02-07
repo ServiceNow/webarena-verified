@@ -17,6 +17,7 @@ from datasets.exceptions import DatasetGenerationError
 from huggingface_hub import HfApi, hf_hub_download, upload_folder
 from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError, RevisionNotFoundError
 from invoke import task
+from invoke.exceptions import UnexpectedExit
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 if TYPE_CHECKING:
@@ -339,7 +340,7 @@ def build_hf_dataset(ctx: Context, version: str | None = None, output_dir: str =
             full=len(full),
             hard=len(hard),
         )
-    except (RuntimeError, subprocess.CalledProcessError) as exc:
+    except (RuntimeError, subprocess.CalledProcessError, UnexpectedExit) as exc:
         logging_utils.print_error(str(exc))
         sys.exit(1)
 
@@ -458,6 +459,6 @@ def upload_hf_dataset(
             upload_mode=upload_mode,
             dataset_hash=local_hash,
         )
-    except (RuntimeError, subprocess.CalledProcessError) as exc:
+    except (RuntimeError, subprocess.CalledProcessError, UnexpectedExit) as exc:
         logging_utils.print_error(str(exc))
         sys.exit(1)

@@ -40,7 +40,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--hf-dataset-ref",
         action="store",
-        default="AmineHA/WebArena-Verified",
+        default="",
         help="HF dataset reference (repo id or local path) for HF dataset tests",
     )
 

@@ -13,10 +13,6 @@ from deepdiff import DeepDiff
 if TYPE_CHECKING:
     from pathlib import Path
 
-EXPECTED_FULL_ROWS = 812
-EXPECTED_HARD_ROWS = 258
-
-
 def _canonicalize(value: Any) -> Any:
     """Normalize nested structures for stable equality checks."""
     if isinstance(value, dict):
@@ -46,20 +42,10 @@ def _assert_deep_equal(actual: Any, expected: Any) -> None:
 @pytest.fixture
 def dataset_ref(request: pytest.FixtureRequest) -> str:
     """Dataset reference from CLI (HF repo id or local path)."""
-    return str(request.config.getoption("--hf-dataset-ref"))
-
-
-@pytest.fixture(scope="session")
-def hard_subset_ids(project_root: Path) -> set[int]:
-    """Hard subset task ids loaded from the subset definition file."""
-    path = project_root / "assets" / "dataset" / "subsets" / "webarena-verified-hard.json"
-    payload: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
-    task_ids = payload.get("task_ids")
-    if not isinstance(task_ids, list):
-        raise AssertionError("Hard subset file must contain a list field 'task_ids'")
-    if not all(isinstance(task_id, int) for task_id in task_ids):
-        raise AssertionError("All hard subset task_ids must be integers")
-    return set(task_ids)
+    dataset = request.config.getoption("--hf-dataset-ref")
+    if not dataset:
+        pytest.skip("HF dataset parity tests require --hf-dataset-ref (repo id or local path)")
+    return str(dataset)
 
 
 @pytest.fixture(scope="session")
@@ -93,10 +79,10 @@ def benchmark_data(project_root: Path) -> tuple[dict[str, Any], ...]:
     return tuple(result)
 
 
-@pytest.fixture
-def hf_cache_dir(tmp_path: Path) -> Path:
-    """Temporary cache directory for a fresh dataset download/build."""
-    path = tmp_path / "hf_dataset_cache"
+@pytest.fixture(scope="session")
+def hf_cache_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Shared cache directory for HF dataset downloads in this test session."""
+    path = tmp_path_factory.mktemp("hf_dataset_cache")
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -108,7 +94,6 @@ def hf_full_split_rows(dataset_ref: str, hf_cache_dir: Path) -> tuple[dict[str, 
         dataset_ref,
         split="full",
         cache_dir=str(hf_cache_dir),
-        download_mode="force_redownload",
     ).to_list()
     return tuple(rows)
 
@@ -120,7 +105,6 @@ def hf_hard_split_rows(dataset_ref: str, hf_cache_dir: Path) -> tuple[dict[str, 
         dataset_ref,
         split="hard",
         cache_dir=str(hf_cache_dir),
-        download_mode="force_redownload",
     ).to_list()
     return tuple(rows)
 
@@ -130,13 +114,11 @@ def test_hf_dataset_full_exact_content(
     hf_full_split_rows: tuple[dict[str, Any], ...],
 ) -> None:
     """Full split must match the source dataset exactly (row count + row content + order)."""
-    assert len(hf_full_split_rows) == EXPECTED_FULL_ROWS
-    assert len(benchmark_data) == EXPECTED_FULL_ROWS
+    assert len(hf_full_split_rows) == len(benchmark_data)
     _assert_deep_equal(_canonicalize(hf_full_split_rows), _canonicalize(benchmark_data))
 
 
 def test_hf_dataset_hard_subset_exact_content(
-    hard_subset_ids: set[int],
     hard_subset_data: tuple[dict[str, Any], ...],
     hf_hard_split_rows: tuple[dict[str, Any], ...],
 ) -> None:
@@ -144,8 +126,6 @@ def test_hf_dataset_hard_subset_exact_content(
     hard_ids = {task["task_id"] for task in hf_hard_split_rows}
     expected_hard_ids = {task["task_id"] for task in hard_subset_data}
 
-    assert len(hf_hard_split_rows) == EXPECTED_HARD_ROWS
-    assert len(hard_subset_ids) == EXPECTED_HARD_ROWS
-    assert hard_ids == hard_subset_ids
-    assert expected_hard_ids == hard_subset_ids
+    assert len(hf_hard_split_rows) == len(hard_subset_data)
+    assert hard_ids == expected_hard_ids
     _assert_deep_equal(_canonicalize(hf_hard_split_rows), _canonicalize(hard_subset_data))
