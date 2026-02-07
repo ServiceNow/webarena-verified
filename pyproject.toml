@@ -94,6 +94,7 @@ dev = [
     "twine>=6.0.1",
     "ty>=0.0.13",
     "actionlint-py>=1.7.10.24",
+    "deepdiff>=8.6.1",
 ]
 
 [tool.uv]
