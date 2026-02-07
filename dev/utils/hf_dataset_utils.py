@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import semver
-from datasets import ClassLabel, Dataset, List
+from datasets import Dataset, List, Value
 from huggingface_hub import HfApi, hf_hub_download
 from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError, RevisionNotFoundError
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
@@ -29,7 +29,7 @@ HARD_SUBSET_PATH = Path("assets/dataset/subsets/webarena-verified-hard.json")
 EXPECTED_FULL_ROWS = 812
 EXPECTED_HARD_ROWS = 258
 SITE_CLASS_NAMES = ["gitlab", "map", "reddit", "shopping_admin", "shopping", "wikipedia", "homepage"]
-SITES_FEATURE = List(ClassLabel(names=SITE_CLASS_NAMES))
+SITES_FEATURE = List(Value("string"))
 
 
 def _json_stringify(value: Any) -> str:
@@ -290,24 +290,25 @@ def load_hf_json_dataset(path: Path) -> Dataset:
     """Load a JSON split with an explicit HF schema.
 
     - `sites` is encoded as multi-label categorical values.
-    - `instantiation_dict` is kept as a mapping with stringified values.
-    - `eval` is kept as nested objects with Arrow-compatible normalization.
+    - `instantiation_dict` and `eval` are stored as JSON strings for stable cross-split schemas.
     """
     rows = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(rows, list):
         raise RuntimeError(f"Expected JSON array in {path}") from None
 
-    stringify_instantiation_keys = _compute_instantiation_stringify_keys(rows, path)
-
     for row in rows:
         if not isinstance(row, dict):
             raise RuntimeError(f"Expected object rows in {path}") from None
-        row["instantiation_dict"] = _normalize_instantiation_dict(
-            row.get("instantiation_dict"),
-            path,
-            stringify_instantiation_keys,
-        )
-        row["eval"] = _normalize_eval(row.get("eval"), path)
+
+        instantiation_dict = row.get("instantiation_dict")
+        if not isinstance(instantiation_dict, dict):
+            raise RuntimeError(f"Expected 'instantiation_dict' to be an object in {path}") from None
+        row["instantiation_dict"] = _json_stringify(instantiation_dict)
+
+        eval_value = row.get("eval")
+        if not isinstance(eval_value, list):
+            raise RuntimeError(f"Expected 'eval' to be an array in {path}") from None
+        row["eval"] = _json_stringify(eval_value)
 
     dataset = Dataset.from_list(rows)
     return dataset.cast_column("sites", SITES_FEATURE)
@@ -393,6 +394,8 @@ def build_hf_dataset_files(
 
     full.to_parquet(str(full_parquet))
     hard.to_parquet(str(hard_parquet))
+    full_json.unlink(missing_ok=True)
+    hard_json.unlink(missing_ok=True)
 
     schema = [(name, str(feature)) for name, feature in full.features.items()]
     full_site_task_counts = compute_site_task_counts(full_rows)

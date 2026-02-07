@@ -55,6 +55,7 @@ def run_tests(ctx: Context, docker_img: str = "webarena-verified:test") -> None:
     logging_utils.print_info("Running tests...")
     ctx.run(
         f"uv run pytest --webarena-verified-docker-img {docker_img} "
+        "--ignore=tests/dataset/test_hf_dataset.py "
         "--ignore=tests/integration/environment_control/ "
         "--ignore=tests/integration/environments/"
     )

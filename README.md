@@ -6,7 +6,7 @@
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg" alt="Python 3.11+"></a>
   <a href="tests"><img src="https://img.shields.io/badge/Tests-Pytest-6B2F8.svg" alt="Tests: Pytest"></a>
   <a href="https://servicenow.github.io/webarena-verified/"><img src="https://img.shields.io/badge/Docs-MkDocs-0288D1.svg" alt="Docs: MkDocs"></a>
-  <a href="https://huggingface.co/datasets/AmineHA/WebArena-Verified"><img src="https://huggingface.co/datasets/huggingface/badges/resolve/main/powered-by-huggingface-sm.svg" alt="Powered by Hugging Face"></a>
+  <a href="https://huggingface.co/datasets/AmineHA/WebArena-Verified"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-AmineHA%2FWebArena--Verified-yellow" alt="Hugging Face Dataset"></a>
 </p>
 
 WebArena-Verified is the verified release of the WebArena benchmark. It distributes a curated, version-controlled dataset of web tasks together with deterministic evaluators that operate on agent responses and captured network traces. The project is designed for reproducible benchmarking of web agents and provides tooling for both single-task debugging and batch evaluation.

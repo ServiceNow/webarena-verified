@@ -1,16 +1,15 @@
 name: Release Publish
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Release tag (e.g. v1.2.3)
-        required: true
-        type: string
+  release:
+    types: [published]
 
 concurrency:
   group: release-publish-${{ github.event.inputs.tag || github.run_id }}
   cancel-in-progress: false
+
+permissions:
+  id-token: write # Required for trusted publishing
 
 jobs:
   prepare:
@@ -181,7 +180,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           sync-args: --group dev
-          configure-git-identity: 'true'
+          configure-git-identity: "true"
 
       - name: Fetch gh-pages branch
         run: |
