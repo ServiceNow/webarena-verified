@@ -200,7 +200,6 @@ def upload_hf_dataset(
                 version=resolved_version,
                 repo_id=repo_id,
                 folder_path=str(folder),
-                create_pr=True,
                 upload_mode=upload_mode,
                 dataset_hash=local_hash,
                 remote_dataset_hash=remote_hash or "none",
@@ -213,7 +212,6 @@ def upload_hf_dataset(
             repo_type="dataset",
             allow_patterns=allow_patterns,
             commit_message=f"dataset: {resolved_version}",
-            create_pr=True,
             token=token,
         )
 
@@ -222,7 +220,6 @@ def upload_hf_dataset(
             version=resolved_version,
             repo_id=repo_id,
             folder_path=str(folder),
-            create_pr=True,
             upload_mode=upload_mode,
             dataset_hash=local_hash,
             tag_created=False,

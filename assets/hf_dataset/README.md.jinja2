@@ -15,10 +15,36 @@ configs:
 WebArena-Verified is a curated benchmark dataset of web tasks designed for reproducible
 evaluation of web agents across multiple realistic websites.
 
+## Sources
+
+- GitHub repository: [webarena-verified](https://github.com/web-arena-x/webarena-verified)
+- Original WebArena benchmark: [webarena.dev](https://webarena.dev)
+
 ## Splits
 
 - `full`: {{ full_count }} rows
 - `hard`: {{ hard_count }} rows
+
+## Tasks per site
+
+Counts below are task counts grouped by category. Tasks with more than one site are grouped
+under `multi-category` to avoid double-counting.
+
+### Full split
+
+| Site | Tasks |
+| --- | ---: |
+{% for site_name, task_count in full_site_task_counts -%}
+| `{{ site_name }}` | {{ task_count }} |
+{% endfor %}
+
+### Hard split
+
+| Site | Tasks |
+| --- | ---: |
+{% for site_name, task_count in hard_site_task_counts -%}
+| `{{ site_name }}` | {{ task_count }} |
+{% endfor %}
 
 ## Schema notes
 
