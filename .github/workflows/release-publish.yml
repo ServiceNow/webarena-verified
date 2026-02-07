@@ -1,0 +1,179 @@
+name: Release Publish
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: release-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    outputs:
+      tag: ${{ steps.release-meta.outputs.tag }}
+      version: ${{ steps.release-meta.outputs.version }}
+      prerelease: ${{ steps.release-meta.outputs.prerelease }}
+    steps:
+      - name: Validate and derive release metadata
+        id: release-meta
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "::error::Invalid version tag format: $TAG"
+            echo "Expected format: v1.2.3 or v1.2.3-rc.1"
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          PRERELEASE="${{ github.event.release.prerelease }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+  publish_pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: prepare
+    permissions:
+      contents: read
+      actions: write
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/webarena-verified
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish_docker:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    needs: prepare
+    permissions:
+      contents: read
+      actions: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.tag }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: image-tags
+        run: |
+          IMAGE="ghcr.io/${{ github.repository }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+          TAGS="$IMAGE:$VERSION"
+          if [ "${{ needs.prepare.outputs.prerelease }}" = "false" ]; then
+            TAGS="$TAGS,$IMAGE:latest"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            WBV_VERSION=${{ needs.prepare.outputs.version }}
+          tags: ${{ steps.image-tags.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish_hf_dataset:
+    name: Publish HF Dataset
+    runs-on: ubuntu-latest
+    needs: prepare
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+
+      - name: Build HF dataset artifacts
+        run: uv run inv dev.release.build-hf-dataset --version "${{ needs.prepare.outputs.tag }}"
+
+      - name: Test HF dataset artifacts (local parity)
+        run: uv run pytest tests/dataset/test_hf_dataset.py -v --hf-dataset-ref output/build/hf_dataset
+
+      - name: Publish HF dataset
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          uv run inv dev.release.upload-hf-dataset \
+            --version "${{ needs.prepare.outputs.tag }}" \
+            --folder-path output/build/hf_dataset \
+            --token "${HF_TOKEN}"
+
+  publish_docs:
+    name: Publish Docs
+    runs-on: ubuntu-latest
+    needs: prepare
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.prepare.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+          configure-git-identity: 'true'
+
+      - name: Fetch gh-pages branch
+        run: |
+          git fetch origin gh-pages --depth=1 || echo "gh-pages branch does not exist yet"
+
+      - name: Deploy release docs
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          uv run mike deploy --push --update-aliases "$VERSION" latest
+          uv run mike set-default --push latest

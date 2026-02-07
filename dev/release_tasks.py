@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 import shutil
@@ -23,87 +22,21 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 if TYPE_CHECKING:
     from invoke.context import Context
 
+from dev import hf_dataset_utils
 from dev.utils import logging_utils
 
 HF_BUILD_DIR = Path("output/build/hf_dataset")
 HF_TEMPLATE_PATH = Path("assets/hf_dataset/README.md.jinja2")
 DATASET_SRC = Path("assets/dataset/webarena-verified.json")
 HARD_SUBSET_PATH = Path("assets/dataset/subsets/webarena-verified-hard.json")
-RELEASE_VERSION_RE = re.compile(r"^v\d+\.\d+\.\d+([-.].+)?$")
 EXPECTED_FULL_ROWS = 812
 EXPECTED_HARD_ROWS = 258
-
-
-class ReleaseSpecError(RuntimeError):
-    """Raised when HF release generation fails due to spec violations."""
-
-
-def _run_capture(cmd: list[str]) -> str:
-    """Run a subprocess command and return stdout text."""
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    return result.stdout.strip()
-
-
-def _validate_release_version(version: str) -> None:
-    """Validate version against release tag format."""
-    if not RELEASE_VERSION_RE.fullmatch(version):
-        msg = f"Invalid version '{version}'. Expected format like v1.2.3 or v1.2.3-rc.1"
-        raise ReleaseSpecError(msg)
-
-
-def _get_release_tags_on_head() -> list[str]:
-    """Return valid release tags that point to HEAD."""
-    tags_output = _run_capture(["git", "tag", "--points-at", "HEAD"])
-    if not tags_output:
-        return []
-    return [tag for tag in tags_output.splitlines() if RELEASE_VERSION_RE.fullmatch(tag)]
-
-
-def _resolve_release_version(version: str | None) -> str:
-    """Resolve and validate the release version.
-
-    Rules:
-    - If version is provided, it must be valid and point to HEAD.
-    - If version is omitted, exactly one valid release tag must point to HEAD.
-    """
-    head_tags = _get_release_tags_on_head()
-
-    if version:
-        _validate_release_version(version)
-        if version not in head_tags:
-            msg = (
-                f"Provided version '{version}' does not match a tag on HEAD. "
-                f"Tags on HEAD: {head_tags or 'none'}"
-            )
-            raise ReleaseSpecError(msg)
-        return version
-
-    if len(head_tags) != 1:
-        msg = (
-            "Auto-detect requires exactly one release tag on HEAD. "
-            f"Found: {head_tags or 'none'}"
-        )
-        raise ReleaseSpecError(msg)
-
-    return head_tags[0]
 
 
 def _write_json(path: Path, payload: dict[str, str]) -> None:
     """Write JSON payload with stable formatting."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"{json.dumps(payload, indent=2)}\n", encoding="utf-8")
-
-
-def _compute_dataset_hash() -> str:
-    """Compute a stable hash over dataset-defining JSON sources only."""
-    hasher = hashlib.sha256()
-    for path in [DATASET_SRC, HARD_SUBSET_PATH]:
-        data = path.read_bytes()
-        hasher.update(str(path).encode("utf-8"))
-        hasher.update(b"\0")
-        hasher.update(data)
-        hasher.update(b"\0")
-    return hasher.hexdigest()
 
 
 def _render_hf_readme(
@@ -118,7 +51,7 @@ def _render_hf_readme(
 ) -> None:
     """Render dataset card from Jinja2 template."""
     if not HF_TEMPLATE_PATH.exists():
-        raise ReleaseSpecError(f"Template file not found: {HF_TEMPLATE_PATH}")
+        raise RuntimeError(f"Template file not found: {HF_TEMPLATE_PATH}")
 
     env = Environment(
         loader=FileSystemLoader(str(HF_TEMPLATE_PATH.parent)),
@@ -163,15 +96,15 @@ def _build_hf_dataset_files(ctx: Context, output_dir: Path) -> tuple[int, int, l
     hard_ids = set(hard["task_id"])
 
     if full_count != EXPECTED_FULL_ROWS:
-        raise ReleaseSpecError(
+        raise RuntimeError(
             f"Validation failed: full split expected {EXPECTED_FULL_ROWS}, got {full_count}"
         )
     if hard_count != EXPECTED_HARD_ROWS:
-        raise ReleaseSpecError(
+        raise RuntimeError(
             f"Validation failed: hard split expected {EXPECTED_HARD_ROWS}, got {hard_count}"
         )
     if not hard_ids.issubset(full_ids):
-        raise ReleaseSpecError("Validation failed: hard.task_id is not a subset of full.task_id")
+        raise RuntimeError("Validation failed: hard.task_id is not a subset of full.task_id")
 
     full.to_parquet(str(full_parquet))
     hard.to_parquet(str(hard_parquet))
@@ -191,11 +124,11 @@ def _load_hf_json_dataset(path: Path) -> Dataset:
     except DatasetGenerationError:
         rows = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(rows, list):
-            raise ReleaseSpecError(f"Expected JSON array in {path}") from None
+            raise RuntimeError(f"Expected JSON array in {path}") from None
 
         for row in rows:
             if not isinstance(row, dict):
-                raise ReleaseSpecError(f"Expected object rows in {path}") from None
+                raise RuntimeError(f"Expected object rows in {path}") from None
             for key, value in list(row.items()):
                 if isinstance(value, dict | list):
                     row[key] = json.dumps(value, sort_keys=True)
@@ -207,9 +140,9 @@ def _generate_hf_release_artifacts(ctx: Context, resolved_version: str, build_di
     """Generate all HF release artifacts into build_dir."""
     build_dir.mkdir(parents=True, exist_ok=True)
     full_count, hard_count, schema = _build_hf_dataset_files(ctx, build_dir)
-    git_commit = _run_capture(["git", "rev-parse", "HEAD"])
+    git_commit = hf_dataset_utils.run_capture(["git", "rev-parse", "HEAD"])
     generated_at = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    dataset_hash = _compute_dataset_hash()
+    dataset_hash = hf_dataset_utils.compute_dataset_hash([DATASET_SRC, HARD_SUBSET_PATH])
 
     _write_json(
         build_dir / "version.json",
@@ -243,7 +176,7 @@ def _assert_hf_release_files_exist(folder: Path, required: list[str]) -> None:
     missing = _missing_release_files(folder, required)
     if missing:
         msg = f"Missing required files in {folder}: {', '.join(missing)}"
-        raise ReleaseSpecError(msg)
+        raise RuntimeError(msg)
 
 
 def _ensure_hf_tag(
@@ -254,18 +187,33 @@ def _ensure_hf_tag(
 ) -> None:
     """Create or verify matching HF dataset tag."""
     api = HfApi(token=token)
+    expected_revision = revision
+    expected_commit: str | None = None
+    branch_refs = api.list_repo_refs(repo_id=repo_id, repo_type="dataset").branches
+    for branch in branch_refs:
+        if branch.name == revision:
+            expected_commit = branch.target_commit
+            break
+    if expected_commit is None and re.fullmatch(r"[0-9a-f]{7,40}", revision):
+        expected_commit = revision
+
     api.create_tag(
         repo_id=repo_id,
         repo_type="dataset",
         tag=version,
-        revision=revision,
+        revision=expected_revision,
         exist_ok=True,
     )
 
     refs = api.list_repo_refs(repo_id=repo_id, repo_type="dataset")
-    tags = {tag.name for tag in refs.tags}
-    if version not in tags:
-        raise ReleaseSpecError(f"HF tag verification failed: tag '{version}' not found on {repo_id}")
+    tag_ref = next((tag for tag in refs.tags if tag.name == version), None)
+    if tag_ref is None:
+        raise RuntimeError(f"HF tag verification failed: tag '{version}' not found on {repo_id}")
+    if expected_commit is not None and tag_ref.target_commit != expected_commit:
+        raise RuntimeError(
+            f"HF tag verification failed: tag '{version}' points to {tag_ref.target_commit}, "
+            f"expected {expected_commit}"
+        )
 
 
 def _get_remote_dataset_hash(repo_id: str, token: str | None = None) -> str | None:
@@ -286,7 +234,7 @@ def _get_remote_dataset_hash(repo_id: str, token: str | None = None) -> str | No
     if dataset_hash is None:
         return None
     if not isinstance(dataset_hash, str):
-        raise ReleaseSpecError("HF version.json contains non-string dataset_hash")
+        raise RuntimeError("HF version.json contains non-string dataset_hash")
     return dataset_hash
 
 
@@ -378,7 +326,7 @@ def build_hf_dataset(ctx: Context, version: str | None = None, output_dir: str =
         output_dir: Output directory for generated artifacts.
     """
     try:
-        resolved_version = _resolve_release_version(version)
+        resolved_version = hf_dataset_utils.resolve_release_version(version)
         build_dir = Path(output_dir)
         _generate_hf_release_artifacts(ctx, resolved_version, build_dir)
         full = load_dataset("parquet", data_files=str(build_dir / "full.parquet"), split="train")
@@ -391,7 +339,7 @@ def build_hf_dataset(ctx: Context, version: str | None = None, output_dir: str =
             full=len(full),
             hard=len(hard),
         )
-    except (ReleaseSpecError, subprocess.CalledProcessError) as exc:
+    except (RuntimeError, subprocess.CalledProcessError) as exc:
         logging_utils.print_error(str(exc))
         sys.exit(1)
 
@@ -422,15 +370,17 @@ def upload_hf_dataset(
     try:
         _ = ctx
         if skip_tag_check and not dry_run:
-            raise ReleaseSpecError("--skip-tag-check can only be used with --dry-run")
+            raise RuntimeError("--skip-tag-check can only be used with --dry-run")
+        if create_pr and not dry_run:
+            raise RuntimeError("--create-pr is not compatible with tagging; upload after merge without --create-pr")
 
         if skip_tag_check:
             if version is None:
-                raise ReleaseSpecError("--skip-tag-check requires --version")
-            _validate_release_version(version)
+                raise RuntimeError("--skip-tag-check requires --version")
+            hf_dataset_utils.validate_release_version(version)
             resolved_version = version
         else:
-            resolved_version = _resolve_release_version(version)
+            resolved_version = hf_dataset_utils.resolve_release_version(version)
 
         folder = Path(folder_path)
         required_preflight = ["version.json", "README.md", "full.parquet", "hard.parquet"]
@@ -451,11 +401,11 @@ def upload_hf_dataset(
                 "Version mismatch: version.json has "
                 f"'{stamped_version}', expected '{resolved_version}'"
             )
-            raise ReleaseSpecError(msg)
+            raise RuntimeError(msg)
 
         local_hash = version_payload.get("dataset_hash")
         if not isinstance(local_hash, str) or not local_hash:
-            raise ReleaseSpecError("version.json must include a non-empty 'dataset_hash' field")
+            raise RuntimeError("version.json must include a non-empty 'dataset_hash' field")
 
         remote_hash = _get_remote_dataset_hash(repo_id=repo_id, token=token)
         data_changed = remote_hash != local_hash
@@ -482,7 +432,7 @@ def upload_hf_dataset(
             )
             return
 
-        upload_folder(
+        commit_info = upload_folder(
             folder_path=str(folder),
             repo_id=repo_id,
             repo_type="dataset",
@@ -495,7 +445,7 @@ def upload_hf_dataset(
         _ensure_hf_tag(
             repo_id=repo_id,
             version=resolved_version,
-            revision="main",
+            revision=commit_info.oid,
             token=token,
         )
 
@@ -508,6 +458,6 @@ def upload_hf_dataset(
             upload_mode=upload_mode,
             dataset_hash=local_hash,
         )
-    except (ReleaseSpecError, subprocess.CalledProcessError) as exc:
+    except (RuntimeError, subprocess.CalledProcessError) as exc:
         logging_utils.print_error(str(exc))
         sys.exit(1)

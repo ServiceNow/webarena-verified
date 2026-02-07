@@ -71,7 +71,7 @@ dev = [
     "click>=8.3.0",
     "datasets>=4.1.1",
     "docker-squash>=1.2.2",
-    "huggingface_hub>=0.34.4",
+    "huggingface-hub>=0.34.4",
     "environment-control",
     "pydantic-settings>=2.11.0",
     "jinja2>=3.1.6",
