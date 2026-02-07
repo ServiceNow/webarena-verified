@@ -50,10 +50,6 @@ def test_hf_dataset_splits_and_integrity(loaded_splits) -> None:
     """Validate split presence, counts, sample intents, and hard subset relation."""
     full, hard = loaded_splits
 
-    # Two splits exist if they are loadable and non-empty.
-    assert len(full) > 0
-    assert len(hard) > 0
-
     assert len(full) == EXPECTED_FULL_ROWS
     assert len(hard) == EXPECTED_HARD_ROWS
 
