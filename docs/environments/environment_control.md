@@ -46,7 +46,7 @@ The client library communicates with `env-ctrl` running inside each container, a
 
 The env-ctrl server includes a web-based dashboard for manual environment management. Access it by navigating to the server's root URL (e.g., `http://localhost:8877/`).
 
-![Environment Control Dashboard](../assets/env-ctrl-dashboard.png)
+![Environment Control Dashboard](../assets/env-ctrl-dashboard-cropped.png)
 
 The dashboard provides:
 

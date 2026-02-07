@@ -12,6 +12,8 @@ from deepdiff import DeepDiff
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
 def _canonicalize(value: Any) -> Any:
     """Normalize dataset rows to compare semantic equality across load paths.
 
