@@ -7169,6 +7169,15 @@ wheels = [
 ]
 
 [[package]]
+name = "vermin"
+version = "1.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/24/7b/2c1b403f2a844e1acb36694fc336e323df742f7f752edb4188311ad43f9e/vermin-1.8.0.tar.gz", hash = "sha256:3621955ac2a2950175c5b4a9b2fc3bd24bd416da0388893c9eb6971264e4ca1f", size = 99913, upload-time = "2025-11-20T17:29:31.509Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e6/fd/6d2167767488e162efd01300a679c7f7d913dbb65baa0b15760ebb369854/vermin-1.8.0-py3-none-any.whl", hash = "sha256:6f2b98ad697a16ed3442e81a0f0baabfc38c185b78aaab1b1fecd87bdd6640b8", size = 98030, upload-time = "2025-11-20T17:29:29.931Z" },
+]
+
+[[package]]
 name = "verspec"
 version = "0.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -7289,6 +7298,7 @@ dev = [
     { name = "semver" },
     { name = "twine" },
     { name = "ty" },
+    { name = "vermin" },
 ]
 
 [package.metadata]
@@ -7349,6 +7359,7 @@ dev = [
     { name = "semver", specifier = ">=3.0.0" },
     { name = "twine", specifier = ">=6.0.1" },
     { name = "ty", specifier = ">=0.0.13" },
+    { name = "vermin", specifier = ">=1.6.0" },
 ]
 
 [[package]]

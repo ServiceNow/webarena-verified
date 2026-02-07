@@ -51,6 +51,62 @@ def _normalize_instantiation_dict(value: Any, path: Path) -> dict[str, str]:
     return normalized
 
 
+def _normalize_post_data(post_data: dict[str, Any]) -> dict[str, str | None]:
+    """Normalize expected.post_data to a stable map<string, string|null>."""
+    normalized_post_data: dict[str, str | None] = {}
+    for key, value in post_data.items():
+        if value is None:
+            normalized_post_data[key] = None
+        elif isinstance(value, dict | list):
+            normalized_post_data[key] = _json_stringify(value)
+        else:
+            normalized_post_data[key] = str(value)
+    return normalized_post_data
+
+
+def _normalize_expected(expected: dict[str, Any]) -> dict[str, Any]:
+    """Normalize evaluator expected block for Arrow-compat nested typing."""
+    normalized_expected = dict(expected)
+
+    if "url" in normalized_expected and not isinstance(normalized_expected["url"], list):
+        normalized_expected["url"] = [normalized_expected["url"]]
+
+    headers = normalized_expected.get("headers")
+    if isinstance(headers, dict) and "referer" in headers and not isinstance(headers["referer"], list):
+        headers = dict(headers)
+        headers["referer"] = [headers["referer"]]
+        normalized_expected["headers"] = headers
+
+    if normalized_expected.get("retrieved_data") is None:
+        normalized_expected["retrieved_data"] = []
+    if isinstance(normalized_expected.get("retrieved_data"), list):
+        normalized_expected["retrieved_data"] = [
+            _json_stringify(value) for value in normalized_expected["retrieved_data"]
+        ]
+
+    post_data = normalized_expected.get("post_data")
+    if isinstance(post_data, dict):
+        normalized_expected["post_data"] = _normalize_post_data(post_data)
+
+    return normalized_expected
+
+
+def _normalize_schema_fields(normalized: dict[str, Any]) -> None:
+    """Stringify highly-dynamic schema dictionaries."""
+    for key in ("results_schema", "query_params_schema", "post_data_schema"):
+        value = normalized.get(key)
+        if isinstance(value, dict | list):
+            normalized[key] = _json_stringify(value)
+
+
+def _normalize_ignored_param_fields(normalized: dict[str, Any]) -> None:
+    """Ensure ignored-params fields are lists of strings."""
+    for key in ("ignored_query_params", "ignored_query_params_patterns", "ignored_post_data_params_patterns"):
+        value = normalized.get(key)
+        if value is not None:
+            normalized[key] = [str(item) for item in value]
+
+
 def _normalize_eval_item(item: Any, path: Path) -> dict[str, Any]:
     """Normalize one evaluator config for Arrow-compat nested typing."""
     if not isinstance(item, dict):
@@ -59,46 +115,10 @@ def _normalize_eval_item(item: Any, path: Path) -> dict[str, Any]:
     normalized = dict(item)
     expected = normalized.get("expected")
     if isinstance(expected, dict):
-        expected = dict(expected)
+        normalized["expected"] = _normalize_expected(expected)
 
-        if "url" in expected and not isinstance(expected["url"], list):
-            expected["url"] = [expected["url"]]
-
-        headers = expected.get("headers")
-        if isinstance(headers, dict) and "referer" in headers and not isinstance(headers["referer"], list):
-            headers = dict(headers)
-            headers["referer"] = [headers["referer"]]
-            expected["headers"] = headers
-
-        if expected.get("retrieved_data") is None:
-            expected["retrieved_data"] = []
-        if isinstance(expected.get("retrieved_data"), list):
-            expected["retrieved_data"] = [_json_stringify(value) for value in expected["retrieved_data"]]
-
-        post_data = expected.get("post_data")
-        if isinstance(post_data, dict):
-            normalized_post_data: dict[str, str | None] = {}
-            for key, value in post_data.items():
-                if value is None:
-                    normalized_post_data[key] = None
-                elif isinstance(value, dict | list):
-                    normalized_post_data[key] = _json_stringify(value)
-                else:
-                    normalized_post_data[key] = str(value)
-            expected["post_data"] = normalized_post_data
-
-        normalized["expected"] = expected
-
-    # Nested schema dictionaries are highly dynamic; store as JSON strings.
-    for key in ("results_schema", "query_params_schema", "post_data_schema"):
-        value = normalized.get(key)
-        if isinstance(value, dict | list):
-            normalized[key] = _json_stringify(value)
-
-    for key in ("ignored_query_params", "ignored_query_params_patterns", "ignored_post_data_params_patterns"):
-        value = normalized.get(key)
-        if value is not None:
-            normalized[key] = [str(item) for item in value]
+    _normalize_schema_fields(normalized)
+    _normalize_ignored_param_fields(normalized)
 
     return normalized
 
@@ -256,7 +276,7 @@ def load_hf_json_dataset(path: Path) -> Dataset:
 
 def compute_site_task_counts(rows: list[dict[str, object]]) -> list[tuple[str, int]]:
     """Count tasks per site, placing multi-site tasks in a dedicated bucket."""
-    counts = {site: 0 for site in SITE_CLASS_NAMES}
+    counts = dict.fromkeys(SITE_CLASS_NAMES, 0)
     extra_sites: dict[str, int] = {}
     multi_category_count = 0
 
