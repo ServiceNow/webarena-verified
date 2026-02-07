@@ -30,6 +30,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           sync-args: --group dev
+          configure-git-identity: 'true'
 
       - name: Create GitHub release
         run: uv run inv dev.release.create-release --version "${{ inputs.version }}"
