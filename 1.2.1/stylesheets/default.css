@@ -1,0 +1,14 @@
+/* Page-specific styles for WebArenaVerified API documentation */
+
+/* Target page by checking if it has WebArenaVerified as the main heading */
+.md-content__inner:has(h1#webarenaverified) .doc-children {
+    display: block !important;
+}
+
+.md-content__inner:has(h1#webarenaverified) .doc-section-title {
+    display: block !important;
+}
+
+.md-content__inner:has(h1#webarenaverified) .doc-contents {
+    display: block !important;
+}

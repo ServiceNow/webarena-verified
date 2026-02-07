@@ -1,0 +1,9 @@
+/* Hide detailed attribute sections while keeping the summary table */
+.doc-children {
+    display: none !important;
+}
+
+/* Hide section titles */
+.doc-section-title {
+    display: none !important;
+}
