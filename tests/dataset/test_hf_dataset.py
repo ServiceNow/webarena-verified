@@ -12,10 +12,14 @@ from deepdiff import DeepDiff
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-
 def _canonicalize(value: Any) -> Any:
-    """Normalize nested structures for stable equality checks."""
+    """Normalize dataset rows to compare semantic equality across load paths.
+
+    The HF build/load fallback can serialize nested list/dict fields as JSON strings
+    (e.g. `eval`, `sites`, `instantiation_dict`). This helper converts those JSON-like
+    strings back to structured values and normalizes containers recursively so DeepDiff
+    reports real content differences rather than representation/type noise.
+    """
     if isinstance(value, dict):
         return {k: _canonicalize(value[k]) for k in sorted(value)}
     if isinstance(value, tuple):
@@ -23,7 +27,6 @@ def _canonicalize(value: Any) -> Any:
     if isinstance(value, list):
         return tuple(_canonicalize(item) for item in value)
     if isinstance(value, str):
-        # Fallback loader can stringify nested JSON fields; recover if possible.
         stripped = value.strip()
         if stripped and stripped[0] in "[{":
             try:
