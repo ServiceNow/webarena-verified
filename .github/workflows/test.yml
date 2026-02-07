@@ -10,9 +10,26 @@ permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Test
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+
+      - name: Run lint
+        run: uv run inv dev.code.lint
+
+  unit_tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,3 +42,43 @@ jobs:
 
       - name: Run tests
         run: uv run inv dev.code.test
+
+  env_ctrl_changes:
+    name: Detect Env Ctrl Changes
+    runs-on: ubuntu-latest
+    outputs:
+      run_env_ctrl: ${{ steps.filter.outputs.env_ctrl }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect changed files
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            env_ctrl:
+              - "packages/environment_control/**"
+              - "tests/integration/environment_control/**"
+              - "src/webarena_verified/environments/env_ctrl_client/**"
+
+  env_ctrl_tests:
+    if: needs.env_ctrl_changes.outputs.run_env_ctrl == 'true'
+    name: Test Environment Control
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: env_ctrl_changes
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          install-playwright: 'true'
+
+      - name: Build Docker image
+        run: docker build -t webarena-verified:test .
+
+      - name: Run environment control tests
+        run: uv run pytest tests/integration/environment_control/ -m docker --webarena-verified-docker-img webarena-verified:test
