@@ -37,17 +37,49 @@ def _json_stringify(value: Any) -> str:
     return json.dumps(value, sort_keys=True)
 
 
-def _normalize_instantiation_dict(value: Any, path: Path) -> dict[str, str]:
-    """Normalize instantiation_dict to map<string, string> while preserving JSON semantics."""
+def _compute_instantiation_stringify_keys(rows: list[dict[str, Any]], path: Path) -> set[str]:
+    """Find instantiation_dict keys that must be stringified for Arrow schema stability."""
+    scalar_types_by_key: dict[str, set[type[Any]]] = {}
+    keys_with_nested_values: set[str] = set()
+
+    for row in rows:
+        instantiation_dict = row.get("instantiation_dict")
+        if not isinstance(instantiation_dict, dict):
+            raise RuntimeError(f"Expected 'instantiation_dict' to be an object in {path}") from None
+
+        for key, raw in instantiation_dict.items():
+            if isinstance(raw, dict | list):
+                keys_with_nested_values.add(key)
+                continue
+
+            scalar_types_by_key.setdefault(key, set()).add(type(raw))
+
+    stringify_keys = set(keys_with_nested_values)
+    for key, scalar_types in scalar_types_by_key.items():
+        non_none_scalar_types = {value_type for value_type in scalar_types if value_type is not type(None)}
+        if len(non_none_scalar_types) > 1:
+            stringify_keys.add(key)
+
+    return stringify_keys
+
+
+def _normalize_instantiation_dict(
+    value: Any,
+    path: Path,
+    stringify_scalar_keys: set[str],
+) -> dict[str, Any]:
+    """Normalize instantiation_dict while preserving scalar types and JSON semantics."""
     if not isinstance(value, dict):
         raise RuntimeError(f"Expected 'instantiation_dict' to be an object in {path}") from None
 
-    normalized: dict[str, str] = {}
+    normalized: dict[str, Any] = {}
     for key, raw in value.items():
         if isinstance(raw, dict | list):
             normalized[key] = _json_stringify(raw)
-        else:
+        elif key in stringify_scalar_keys and raw is not None:
             normalized[key] = str(raw)
+        else:
+            normalized[key] = raw
     return normalized
 
 
@@ -81,7 +113,8 @@ def _normalize_expected(expected: dict[str, Any]) -> dict[str, Any]:
         normalized_expected["retrieved_data"] = []
     if isinstance(normalized_expected.get("retrieved_data"), list):
         normalized_expected["retrieved_data"] = [
-            _json_stringify(value) for value in normalized_expected["retrieved_data"]
+            value if isinstance(value, str) else _json_stringify(value)
+            for value in normalized_expected["retrieved_data"]
         ]
 
     post_data = normalized_expected.get("post_data")
@@ -264,10 +297,16 @@ def load_hf_json_dataset(path: Path) -> Dataset:
     if not isinstance(rows, list):
         raise RuntimeError(f"Expected JSON array in {path}") from None
 
+    stringify_instantiation_keys = _compute_instantiation_stringify_keys(rows, path)
+
     for row in rows:
         if not isinstance(row, dict):
             raise RuntimeError(f"Expected object rows in {path}") from None
-        row["instantiation_dict"] = _normalize_instantiation_dict(row.get("instantiation_dict"), path)
+        row["instantiation_dict"] = _normalize_instantiation_dict(
+            row.get("instantiation_dict"),
+            path,
+            stringify_instantiation_keys,
+        )
         row["eval"] = _normalize_eval(row.get("eval"), path)
 
     dataset = Dataset.from_list(rows)
