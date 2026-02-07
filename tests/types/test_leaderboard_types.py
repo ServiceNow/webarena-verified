@@ -129,6 +129,6 @@ def test_table_file_valid():
         generation_id="gen-abc",
         generated_at_utc="2026-02-07T12:00:00Z",
         leaderboard="full",
-        rows=[_valid_row()],
+        rows=[LeaderboardRow(**_valid_row())],
     )
     assert table.leaderboard == "full"
