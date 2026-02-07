@@ -13,6 +13,7 @@ from deepdiff import DeepDiff
 if TYPE_CHECKING:
     from pathlib import Path
 
+
 def _canonicalize(value: Any) -> Any:
     """Normalize nested structures for stable equality checks."""
     if isinstance(value, dict):
