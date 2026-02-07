@@ -50,7 +50,7 @@ def dataset_ref(request: pytest.FixtureRequest) -> str:
     """Dataset reference from CLI (HF repo id or local path)."""
     dataset = request.config.getoption("--hf-dataset-ref")
     if not dataset:
-        pytest.skip("HF dataset parity tests require --hf-dataset-ref (repo id or local path)")
+        raise pytest.UsageError("HF dataset parity tests require --hf-dataset-ref (repo id or local path)")
     return str(dataset)
 
 
