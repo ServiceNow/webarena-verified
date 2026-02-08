@@ -9,7 +9,7 @@ from pathlib import Path
 
 from invoke import task
 
-from dev.leaderboard.utils.hf_sync import build_submissions_json, run_discover_hf_submission_prs, run_hf_single_pr, run_hf_sync
+from dev.leaderboard.utils.hf_sync import build_submissions_json, run_discover_hf_submission_prs, run_hf_single_pr
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,12 +21,6 @@ def resolve_hf_config(_ctx) -> None:
     Placeholder entry point; implementation pending.
     """
     LOGGER.warning("resolve-hf-config is not implemented yet")
-
-
-@task(name="hf-sync")
-def hf_sync(_ctx) -> None:
-    """Sync and process open HF dataset pull requests into control-plane records."""
-    run_hf_sync()
 
 
 @task(name="discover-hf-prs")

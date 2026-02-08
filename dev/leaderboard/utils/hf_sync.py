@@ -27,10 +27,6 @@ def _now_utc_z() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def _generation_id() -> str:
-    return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-
-
 def _sanitize_repo(repo: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", repo.lower()).strip("-")
 
@@ -180,101 +176,6 @@ def run_discover_hf_submission_prs() -> None:
     print(f"Discovered {count} matching open HF submission PR(s)")
     print(f"count={count}")
     print(f"matrix={matrix_json}")
-
-
-def run_hf_sync() -> None:
-    """Sync and process open HF dataset pull requests into control-plane records."""
-    settings = get_hf_sync_settings()
-
-    generation_id = _generation_id()
-
-    LOGGER.info("Starting HF sync for repo=%s", settings.leaderboard_hf_repo)
-    api = HfApi(token=settings.hf_token)
-    discussions = _get_open_submission_prs(api, settings.leaderboard_hf_repo)
-
-    existing = _load_existing_records()
-
-    total_candidates = len(discussions)
-    accepted = 0
-    rejected = 0
-    skipped = 0
-    pending_retry = 0
-
-    for discussion in discussions:
-        hf_pr_id = int(discussion.num)
-        hf_pr_url = discussion.url
-        key = (settings.leaderboard_hf_repo, hf_pr_id)
-        previous = existing.get(key)
-        now_utc = _now_utc_z()
-
-        candidate = SubmissionRecord(
-            submission_id=previous.submission_id
-            if previous
-            else _submission_id(settings.leaderboard_hf_repo, hf_pr_id),
-            status=SubmissionStatus.PENDING,
-            hf_repo=settings.leaderboard_hf_repo,
-            hf_pr_id=hf_pr_id,
-            hf_pr_url=hf_pr_url,
-            created_at_utc=previous.created_at_utc if previous else now_utc,
-            updated_at_utc=now_utc,
-            github_pr_url=previous.github_pr_url if previous else None,
-            processed_at_utc=None,
-            result_reason=None,
-        )
-
-        try:
-            validate_hf_submission_record(candidate, token=settings.hf_token)
-            new_status = SubmissionStatus.ACCEPTED
-            result_reason = None
-            accepted += 1
-        except SubmissionHFValidationError as exc:
-            new_status = _classify_validation_failure(exc)
-            result_reason = str(exc)
-            if new_status == SubmissionStatus.PENDING:
-                pending_retry += 1
-            else:
-                rejected += 1
-
-        updated_record = SubmissionRecord(
-            submission_id=candidate.submission_id,
-            status=new_status,
-            hf_repo=candidate.hf_repo,
-            hf_pr_id=candidate.hf_pr_id,
-            hf_pr_url=candidate.hf_pr_url,
-            created_at_utc=candidate.created_at_utc,
-            updated_at_utc=now_utc,
-            github_pr_url=candidate.github_pr_url,
-            processed_at_utc=now_utc if new_status != SubmissionStatus.PENDING else None,
-            result_reason=result_reason,
-        )
-
-        if previous and previous.model_dump(mode="json") == updated_record.model_dump(mode="json"):
-            skipped += 1
-            continue
-
-        if previous:
-            previous_path = _record_path(previous)
-            if previous_path.exists():
-                previous_path.unlink()
-        _write_record(updated_record)
-
-    LOGGER.info(
-        "HF sync completed: total=%s accepted=%s rejected=%s skipped=%s pending_retry=%s generation_id=%s",
-        total_candidates,
-        accepted,
-        rejected,
-        skipped,
-        pending_retry,
-        generation_id,
-    )
-
-    # Key/value output contract for workflow usage.
-    print(f"total_candidates={total_candidates}")
-    print(f"accepted={accepted}")
-    print(f"rejected={rejected}")
-    print(f"skipped={skipped}")
-    print(f"pending_retry={pending_retry}")
-    print(f"generation_id={generation_id}")
 
 
 def run_hf_single_pr(hf_pr_id: int, expected_head_sha: str | None = None, merge_accepted: bool = True) -> None:
