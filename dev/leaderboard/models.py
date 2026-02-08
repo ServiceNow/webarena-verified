@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from enum import StrEnum
-from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -27,30 +26,6 @@ def validate_sha256_hex(value: str, field_name: str) -> str:
     if not SHA256_HEX_PATTERN.match(value):
         raise ValueError(f"{field_name} must be a lowercase 64-character SHA256 hex string")
     return value
-
-
-class ChangedFile(BaseModel):
-    """Single changed file from git diff."""
-
-    model_config = ConfigDict(frozen=True)
-
-    status: str
-    path: str
-
-
-class SubmissionPRContext(BaseModel):
-    """Input context for submission PR validation."""
-
-    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
-
-    repo_root: Path
-    base_sha: str
-    head_sha: str
-    repo: str
-    actor: str
-    pr_number: int
-    pr_title: str
-    github_token: str
 
 
 class SubmissionStatus(StrEnum):

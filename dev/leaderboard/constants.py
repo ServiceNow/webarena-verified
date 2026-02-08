@@ -24,11 +24,3 @@ TASK_MISSING_SENTINEL_FILE = ".missing"
 TASK_AGENT_RESPONSE_FILE = "agent_response.json"
 # Network HAR payload file required for non-missing tasks.
 TASK_NETWORK_HAR_FILE = "network.har"
-
-# Required title prefix for submission pull requests.
-SUBMISSION_PR_TITLE_PREFIX = "Leaderboard Submission: "
-# Allowed path prefix for pending submission control records.
-SUBMISSION_PENDING_DIR_PREFIX = "leaderboard/data/submissions/pending/"
-
-# Markdown Jinja2 template path for failed submission PR validation report.
-SUBMISSION_PR_FAILURE_TEMPLATE_FILE = "submission_pr_validation_failed.md.jinja2"
