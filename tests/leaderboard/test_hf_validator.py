@@ -2,8 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from dev.leaderboard import hf_validator
-from webarena_verified.types.leaderboard import SubmissionRecord
+import dev.leaderboard.hf_validator as hf_validator
+from dev.leaderboard.constants import (
+    HF_SUBMISSION_ARCHIVE_FILE,
+    HF_SUBMISSION_SHA256_FILE,
+    TASK_MISSING_SENTINEL_FILE,
+)
+from dev.leaderboard.models import SubmissionRecord
 
 
 def _record() -> SubmissionRecord:
@@ -23,7 +28,7 @@ def _record() -> SubmissionRecord:
 
 
 def test_validate_hf_discussion_open_rejects_closed_status(monkeypatch):
-    monkeypatch.setattr(hf_validator, "_http_get_json", lambda url, token=None: {"status": "closed"})
+    monkeypatch.setattr(hf_validator, "http_get_json", lambda url, token=None: {"status": "closed"})
 
     with pytest.raises(hf_validator.SubmissionHFValidationError, match="must be open"):
         hf_validator.validate_hf_discussion_open("org/repo", 42)
@@ -32,7 +37,7 @@ def test_validate_hf_discussion_open_rejects_closed_status(monkeypatch):
 def test_validate_task_dir_rejects_missing_plus_files(tmp_path: Path):
     task_dir = tmp_path / "1"
     task_dir.mkdir()
-    (task_dir / ".missing").write_text("")
+    (task_dir / TASK_MISSING_SENTINEL_FILE).write_text("")
     (task_dir / "network.har").write_text("{}")
 
     with pytest.raises(hf_validator.SubmissionHFValidationError, match="cannot coexist"):
@@ -43,9 +48,9 @@ def test_validate_hf_payload_rejects_checksum_mismatch(monkeypatch):
     record = _record()
 
     def fake_get_bytes(url: str) -> bytes:
-        if url.endswith("payload.tar.zst?download=true"):
+        if url.endswith(f"{HF_SUBMISSION_ARCHIVE_FILE}?download=true"):
             return b"payload-bytes"
-        if url.endswith("payload.sha256?download=true"):
+        if url.endswith(f"{HF_SUBMISSION_SHA256_FILE}?download=true"):
             return ("0" * 64).encode("utf-8")
         return b"{}"
 
