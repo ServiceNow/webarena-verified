@@ -64,7 +64,7 @@ class SubmissionRecord(BaseModel):
         return validate_rfc3339_utc_z(value, "updated_at_utc")
 
     @model_validator(mode="after")
-    def validate_state_fields(self) -> "SubmissionRecord":
+    def validate_state_fields(self) -> SubmissionRecord:
         """Enforce status-dependent required fields."""
         if self.status == SubmissionStatus.PENDING:
             if self.processed_at_utc is not None:
@@ -80,7 +80,7 @@ class SubmissionRecord(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def validate_optional_timestamps(self) -> "SubmissionRecord":
+    def validate_optional_timestamps(self) -> SubmissionRecord:
         """Validate optional processed timestamp when provided."""
         if self.processed_at_utc is not None:
             self.processed_at_utc = validate_rfc3339_utc_z(self.processed_at_utc, "processed_at_utc")
@@ -178,7 +178,7 @@ class SubmissionArtifacts(BaseModel):
     manifest_remote_path: str
 
     @classmethod
-    def from_record(cls, record: SubmissionRecord) -> "SubmissionArtifacts":
+    def from_record(cls, record: SubmissionRecord) -> SubmissionArtifacts:
         """Build derived artifact paths and URLs from submission record linkage."""
         ref = f"refs/pr/{record.hf_pr_id}"
         submission_root = f"submissions/accepted/{record.submission_id}"

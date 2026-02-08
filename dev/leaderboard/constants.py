@@ -1,6 +1,7 @@
 """Shared constants for leaderboard submission validators."""
 
 import re
+from pathlib import Path
 
 # Hugging Face artifact archive containing all submission task outputs.
 HF_SUBMISSION_ARCHIVE_FILE = "submission-payload.tar.gz"
@@ -32,3 +33,12 @@ TASK_MISSING_SENTINEL_FILE = ".missing"
 TASK_AGENT_RESPONSE_FILE = "agent_response.json"
 # Network HAR payload file required for non-missing tasks.
 TASK_NETWORK_HAR_FILE = "network.har"
+
+# Required HF discussion title prefix for leaderboard submission pull requests.
+HF_SUBMISSION_DISCUSSION_TITLE_PREFIX = "Leaderboard Submission: "
+
+# Root directory for submission control-plane records.
+LEADERBOARD_SUBMISSIONS_ROOT = Path("leaderboard/data/submissions")
+
+# Markers used to classify transient validation failures that should be retried.
+HF_SYNC_TRANSIENT_ERROR_MARKERS = ("fail-closed", "unable to verify", "timeout", "temporar", "connection")
