@@ -1,0 +1,28 @@
+name: Leaderboard Control Plane Validate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "leaderboard/data/submissions/**"
+      - "dev/leaderboard/**"
+      - "dev/leaderboard_tasks.py"
+      - "src/webarena_verified/types/leaderboard/**"
+      - ".github/workflows/leaderboard-control-plane-validate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-control-plane:
+    name: Validate submission control-plane invariants
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+
+      - name: Validate pending/processed submission files
+        run: uv run inv dev.leaderboard.submission-validate
