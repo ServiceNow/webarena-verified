@@ -16,6 +16,7 @@ class HFSyncSettings(BaseSettings):
 
     leaderboard_hf_repo: str = Field(alias="LEADERBOARD_HF_REPO")
     hf_token: str = Field(alias="HF_TOKEN")
+    github_output: str | None = Field(default=None, alias="GITHUB_OUTPUT")
 
     @field_validator("leaderboard_hf_repo", "hf_token")
     @classmethod
@@ -35,7 +36,7 @@ def get_hf_sync_settings() -> HFSyncSettings:
             {
                 "LEADERBOARD_HF_REPO": os.environ.get("LEADERBOARD_HF_REPO"),
                 "HF_TOKEN": os.environ.get("HF_TOKEN"),
-                "MERGE_ACCEPTED": os.environ.get("MERGE_ACCEPTED", "true"),
+                "GITHUB_OUTPUT": os.environ.get("GITHUB_OUTPUT"),
             }
         )
     except ValidationError as exc:
