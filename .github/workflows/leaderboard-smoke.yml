@@ -1,0 +1,57 @@
+name: Leaderboard Smoke Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      leaderboard_base_url:
+        description: "Base leaderboard URL (defaults to production Pages URL)"
+        required: false
+        default: "https://servicenow.github.io/webarena-verified/leaderboard/data"
+  schedule:
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Validate live manifest and generation assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve base URL
+        id: cfg
+        run: |
+          URL="${{ github.event.inputs.leaderboard_base_url }}"
+          if [ -z "$URL" ]; then
+            URL="https://servicenow.github.io/webarena-verified/leaderboard/data"
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch manifest
+        run: |
+          set -euo pipefail
+          curl -fsSL "${{ steps.cfg.outputs.url }}/leaderboard_manifest.json" -o manifest.json
+          jq -e '.generation_id and .full_file and .hard_file and .full_sha256 and .hard_sha256' manifest.json > /dev/null
+
+      - name: Fetch and verify referenced assets
+        run: |
+          set -euo pipefail
+          FULL_FILE="$(jq -r '.full_file' manifest.json)"
+          HARD_FILE="$(jq -r '.hard_file' manifest.json)"
+          FULL_SHA="$(jq -r '.full_sha256' manifest.json)"
+          HARD_SHA="$(jq -r '.hard_sha256' manifest.json)"
+
+          curl -fsSL "${{ steps.cfg.outputs.url }}/${FULL_FILE}" -o full.json
+          curl -fsSL "${{ steps.cfg.outputs.url }}/${HARD_FILE}" -o hard.json
+
+          test "$(sha256sum full.json | awk '{print $1}')" = "$FULL_SHA"
+          test "$(sha256sum hard.json | awk '{print $1}')" = "$HARD_SHA"
+
+          jq -e '.leaderboard == "full" and (.rows | type == "array")' full.json > /dev/null
+          jq -e '.leaderboard == "hard" and (.rows | type == "array")' hard.json > /dev/null
+
+      - name: Summary
+        run: |
+          echo "generation_id=$(jq -r '.generation_id' manifest.json)" >> "$GITHUB_STEP_SUMMARY"
+          echo "full_file=$(jq -r '.full_file' manifest.json)" >> "$GITHUB_STEP_SUMMARY"
+          echo "hard_file=$(jq -r '.hard_file' manifest.json)" >> "$GITHUB_STEP_SUMMARY"

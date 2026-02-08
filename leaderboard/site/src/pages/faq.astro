@@ -1,0 +1,38 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+---
+
+<SiteLayout title="FAQ / Help | WebArena-Verified" description="Frequently asked questions about leaderboard scoring, updates, and troubleshooting.">
+  <header class="page-header">
+    <div>
+      <p class="kicker">Support</p>
+      <h1>FAQ / Help</h1>
+      <p class="subtitle">Answers for ranking, data refresh, and troubleshooting leaderboard display issues.</p>
+    </div>
+  </header>
+
+  <section class="content-card">
+    <h2>How are rankings computed?</h2>
+    <p>Ranking is generated in CI using <code>overall_score</code> descending, then <code>submission_id</code> ascending as tie-break.</p>
+  </section>
+
+  <section class="content-card">
+    <h2>What is the difference between Full and Hard?</h2>
+    <p><strong>Full</strong> includes the complete evaluation scope. <strong>Hard</strong> is the difficulty-prioritized subset.</p>
+  </section>
+
+  <section class="content-card">
+    <h2>When does the leaderboard update?</h2>
+    <p>After submission PR merge and post-merge processing. Publish latency depends on CI queue and validation runtime.</p>
+  </section>
+
+  <section class="content-card">
+    <h2>I see "Leaderboard data is currently unavailable"</h2>
+    <p>This means manifest fetch failed. Use Retry after publish artifacts are available at <code>/leaderboard/data/leaderboard_manifest.json</code>.</p>
+  </section>
+
+  <section class="content-card">
+    <h2>How should unavailable site scores be interpreted?</h2>
+    <p>Site scores with sentinel <code>-1</code> are rendered as <strong>N/A</strong> and represent unavailable per-site score values.</p>
+  </section>
+</SiteLayout>

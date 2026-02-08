@@ -1,0 +1,139 @@
+name: Leaderboard HF Sync
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      hf_repo:
+        description: "HF dataset repo (owner/name)"
+        required: false
+        default: ""
+      merge_accepted:
+        description: "Merge accepted HF PRs"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    name: Sync HF PRs and publish leaderboard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve HF settings
+        id: cfg
+        run: |
+          set -euo pipefail
+          HF_REPO="${{ github.event.inputs.hf_repo }}"
+          if [ -z "$HF_REPO" ]; then
+            HF_REPO="${{ vars.LEADERBOARD_HF_REPO }}"
+          fi
+          if [ -z "$HF_REPO" ]; then
+            echo "Missing HF repo. Set workflow input hf_repo or repository variable LEADERBOARD_HF_REPO."
+            exit 1
+          fi
+          echo "hf_repo=$HF_REPO" >> "$GITHUB_OUTPUT"
+
+      - name: Run HF sync processor
+        id: sync
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          MERGE_FLAG="--merge-accepted"
+          if [ "${{ github.event.inputs.merge_accepted }}" = "false" ]; then
+            MERGE_FLAG="--no-merge-accepted"
+          fi
+
+          LOG_FILE="$(mktemp)"
+          uv run inv dev.leaderboard.hf-sync \
+            --hf-repo "${{ steps.cfg.outputs.hf_repo }}" \
+            $MERGE_FLAG | tee "$LOG_FILE"
+
+          while IFS='=' read -r key value; do
+            case "$key" in
+              total_candidates|accepted|rejected|skipped|pending_retry|generation_id)
+                echo "$key=$value" >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          done < "$LOG_FILE"
+
+      - name: Commit control-plane changes
+        id: main_commit
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No control-plane changes."
+            exit 0
+          fi
+          git add leaderboard/data/submissions
+          git commit -m "HF sync update ${{ steps.sync.outputs.generation_id }}"
+          git push origin HEAD:main
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare gh-pages worktree
+        run: |
+          set -euo pipefail
+          rm -rf gh-pages
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null; then
+            git fetch origin gh-pages --depth=1
+            git worktree add gh-pages origin/gh-pages
+          else
+            git worktree add --detach gh-pages
+            cd gh-pages
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+          fi
+
+      - name: Publish leaderboard artifacts
+        id: publish
+        run: |
+          set -euo pipefail
+          uv run inv dev.leaderboard.publish-from-processed \
+            --processed-dir leaderboard/data/submissions/processed \
+            --staging-dir ".tmp/leaderboard-staging" \
+            --gh-pages-root "gh-pages" \
+            --generation-id "${{ steps.sync.outputs.generation_id }}"
+
+          cd gh-pages
+          git add leaderboard/data
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          GEN_ID="$(jq -r '.generation_id' leaderboard/data/leaderboard_manifest.json)"
+          git commit -m "Publish leaderboard generation ${GEN_ID}"
+          git push origin HEAD:gh-pages
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "generation_id=$GEN_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Sync summary
+        run: |
+          {
+            echo "hf_repo=${{ steps.cfg.outputs.hf_repo }}"
+            echo "total_candidates=${{ steps.sync.outputs.total_candidates || '0' }}"
+            echo "accepted=${{ steps.sync.outputs.accepted || '0' }}"
+            echo "rejected=${{ steps.sync.outputs.rejected || '0' }}"
+            echo "skipped=${{ steps.sync.outputs.skipped || '0' }}"
+            echo "pending_retry=${{ steps.sync.outputs.pending_retry || '0' }}"
+            echo "generation_id=${{ steps.publish.outputs.generation_id || steps.sync.outputs.generation_id }}"
+          } >> "$GITHUB_STEP_SUMMARY"

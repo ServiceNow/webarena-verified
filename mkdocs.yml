@@ -90,6 +90,7 @@ extra_css:
   - stylesheets/default.css
 
 nav:
+  - Leaderboard: https://servicenow.github.io/webarena-verified/leaderboard/
   - Getting Started:
       - Quick Start: index.md
       - Usage:
@@ -118,6 +119,8 @@ nav:
       - Removing LLM-Based Evaluation: evaluation/removing_llm_based_evaluation.md
       - Network Event Based Evaluation: evaluation/network_event_based_evaluation.md
       - Evaluation Results: evaluation/evaluation_results.md
+  - Leaderboard Ops:
+      - Publish Runbook: leaderboard/publish_runbook.md
   - API Reference:
       - Overview: api_reference/index.md
       - WebArenaVerified: api_reference/webarena_verified.md
