@@ -2,28 +2,24 @@
 
 from __future__ import annotations
 
-import re
 from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-RFC3339_UTC_Z_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
-SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
-NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$")
-EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+from dev.leaderboard import constants
 
 
 def validate_rfc3339_utc_z(value: str, field_name: str) -> str:
     """Validate a timestamp is RFC3339 UTC with trailing Z."""
-    if not RFC3339_UTC_Z_PATTERN.match(value):
+    if not constants.RFC3339_UTC_Z_PATTERN.match(value):
         raise ValueError(f"{field_name} must be RFC3339 UTC ending with 'Z' (e.g. 2026-02-07T12:00:00Z)")
     return value
 
 
 def validate_sha256_hex(value: str, field_name: str) -> str:
     """Validate a lowercase 64-char SHA256 hex string."""
-    if not SHA256_HEX_PATTERN.match(value):
+    if not constants.SHA256_HEX_PATTERN.match(value):
         raise ValueError(f"{field_name} must be a lowercase 64-character SHA256 hex string")
     return value
 
@@ -51,7 +47,6 @@ class SubmissionRecord(BaseModel):
     created_at_utc: str
     updated_at_utc: str
 
-    github_pr_number: int | None = None
     github_pr_url: str | None = None
     processed_at_utc: str | None = None
     result_reason: str | None = None
@@ -109,7 +104,7 @@ class SubmissionMetadata(BaseModel):
     @classmethod
     def validate_name(cls, value: str) -> str:
         """Validate model/team name format."""
-        if not NAME_PATTERN.match(value):
+        if not constants.NAME_PATTERN.match(value):
             raise ValueError("name must match ^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$")
         return value
 
@@ -133,7 +128,7 @@ class SubmissionMetadata(BaseModel):
         """Validate optional contact email format."""
         if value is None:
             return None
-        if not EMAIL_PATTERN.match(value):
+        if not constants.EMAIL_PATTERN.match(value):
             raise ValueError("contact_info must be a valid email address")
         return value
 
@@ -144,7 +139,7 @@ class SubmissionPayloadManifest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     submission_id: str = Field(min_length=1)
-    archive_file: Literal["submission-payload.tar.zst"]
+    archive_file: Literal["submission-payload.tar.gz"]
     archive_sha256: str
     archive_size_bytes: int = Field(gt=0)
     created_at_utc: str
