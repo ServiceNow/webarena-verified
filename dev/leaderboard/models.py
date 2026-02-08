@@ -32,10 +32,26 @@ class SubmissionStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class HFDiscussionStatus(StrEnum):
+    """Allowed Hugging Face discussion statuses used by the sync flow."""
+
+    OPEN = "open"
+
+
+class HFDiscussionState(BaseModel):
+    """Minimal discussion state payload consumed from HF HTTP endpoint."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    status: str | None = None
+    isClosed: bool | None = None
+    closedAt: str | None = None
+
+
 class SubmissionRecord(BaseModel):
     """Control-plane submission record stored in main branch."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="forbid")
 
     submission_id: str = Field(min_length=1)
     status: SubmissionStatus
@@ -50,6 +66,8 @@ class SubmissionRecord(BaseModel):
     github_pr_url: str | None = None
     processed_at_utc: str | None = None
     result_reason: str | None = None
+    initial_head_sha: str | None = None
+    processed_head_sha: str | None = None
 
     @field_validator("created_at_utc")
     @classmethod
@@ -90,7 +108,7 @@ class SubmissionRecord(BaseModel):
 class SubmissionMetadata(BaseModel):
     """Metadata contract stored in payload submission_metadata.json."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="forbid")
 
     submission_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
@@ -165,6 +183,15 @@ class SubmissionArtifacts(BaseModel):
         return f"{self.submission_root}/{file_name}"
 
 
+class SubmissionPayloadFiles(BaseModel):
+    """Downloaded bytes for required submission files."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    payload_archive: bytes
+    metadata: bytes
+
+
 class SubmissionManifest(BaseModel):
     """System-generated manifest for accepted payload + metadata inputs."""
 
@@ -190,3 +217,44 @@ class SubmissionManifest(BaseModel):
     def validate_sha_fields(cls, value: str) -> str:
         """Validate generated SHA256 fields."""
         return validate_sha256_hex(value, "generated manifest sha256 field")
+
+
+class DiscoverMatrixItem(BaseModel):
+    """One matrix entry for a single discovered HF PR."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    hf_pr_id: int
+    hf_head_sha: str = Field(min_length=1)
+
+
+class DiscoverMatrix(BaseModel):
+    """GitHub Actions matrix payload for discovered HF PRs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    include: list[DiscoverMatrixItem]
+
+
+class DiscoverResult(BaseModel):
+    """Structured discovery result emitted to CI outputs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    count: int = Field(ge=0)
+    matrix: DiscoverMatrix
+
+
+class SubmissionsManfiest(BaseModel):
+    """Deterministic submissions.json document shape."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    generated_at_utc: str
+    count: int = Field(ge=0)
+    records: list[SubmissionRecord]
+
+    @field_validator("generated_at_utc")
+    @classmethod
+    def validate_generated_at_utc(cls, value: str) -> str:
+        return validate_rfc3339_utc_z(value, "generated_at_utc")
