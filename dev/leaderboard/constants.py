@@ -30,9 +30,15 @@ TASK_NETWORK_HAR_FILE = "network.har"
 
 # Required HF discussion title prefix for leaderboard submission pull requests.
 HF_SUBMISSION_DISCUSSION_TITLE_PREFIX = "Leaderboard Submission: "
+HF_REPO_TYPE_DATASET = "dataset"
+HF_SUBMISSION_TITLE_PATTERN = re.compile(rf"^{re.escape(HF_SUBMISSION_DISCUSSION_TITLE_PREFIX)}.+$")
 
 # Root directory for submission control-plane records.
 LEADERBOARD_SUBMISSIONS_ROOT = Path("leaderboard/data/submissions")
+
+# Structured output keys used in CI workflow communication.
+DISCOVER_OUTPUT_COUNT_KEY = "count"
+DISCOVER_OUTPUT_MATRIX_KEY = "matrix"
 
 # Markers used to classify transient validation failures that should be retried.
 HF_SYNC_TRANSIENT_ERROR_MARKERS = ("fail-closed", "unable to verify", "timeout", "temporar", "connection")
