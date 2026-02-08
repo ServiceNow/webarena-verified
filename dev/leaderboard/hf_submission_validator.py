@@ -181,8 +181,7 @@ def validate_hf_payload(record: SubmissionRecord, token: str | None = None) -> N
     computed_sha256 = hashlib.sha256(payload_archive).hexdigest()
     if payload_sha256 != computed_sha256:
         raise SubmissionHFValidationError(
-            "payload checksum mismatch: "
-            f"{artifacts.checksum_file} does not match {artifacts.archive_file} content"
+            f"payload checksum mismatch: {artifacts.checksum_file} does not match {artifacts.archive_file} content"
         )
     LOGGER.info("Archive checksum validated")
 
@@ -212,7 +211,9 @@ def validate_hf_payload(record: SubmissionRecord, token: str | None = None) -> N
     if manifest.archive_sha256 != payload_sha256:
         raise SubmissionHFValidationError(f"HF manifest archive_sha256 does not match {artifacts.checksum_file}")
     if manifest.archive_size_bytes != len(payload_archive):
-        raise SubmissionHFValidationError(f"HF manifest archive_size_bytes does not match {artifacts.archive_file} size")
+        raise SubmissionHFValidationError(
+            f"HF manifest archive_size_bytes does not match {artifacts.archive_file} size"
+        )
     LOGGER.info("HF metadata and manifest schema/invariants validated")
 
     with tempfile.TemporaryDirectory() as tmp_dir:

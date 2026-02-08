@@ -241,6 +241,7 @@ filterwarnings = [
 ]
 markers = [
     "docker: marks tests that require Docker",
+    "integration_hf: marks tests that require live Hugging Face API access",
     "integration_docker_shopping: marks tests for shopping (storefront) container",
     "integration_docker_shopping_admin: marks tests for shopping admin container",
     "integration_docker_wikipedia: marks tests for wikipedia container",

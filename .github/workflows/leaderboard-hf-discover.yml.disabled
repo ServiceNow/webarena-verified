@@ -1,0 +1,56 @@
+name: Leaderboard HF Discover
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      merge_accepted:
+        description: "Merge accepted HF PRs"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leaderboard-hf-discover-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Discover HF submission PRs
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+      count: ${{ steps.discover.outputs.count }}
+    env:
+      LEADERBOARD_HF_REPO: ${{ vars.LEADERBOARD_HF_REPO }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+
+      - name: Discover open submission PRs
+        id: discover
+        run: uv run inv dev.leaderboard.discover-hf-prs
+
+  handle-prs:
+    name: Handle each HF submission PR
+    needs: discover
+    if: ${{ needs.discover.outputs.count != '0' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    uses: ./.github/workflows/leaderboard-hf-handle-single-pr.yml
+    with:
+      hf_pr_id: ${{ matrix.hf_pr_id }}
+      hf_head_sha: ${{ matrix.hf_head_sha }}
+      merge_accepted: ${{ github.event.inputs.merge_accepted != 'false' }}
+    secrets: inherit
