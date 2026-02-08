@@ -5,7 +5,6 @@ import os
 from invoke import Collection, Context, task
 
 from dev import ci_tasks, code_tasks, data_tasks, docs_tasks, env_tasks, release_tasks
-from dev.leaderboard import tasks as leaderboard_tasks
 from dev.environments import tasks as envs_tasks
 from dev.utils import git_utils
 from examples import tasks as demo_tasks
@@ -137,7 +136,6 @@ dev_ns.add_collection(Collection.from_module(data_tasks), name="data")
 dev_ns.add_collection(Collection.from_module(docs_tasks), name="docs")
 dev_ns.add_collection(Collection.from_module(env_tasks), name="env")
 dev_ns.add_collection(Collection.from_module(release_tasks), name="release")
-dev_ns.add_collection(Collection.from_module(leaderboard_tasks), name="leaderboard")
 ns.add_collection(dev_ns)
 ns.add_collection(Collection.from_module(demo_tasks), name="demo")
 ns.add_collection(envs_tasks.ns, name="envs")
