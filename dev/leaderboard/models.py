@@ -88,7 +88,7 @@ class SubmissionRecord(BaseModel):
 
 
 class SubmissionMetadata(BaseModel):
-    """Metadata contract stored in payload metadata.json."""
+    """Metadata contract stored in payload submission_metadata.json."""
 
     model_config = ConfigDict(extra="allow")
 
@@ -133,32 +133,6 @@ class SubmissionMetadata(BaseModel):
         return value
 
 
-class SubmissionPayloadManifest(BaseModel):
-    """Payload manifest contract stored in payload manifest.json."""
-
-    model_config = ConfigDict(extra="allow")
-
-    submission_id: str = Field(min_length=1)
-    archive_file: Literal["submission-payload.tar.gz"]
-    archive_sha256: str
-    archive_size_bytes: int = Field(gt=0)
-    created_at_utc: str
-    hf_pr_id: int | None
-    hf_pr_url: str | None
-
-    @field_validator("archive_sha256")
-    @classmethod
-    def validate_archive_sha256(cls, value: str) -> str:
-        """Validate archive SHA256 format."""
-        return validate_sha256_hex(value, "archive_sha256")
-
-    @field_validator("created_at_utc")
-    @classmethod
-    def validate_created_at_utc(cls, value: str) -> str:
-        """Validate created timestamp format."""
-        return validate_rfc3339_utc_z(value, "created_at_utc")
-
-
 class SubmissionArtifacts(BaseModel):
     """Derived HF artifact file paths and URLs for a submission."""
 
@@ -168,14 +142,7 @@ class SubmissionArtifacts(BaseModel):
     submission_root: str
 
     archive_file: str
-    checksum_file: str
     metadata_file: str
-    manifest_file: str
-
-    archive_remote_path: str
-    checksum_remote_path: str
-    metadata_remote_path: str
-    manifest_remote_path: str
 
     @classmethod
     def from_record(cls, record: SubmissionRecord) -> SubmissionArtifacts:
@@ -184,24 +151,42 @@ class SubmissionArtifacts(BaseModel):
         submission_root = f"submissions/accepted/{record.submission_id}"
 
         archive_file = constants.HF_SUBMISSION_ARCHIVE_FILE
-        checksum_file = constants.HF_SUBMISSION_SHA256_FILE
         metadata_file = constants.HF_SUBMISSION_METADATA_FILE
-        manifest_file = constants.HF_SUBMISSION_MANIFEST_FILE
-
-        archive_remote_path = f"{submission_root}/{archive_file}"
-        checksum_remote_path = f"{submission_root}/{checksum_file}"
-        metadata_remote_path = f"{submission_root}/{metadata_file}"
-        manifest_remote_path = f"{submission_root}/{manifest_file}"
 
         return cls(
             ref=ref,
             submission_root=submission_root,
             archive_file=archive_file,
-            checksum_file=checksum_file,
             metadata_file=metadata_file,
-            manifest_file=manifest_file,
-            archive_remote_path=archive_remote_path,
-            checksum_remote_path=checksum_remote_path,
-            metadata_remote_path=metadata_remote_path,
-            manifest_remote_path=manifest_remote_path,
         )
+
+    def remote_path_for(self, file_name: str) -> str:
+        """Build remote path under submission root for a known file name."""
+        return f"{self.submission_root}/{file_name}"
+
+
+class SubmissionManifest(BaseModel):
+    """System-generated manifest for accepted payload + metadata inputs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    manifest_version: Literal[1]
+    submission_id: str = Field(min_length=1)
+    hf_pr_id: int
+    hf_pr_url: str = Field(min_length=1)
+
+    payload_file: Literal["submission-payload.tar.gz"]
+    payload_sha256: str
+    payload_size_bytes: int = Field(gt=0)
+
+    metadata_file: Literal["submission_metadata.json"]
+    metadata_sha256: str
+    metadata_size_bytes: int = Field(gt=0)
+
+    submission_checksum: str
+
+    @field_validator("payload_sha256", "metadata_sha256", "submission_checksum")
+    @classmethod
+    def validate_sha_fields(cls, value: str) -> str:
+        """Validate generated SHA256 fields."""
+        return validate_sha256_hex(value, "generated manifest sha256 field")
