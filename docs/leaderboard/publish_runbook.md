@@ -1,51 +1,55 @@
-# Leaderboard Publish Runbook
+# Leaderboard Runbook (HF PR Scheduled Processing)
 
-This runbook covers atomic leaderboard generation/publish for `gh-pages` and rollback-safe operations.
+This runbook covers scheduled HF ingestion, control-plane transitions, and atomic publish for `gh-pages`.
 
 ## Scope
-
-This runbook covers only leaderboard publish artifacts:
-
+Managed artifacts:
+- `leaderboard/data/submissions/pending/*.json`
+- `leaderboard/data/submissions/processed/*.json`
 - `leaderboard/data/leaderboard_manifest.json`
 - `leaderboard/data/leaderboard_full.<generation_id>.json`
 - `leaderboard/data/leaderboard_hard.<generation_id>.json`
 
-No other files should be modified by leaderboard publishing.
+## Operating Model
+- Ingress: HF dataset PRs only.
+- Processor: `.github/workflows/leaderboard-hf-sync.yml`.
+- Cadence: scheduled every 6 hours (plus manual dispatch).
+- Idempotency: processed ids are skipped; merge failures remain pending and retry on next run.
 
-## Atomic Publish Contract
+## Manual Sync
+From repo root:
 
-Publish must obey all of the following:
+```bash
+HF_TOKEN=<token> uv run inv dev.leaderboard.hf-sync \
+  --hf-repo <owner>/<dataset> \
+  --submissions-root leaderboard/data/submissions
+```
 
-1. Generate `full` and `hard` files in staging first.
-2. Validate schemas and file hashes in staging.
-3. Upload/copy generation assets first.
-4. Switch manifest last.
-5. Never switch the live manifest on a failed publish.
-6. Keep only manifest + referenced generation files in `leaderboard/data/`.
+Output includes:
+- `total_candidates`
+- `accepted`
+- `rejected`
+- `skipped`
+- `pending_retry`
+- `generation_id`
 
-The implementation is in `dev/leaderboard/publish.py`.
-
-## Operational Steps
-
-1. Prepare a generation in a clean staging directory.
-2. Run generation + manifest creation.
-3. Run publish with atomic swap semantics into a local `gh-pages` checkout.
-4. Commit and push in a single commit.
-
-Example (from repo root):
+## Manual Publish
 
 ```bash
 uv run inv dev.leaderboard.publish-from-processed \
   --processed-dir leaderboard/data/submissions/processed \
   --staging-dir /tmp/leaderboard-staging \
-  --gh-pages-root /tmp/gh-pages-checkout \
-  --generation-id gen-EXAMPLE \
-  --generated-at-utc 2026-02-07T00:00:00Z
+  --gh-pages-root /tmp/gh-pages-checkout
 ```
 
-## Smoke Checks
+## Atomic Publish Contract
+1. Stage full/hard files first.
+2. Validate schema + hashes in staging.
+3. Copy generation assets first.
+4. Switch manifest last.
+5. On publish failure, keep prior live manifest unchanged.
 
-After publish and push, verify:
+## Smoke Checks
 
 ```bash
 curl -fsSL https://<org>.github.io/<repo>/leaderboard/data/leaderboard_manifest.json > /tmp/manifest.json
@@ -54,18 +58,12 @@ curl -fsSL "https://<org>.github.io/<repo>/leaderboard/data/$(jq -r '.full_file'
 curl -fsSL "https://<org>.github.io/<repo>/leaderboard/data/$(jq -r '.hard_file' /tmp/manifest.json)" > /tmp/hard.json
 ```
 
-Expected:
+## Retry/Failure Guidance
+- Validation failure for a candidate: record transitions to `processed/rejected` with reason.
+- HF merge failure: candidate remains pending and is retried on next scheduled run.
+- One candidate failure must not block processing others.
 
-- All `curl` commands return HTTP 200.
-- `leaderboard_manifest.json` references files that exist and parse as leaderboard table schemas.
-
-## Rollback Procedure
-
-If a bad generation is published:
-
-1. Identify the last known-good `gh-pages` commit.
-2. Check out that commit in a temporary branch.
-3. Re-push `gh-pages` to that commit.
-4. Re-run smoke checks to confirm restoration.
-
-Because publish is manifest-gated and atomic, rollback is a single branch reset/redeploy operation.
+## Rollback
+1. Identify last known-good `gh-pages` commit.
+2. Restore `gh-pages` to that commit.
+3. Re-run smoke checks.

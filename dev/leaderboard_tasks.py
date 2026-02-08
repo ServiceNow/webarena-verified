@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from invoke import task
 
+from dev.leaderboard.hf_sync import run_hf_sync
 from dev.leaderboard.publish import publish_from_processed
 from dev.leaderboard.submission_control_plane import (
     DEFAULT_SUBMISSIONS_ROOT,
@@ -24,6 +25,29 @@ if TYPE_CHECKING:
 
 def _now_utc_z() -> str:
     return dt.datetime.now(tz=dt.UTC).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+@task(name="hf-sync")
+def hf_sync(
+    _ctx: Context,
+    hf_repo: str,
+    submissions_root: str = str(DEFAULT_SUBMISSIONS_ROOT),
+    hf_token: str = "",
+    merge_accepted: bool = True,
+) -> None:
+    """Poll HF PRs, validate payloads, and transition submission control records."""
+    result = run_hf_sync(
+        hf_repo=hf_repo,
+        submissions_root=Path(submissions_root),
+        hf_token=hf_token or None,
+        merge_accepted=merge_accepted,
+    )
+    print(f"total_candidates={result.total_candidates}")
+    print(f"accepted={result.accepted}")
+    print(f"rejected={result.rejected}")
+    print(f"skipped={result.skipped}")
+    print(f"pending_retry={result.pending_retry}")
+    print(f"generation_id={result.generation_id}")
 
 
 @task(name="submission-validate")

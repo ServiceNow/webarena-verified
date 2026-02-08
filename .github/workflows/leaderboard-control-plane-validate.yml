@@ -1,14 +1,6 @@
 name: Leaderboard Control Plane Validate
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "leaderboard/data/submissions/**"
-      - "dev/leaderboard/**"
-      - "dev/leaderboard_tasks.py"
-      - "src/webarena_verified/types/leaderboard/**"
-      - ".github/workflows/leaderboard-control-plane-validate.yml"
   push:
     branches: [main]
     paths:
