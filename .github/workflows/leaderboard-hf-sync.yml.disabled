@@ -1,0 +1,51 @@
+# Disabled until finalizing. 
+name: Leaderboard HF Sync
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      merge_accepted:
+        description: "Merge accepted HF PRs"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    name: Sync HF PRs and publish leaderboard
+    runs-on: ubuntu-latest
+    env:
+      LEADERBOARD_HF_REPO: ${{ vars.LEADERBOARD_HF_REPO }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      MERGE_ACCEPTED: ${{ github.event.inputs.merge_accepted || 'true' }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+          configure-git-identity: 'true'
+
+      - name: Run HF sync processor
+        run: uv run inv dev.leaderboard.hf-sync
+
+      - name: Commit control-plane changes
+        run: uv run inv dev.leaderboard.commit-control-plane
+
+      - name: Prepare gh-pages worktree
+        run: uv run inv dev.leaderboard.prepare-gh-pages-worktree
+
+      - name: Publish leaderboard artifacts
+        run: uv run inv dev.leaderboard.publish-from-processed
+
+      - name: Sync summary
+        run: uv run inv dev.leaderboard.write-sync-summary
