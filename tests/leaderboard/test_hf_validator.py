@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-import dev.leaderboard.hf_validator as hf_validator
+import dev.leaderboard.hf_submission_validator as hf_validator
 from dev.leaderboard.constants import (
     HF_SUBMISSION_ARCHIVE_FILE,
     HF_SUBMISSION_SHA256_FILE,

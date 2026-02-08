@@ -1,9 +1,11 @@
 """Shared constants for leaderboard submission validators."""
 
+import re
+
 # Hugging Face artifact archive containing all submission task outputs.
-HF_SUBMISSION_ARCHIVE_FILE = "submission-payload.tar.zst"
+HF_SUBMISSION_ARCHIVE_FILE = "submission-payload.tar.gz"
 # Checksum sidecar file for the submission archive.
-HF_SUBMISSION_SHA256_FILE = "payload.sha256"
+HF_SUBMISSION_SHA256_FILE = "submission-payload.sha256"
 # Submission metadata payload file.
 HF_SUBMISSION_METADATA_FILE = "metadata.json"
 # Submission manifest payload file.
@@ -15,8 +17,14 @@ HF_REQUIRED_SUBMISSION_FILES = (
     HF_SUBMISSION_METADATA_FILE,
     HF_SUBMISSION_MANIFEST_FILE,
 )
-# Regex pattern used to extract a SHA256 checksum token from payload.sha256.
+# Regex pattern used to extract a SHA256 checksum token from the checksum sidecar file.
 HF_SHA256_CAPTURE_PATTERN = r"([0-9a-f]{64})"
+
+# Validation regex used by leaderboard model helpers.
+RFC3339_UTC_Z_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$")
+EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 # Marker file indicating a task has no artifacts.
 TASK_MISSING_SENTINEL_FILE = ".missing"
