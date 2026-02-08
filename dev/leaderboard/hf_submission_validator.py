@@ -28,19 +28,6 @@ class SubmissionHFValidationError(Exception):
     """Raised when HF PR payload validation fails."""
 
 
-def _hf_download_bytes(repo: str, ref: str, remote_path: str, token: str | None = None) -> bytes:
-    """Download payload file bytes from HF dataset PR via hub download API."""
-    LOGGER.debug("Downloading HF artifact via hub api repo=%s ref=%s path=%s", repo, ref, remote_path)
-    downloaded_path = hf_hub_download(
-        repo_id=repo,
-        repo_type="dataset",
-        revision=ref,
-        filename=remote_path,
-        token=token,
-    )
-    return Path(downloaded_path).read_bytes()
-
-
 def _extract_sha_from_payload_sha(payload_sha: bytes) -> str:
     """Extract hash from payload SHA256 sidecar file content."""
     decoded = payload_sha.decode("utf-8").strip()
@@ -170,7 +157,20 @@ def validate_hf_payload(record: SubmissionRecord, token: str | None = None) -> N
     ):
         LOGGER.info("Fetching payload file: %s", remote_path)
         try:
-            file_bytes[file_name] = _hf_download_bytes(record.hf_repo, artifacts.ref, remote_path, token=token)
+            LOGGER.debug(
+                "Downloading HF artifact via hub api repo=%s ref=%s path=%s",
+                record.hf_repo,
+                artifacts.ref,
+                remote_path,
+            )
+            downloaded_path = hf_hub_download(
+                repo_id=record.hf_repo,
+                repo_type="dataset",
+                revision=artifacts.ref,
+                filename=remote_path,
+                token=token,
+            )
+            file_bytes[file_name] = Path(downloaded_path).read_bytes()
         except (EntryNotFoundError, RepositoryNotFoundError, RevisionNotFoundError, HfHubHTTPError, OSError) as exc:
             raise SubmissionHFValidationError(
                 f"Missing or inaccessible HF payload file '{remote_path}' from linked PR: {exc}"
