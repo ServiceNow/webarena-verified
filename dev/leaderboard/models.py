@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Literal
+from typing import Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -157,3 +157,64 @@ class SubmissionPayloadManifest(BaseModel):
     def validate_created_at_utc(cls, value: str) -> str:
         """Validate created timestamp format."""
         return validate_rfc3339_utc_z(value, "created_at_utc")
+
+
+class SubmissionArtifacts(BaseModel):
+    """Derived HF artifact file paths and URLs for a submission."""
+
+    model_config = ConfigDict(frozen=True)
+
+    ref: str
+    submission_root: str
+
+    archive_file: str
+    checksum_file: str
+    metadata_file: str
+    manifest_file: str
+
+    archive_remote_path: str
+    checksum_remote_path: str
+    metadata_remote_path: str
+    manifest_remote_path: str
+
+    archive_url: str
+    checksum_url: str
+    metadata_url: str
+    manifest_url: str
+
+    @classmethod
+    def from_record(
+        cls,
+        record: SubmissionRecord,
+        resolve_url_fn: Callable[[str, str, str], str],
+    ) -> "SubmissionArtifacts":
+        """Build derived artifact paths and URLs from submission record linkage."""
+        ref = f"refs/pr/{record.hf_pr_id}"
+        submission_root = f"submissions/accepted/{record.submission_id}"
+
+        archive_file = constants.HF_SUBMISSION_ARCHIVE_FILE
+        checksum_file = constants.HF_SUBMISSION_SHA256_FILE
+        metadata_file = constants.HF_SUBMISSION_METADATA_FILE
+        manifest_file = constants.HF_SUBMISSION_MANIFEST_FILE
+
+        archive_remote_path = f"{submission_root}/{archive_file}"
+        checksum_remote_path = f"{submission_root}/{checksum_file}"
+        metadata_remote_path = f"{submission_root}/{metadata_file}"
+        manifest_remote_path = f"{submission_root}/{manifest_file}"
+
+        return cls(
+            ref=ref,
+            submission_root=submission_root,
+            archive_file=archive_file,
+            checksum_file=checksum_file,
+            metadata_file=metadata_file,
+            manifest_file=manifest_file,
+            archive_remote_path=archive_remote_path,
+            checksum_remote_path=checksum_remote_path,
+            metadata_remote_path=metadata_remote_path,
+            manifest_remote_path=manifest_remote_path,
+            archive_url=resolve_url_fn(record.hf_repo, ref, archive_remote_path),
+            checksum_url=resolve_url_fn(record.hf_repo, ref, checksum_remote_path),
+            metadata_url=resolve_url_fn(record.hf_repo, ref, metadata_remote_path),
+            manifest_url=resolve_url_fn(record.hf_repo, ref, manifest_remote_path),
+        )

@@ -14,7 +14,7 @@ from urllib import error, parse, request
 from pydantic import ValidationError
 
 import dev.leaderboard.constants as leaderboard_constants
-from dev.leaderboard.models import SubmissionMetadata, SubmissionPayloadManifest, SubmissionRecord
+from dev.leaderboard.models import SubmissionArtifacts, SubmissionMetadata, SubmissionPayloadManifest, SubmissionRecord
 from dev.leaderboard.utils import http_get_json
 from webarena_verified.core.utils.network_event_utils import load_har_trace
 
@@ -159,13 +159,15 @@ def _validate_extracted_payload_structure(extract_root: Path) -> None:
 def validate_hf_payload(record: SubmissionRecord) -> None:
     """Fetch and validate required payload artifacts from linked HF PR."""
     LOGGER.info("Validating HF payload artifacts for submission_id=%s", record.submission_id)
-    ref = f"refs/pr/{record.hf_pr_id}"
-    submission_root = f"submissions/accepted/{record.submission_id}"
+    artifacts = SubmissionArtifacts.from_record(record, resolve_url_fn=_hf_resolve_url)
 
     file_bytes: dict[str, bytes] = {}
-    for file_name in leaderboard_constants.HF_REQUIRED_SUBMISSION_FILES:
-        remote_path = f"{submission_root}/{file_name}"
-        file_url = _hf_resolve_url(record.hf_repo, ref, remote_path)
+    for file_name, remote_path, file_url in (
+        (artifacts.archive_file, artifacts.archive_remote_path, artifacts.archive_url),
+        (artifacts.checksum_file, artifacts.checksum_remote_path, artifacts.checksum_url),
+        (artifacts.metadata_file, artifacts.metadata_remote_path, artifacts.metadata_url),
+        (artifacts.manifest_file, artifacts.manifest_remote_path, artifacts.manifest_url),
+    ):
         LOGGER.info("Fetching payload file: %s", remote_path)
         try:
             file_bytes[file_name] = _http_get_bytes(file_url)
@@ -174,19 +176,18 @@ def validate_hf_payload(record: SubmissionRecord) -> None:
                 f"Missing or inaccessible HF payload file '{remote_path}' from linked PR: {exc}"
             ) from exc
 
-    payload_archive = file_bytes[leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE]
-    payload_sha256 = _extract_sha_from_payload_sha(file_bytes[leaderboard_constants.HF_SUBMISSION_SHA256_FILE])
+    payload_archive = file_bytes[artifacts.archive_file]
+    payload_sha256 = _extract_sha_from_payload_sha(file_bytes[artifacts.checksum_file])
     computed_sha256 = hashlib.sha256(payload_archive).hexdigest()
     if payload_sha256 != computed_sha256:
         raise SubmissionHFValidationError(
             "payload checksum mismatch: "
-            f"{leaderboard_constants.HF_SUBMISSION_SHA256_FILE} does not match "
-            f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} content"
+            f"{artifacts.checksum_file} does not match {artifacts.archive_file} content"
         )
     LOGGER.info("Archive checksum validated")
 
-    metadata_data = json.loads(file_bytes[leaderboard_constants.HF_SUBMISSION_METADATA_FILE].decode("utf-8"))
-    manifest_data = json.loads(file_bytes[leaderboard_constants.HF_SUBMISSION_MANIFEST_FILE].decode("utf-8"))
+    metadata_data = json.loads(file_bytes[artifacts.metadata_file].decode("utf-8"))
+    manifest_data = json.loads(file_bytes[artifacts.manifest_file].decode("utf-8"))
 
     try:
         metadata = SubmissionMetadata.model_validate(metadata_data)
@@ -209,15 +210,9 @@ def validate_hf_payload(record: SubmissionRecord) -> None:
     if manifest.hf_pr_id != record.hf_pr_id or manifest.hf_pr_url != record.hf_pr_url:
         raise SubmissionHFValidationError("HF manifest hf_pr_id/hf_pr_url must match submission record linkage")
     if manifest.archive_sha256 != payload_sha256:
-        raise SubmissionHFValidationError(
-            "HF manifest archive_sha256 does not match "
-            f"{leaderboard_constants.HF_SUBMISSION_SHA256_FILE}"
-        )
+        raise SubmissionHFValidationError(f"HF manifest archive_sha256 does not match {artifacts.checksum_file}")
     if manifest.archive_size_bytes != len(payload_archive):
-        raise SubmissionHFValidationError(
-            "HF manifest archive_size_bytes does not match "
-            f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} size"
-        )
+        raise SubmissionHFValidationError(f"HF manifest archive_size_bytes does not match {artifacts.archive_file} size")
     LOGGER.info("HF metadata and manifest schema/invariants validated")
 
     with tempfile.TemporaryDirectory() as tmp_dir:
