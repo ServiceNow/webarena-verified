@@ -55,8 +55,8 @@ def _extract_sha_from_payload_sha(payload_sha: bytes) -> str:
 def validate_hf_discussion_open(repo: str, hf_pr_id: int, token: str | None = None) -> None:
     """Validate HF PR/discussion is currently open."""
     LOGGER.info("Validating Hugging Face discussion state for repo=%s pr_id=%s", repo, hf_pr_id)
-    repo_quoted = parse.quote(repo, safe="")
-    url = f"https://huggingface.co/api/datasets/{repo_quoted}/discussions/{hf_pr_id}"
+    repo_quoted = parse.quote(repo, safe="/")
+    url = f"https://huggingface.co/api/datasets/{repo_quoted}/discussions/{hf_pr_id}?diff=1"
     try:
         payload = http_get_json(url, token=token)
     except (error.URLError, TimeoutError, json.JSONDecodeError) as exc:
