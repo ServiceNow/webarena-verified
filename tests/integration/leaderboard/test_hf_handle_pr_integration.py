@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import io
 import json
 import os
@@ -98,7 +97,6 @@ def setup_handle_pr_fixture(hf_api: HfApi, hf_token: str):
         submission_id = _submission_id(HF_TEST_REPO, created_pr_id)
         submission_root = f"submissions/accepted/{submission_id}"
         archive_bytes = _build_archive_bytes()
-        archive_sha = hashlib.sha256(archive_bytes).hexdigest()
         now = _now_utc_z()
 
         metadata = {
@@ -108,20 +106,9 @@ def setup_handle_pr_fixture(hf_api: HfApi, hf_token: str):
             "reference": "https://example.com/integration-test",
             "created_at_utc": now,
         }
-        manifest = {
-            "submission_id": submission_id,
-            "archive_file": "submission-payload.tar.gz",
-            "archive_sha256": archive_sha,
-            "archive_size_bytes": len(archive_bytes),
-            "created_at_utc": now,
-            "hf_pr_id": created_pr_id,
-            "hf_pr_url": f"https://huggingface.co/datasets/{HF_TEST_REPO}/discussions/{created_pr_id}",
-        }
         payloads = {
             "submission-payload.tar.gz": archive_bytes,
-            "submission-payload.sha256": f"{archive_sha}  submission-payload.tar.gz\n".encode("utf-8"),
-            "metadata.json": (json.dumps(metadata, sort_keys=True) + "\n").encode("utf-8"),
-            "manifest.json": (json.dumps(manifest, sort_keys=True) + "\n").encode("utf-8"),
+            "submission_metadata.json": (json.dumps(metadata, sort_keys=True) + "\n").encode("utf-8"),
         }
 
         for file_name, file_bytes in payloads.items():

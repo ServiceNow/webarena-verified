@@ -94,6 +94,14 @@ def _status_comment_content(status: SyncCommentStatus, message: str) -> str:
     return f"{STATUS_COMMENT_MARKER}\nLeaderboard sync status: **{status.value}**\n\n{message}\n"
 
 
+def _render_markdown_template(template_path: str, **context: str) -> str:
+    template = Path(template_path).read_text(encoding="utf-8")
+    try:
+        return template.format(**context).strip()
+    except KeyError as exc:
+        raise RuntimeError(f"Missing template variable '{exc.args[0]}' in {template_path}") from exc
+
+
 def _upsert_status_comment(
     api: HfApi,
     hf_repo: str,
@@ -244,9 +252,10 @@ def _reject_mutated_pr(
     initial_head_sha: str,
     start_sha: str,
 ) -> None:
-    reason = (
-        f"PR mutated after initial lock. locked_initial_head_sha={initial_head_sha} current_head_sha={start_sha}. "
-        "Open a new PR for a new submission."
+    reason = _render_markdown_template(
+        settings.mutated_pr_rejection_template_path,
+        initial_head_sha=initial_head_sha,
+        start_sha=start_sha,
     )
     updated = SubmissionRecord(
         submission_id=previous.submission_id,
@@ -329,7 +338,12 @@ def _apply_stale_guard(
     if final_details.status != "open" or final_sha != start_sha:
         return (
             SubmissionStatus.REJECTED,
-            "Submission became stale before finalize (PR closed or head SHA changed). Open a new PR for a new submission.",
+            _render_markdown_template(
+                settings.stale_rejection_template_path,
+                pr_status=str(final_details.status),
+                start_sha=start_sha,
+                final_sha=str(final_sha),
+            ),
         )
     return status, reason
 
@@ -368,6 +382,7 @@ def _publish_final_status(
     status: SubmissionStatus,
     reason: str | None,
     merge_accepted: bool,
+    submission_id: str,
 ) -> None:
     if status == SubmissionStatus.ACCEPTED:
         _upsert_status_comment(
@@ -384,7 +399,10 @@ def _publish_final_status(
                 discussion_num=hf_pr_id,
                 repo_type="dataset",
                 token=settings.hf_token,
-                comment="Leaderboard sync passed validation. Merging submission PR.",
+                comment=_render_markdown_template(
+                    settings.merge_comment_template_path,
+                    submission_id=submission_id,
+                ),
             )
         return
 
@@ -477,6 +495,7 @@ def run_hf_single_pr(hf_pr_id: int, expected_head_sha: str | None = None, merge_
         status=new_status,
         reason=result_reason,
         merge_accepted=merge_accepted,
+        submission_id=updated.submission_id,
     )
 
 

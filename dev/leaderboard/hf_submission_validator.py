@@ -3,40 +3,28 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import logging
-import re
 import subprocess
+import tarfile
 import tempfile
 from pathlib import Path
 from urllib import error, parse
 
-from huggingface_hub import hf_hub_download
+from huggingface_hub import HfApi, hf_hub_download
 from huggingface_hub.utils import EntryNotFoundError, HfHubHTTPError, RepositoryNotFoundError, RevisionNotFoundError
 from pydantic import ValidationError
 
 import dev.leaderboard.constants as leaderboard_constants
-from dev.leaderboard.models import SubmissionArtifacts, SubmissionMetadata, SubmissionPayloadManifest, SubmissionRecord
+from dev.leaderboard.models import SubmissionArtifacts, SubmissionManifest, SubmissionMetadata, SubmissionRecord
 from dev.leaderboard.utils import http_get_json
-from webarena_verified.core.utils.network_event_utils import load_har_trace
 
-SHA256_PATTERN = re.compile(leaderboard_constants.HF_SHA256_CAPTURE_PATTERN)
 LOGGER = logging.getLogger(__name__)
 
 
 class SubmissionHFValidationError(Exception):
     """Raised when HF PR payload validation fails."""
-
-
-def _extract_sha_from_payload_sha(payload_sha: bytes) -> str:
-    """Extract hash from payload SHA256 sidecar file content."""
-    decoded = payload_sha.decode("utf-8").strip()
-    match = SHA256_PATTERN.search(decoded)
-    if not match:
-        raise SubmissionHFValidationError(
-            f"{leaderboard_constants.HF_SUBMISSION_SHA256_FILE} does not contain a valid lowercase SHA256 checksum"
-        )
-    return match.group(1)
 
 
 def validate_hf_discussion_open(repo: str, hf_pr_id: int, token: str | None = None) -> None:
@@ -81,6 +69,81 @@ def _extract_payload_archive(archive_bytes: bytes, output_dir: Path) -> None:
         ) from exc
 
 
+def _validate_archive_members_before_extraction(archive_bytes: bytes) -> None:
+    """Validate archive member paths and allowed task-level files before extraction."""
+    if len(archive_bytes) > leaderboard_constants.HF_SUBMISSION_ARCHIVE_MAX_BYTES:
+        raise SubmissionHFValidationError(
+            f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} exceeds max size "
+            f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_MAX_BYTES} bytes"
+        )
+
+    try:
+        tar = tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz")
+    except (tarfile.TarError, OSError) as exc:
+        raise SubmissionHFValidationError(
+            f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} is not a valid gzip tar archive: {exc}"
+        ) from exc
+
+    allowed_task_files = {
+        leaderboard_constants.TASK_AGENT_RESPONSE_FILE,
+        leaderboard_constants.TASK_NETWORK_HAR_FILE,
+        leaderboard_constants.TASK_MISSING_SENTINEL_FILE,
+    }
+    task_entries: dict[str, set[str]] = {}
+    with tar:
+        for member in tar.getmembers():
+            member_path = Path(member.name)
+            if member_path.is_absolute() or ".." in member_path.parts:
+                raise SubmissionHFValidationError(
+                    f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} contains unsafe path '{member.name}'"
+                )
+            if member.issym() or member.islnk() or member.ischr() or member.isblk() or member.isfifo():
+                raise SubmissionHFValidationError(
+                    f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} contains unsupported entry type '{member.name}'"
+                )
+            if member.isdir():
+                continue
+
+            parts = [p for p in member_path.parts if p]
+            if len(parts) != 2:
+                raise SubmissionHFValidationError(
+                    f"Invalid archive path '{member.name}': expected '<task_id>/<file>'"
+                )
+            task_id, file_name = parts
+            if not task_id.isdigit():
+                raise SubmissionHFValidationError(
+                    f"Invalid archive path '{member.name}': task_id directory must be numeric"
+                )
+            if file_name not in allowed_task_files:
+                raise SubmissionHFValidationError(
+                    f"Invalid archive path '{member.name}': file '{file_name}' is not allowed"
+                )
+            task_entries.setdefault(task_id, set()).add(file_name)
+
+    if not task_entries:
+        raise SubmissionHFValidationError(
+            f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} must contain at least one task directory"
+        )
+
+    for task_id, names in task_entries.items():
+        if leaderboard_constants.TASK_MISSING_SENTINEL_FILE in names:
+            if names != {leaderboard_constants.TASK_MISSING_SENTINEL_FILE}:
+                raise SubmissionHFValidationError(
+                    f"Task {task_id} is invalid: '{leaderboard_constants.TASK_MISSING_SENTINEL_FILE}' cannot coexist "
+                    "with other files"
+                )
+            continue
+        if {
+            leaderboard_constants.TASK_AGENT_RESPONSE_FILE,
+            leaderboard_constants.TASK_NETWORK_HAR_FILE,
+        } - names:
+            raise SubmissionHFValidationError(
+                f"Task {task_id} must contain {leaderboard_constants.TASK_AGENT_RESPONSE_FILE} + "
+                f"{leaderboard_constants.TASK_NETWORK_HAR_FILE} or only "
+                f"{leaderboard_constants.TASK_MISSING_SENTINEL_FILE}"
+            )
+
+
 def _validate_task_dir(task_dir: Path) -> None:
     """Validate per-task folder with missing-sentinel and HAR invariants."""
     LOGGER.debug("Validating task directory: %s", task_dir.name)
@@ -117,9 +180,10 @@ def _validate_task_dir(task_dir: Path) -> None:
             f"Task {task_dir.name} has invalid {leaderboard_constants.TASK_AGENT_RESPONSE_FILE}: {exc}"
         ) from exc
 
+    network_har = task_dir / leaderboard_constants.TASK_NETWORK_HAR_FILE
     try:
-        load_har_trace(task_dir / leaderboard_constants.TASK_NETWORK_HAR_FILE)
-    except (ValueError, json.JSONDecodeError) as exc:
+        json.loads(network_har.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
         raise SubmissionHFValidationError(
             f"Task {task_dir.name} has invalid {leaderboard_constants.TASK_NETWORK_HAR_FILE}: {exc}"
         ) from exc
@@ -143,18 +207,13 @@ def _validate_extracted_payload_structure(extract_root: Path) -> None:
     LOGGER.info("Validated %s extracted task directory(ies)", len(top_level_dirs))
 
 
-def validate_hf_payload(record: SubmissionRecord, token: str | None = None) -> None:
-    """Fetch and validate required payload artifacts from linked HF PR."""
-    LOGGER.info("Validating HF payload artifacts for submission_id=%s", record.submission_id)
-    artifacts = SubmissionArtifacts.from_record(record)
-
+def _download_required_payload_files(
+    record: SubmissionRecord, artifacts: SubmissionArtifacts, token: str | None = None
+) -> dict[str, bytes]:
+    """Download all required HF payload files for a submission record."""
     file_bytes: dict[str, bytes] = {}
-    for file_name, remote_path in (
-        (artifacts.archive_file, artifacts.archive_remote_path),
-        (artifacts.checksum_file, artifacts.checksum_remote_path),
-        (artifacts.metadata_file, artifacts.metadata_remote_path),
-        (artifacts.manifest_file, artifacts.manifest_remote_path),
-    ):
+    for file_name in (artifacts.archive_file, artifacts.metadata_file):
+        remote_path = artifacts.remote_path_for(file_name)
         LOGGER.info("Fetching payload file: %s", remote_path)
         try:
             LOGGER.debug(
@@ -175,46 +234,94 @@ def validate_hf_payload(record: SubmissionRecord, token: str | None = None) -> N
             raise SubmissionHFValidationError(
                 f"Missing or inaccessible HF payload file '{remote_path}' from linked PR: {exc}"
             ) from exc
+    return file_bytes
+
+
+def _validate_submission_root_inputs_exact(
+    record: SubmissionRecord, artifacts: SubmissionArtifacts, token: str | None = None
+) -> None:
+    expected_files = set(leaderboard_constants.HF_REQUIRED_SUBMISSION_FILES)
+    api = HfApi(token=token)
+    found_files: set[str] = set()
+    try:
+        entries = api.list_repo_tree(
+            repo_id=record.hf_repo,
+            repo_type="dataset",
+            revision=artifacts.ref,
+            path_in_repo=artifacts.submission_root,
+            recursive=False,
+            token=token,
+        )
+        for entry in entries:
+            entry_path = getattr(entry, "path", None)
+            if not entry_path:
+                continue
+            entry_path_obj = Path(entry_path)
+            if entry_path_obj.parent.as_posix() != artifacts.submission_root:
+                continue
+            found_files.add(entry_path_obj.name)
+    except (RepositoryNotFoundError, RevisionNotFoundError, HfHubHTTPError, OSError) as exc:
+        raise SubmissionHFValidationError(
+            f"Unable to list payload files under '{artifacts.submission_root}': {exc}"
+        ) from exc
+
+    if found_files != expected_files:
+        missing = sorted(expected_files - found_files)
+        extra = sorted(found_files - expected_files)
+        raise SubmissionHFValidationError(
+            f"Submission payload files under '{artifacts.submission_root}' must be exactly "
+            f"{sorted(expected_files)} (missing={missing or []}, extra={extra or []})"
+        )
+
+
+def _compute_submission_checksums(payload_archive: bytes, metadata_bytes: bytes) -> tuple[str, str, str]:
+    payload_sha256 = hashlib.sha256(payload_archive).hexdigest()
+    metadata_sha256 = hashlib.sha256(metadata_bytes).hexdigest()
+    submission_checksum = hashlib.sha256(f"{payload_sha256}:{metadata_sha256}".encode("utf-8")).hexdigest()
+    return payload_sha256, metadata_sha256, submission_checksum
+
+
+def validate_hf_payload(record: SubmissionRecord, token: str | None = None) -> None:
+    """Fetch and validate required payload artifacts from linked HF PR."""
+    LOGGER.info("Validating HF payload artifacts for submission_id=%s", record.submission_id)
+    artifacts = SubmissionArtifacts.from_record(record)
+    _validate_submission_root_inputs_exact(record, artifacts, token=token)
+
+    file_bytes = _download_required_payload_files(record, artifacts, token=token)
 
     payload_archive = file_bytes[artifacts.archive_file]
-    payload_sha256 = _extract_sha_from_payload_sha(file_bytes[artifacts.checksum_file])
-    computed_sha256 = hashlib.sha256(payload_archive).hexdigest()
-    if payload_sha256 != computed_sha256:
-        raise SubmissionHFValidationError(
-            f"payload checksum mismatch: {artifacts.checksum_file} does not match {artifacts.archive_file} content"
-        )
-    LOGGER.info("Archive checksum validated")
+    metadata_bytes = file_bytes[artifacts.metadata_file]
+    _validate_archive_members_before_extraction(payload_archive)
+    payload_sha256, metadata_sha256, submission_checksum = _compute_submission_checksums(payload_archive, metadata_bytes)
 
-    metadata_data = json.loads(file_bytes[artifacts.metadata_file].decode("utf-8"))
-    manifest_data = json.loads(file_bytes[artifacts.manifest_file].decode("utf-8"))
+    metadata_data = json.loads(metadata_bytes.decode("utf-8"))
 
     try:
         metadata = SubmissionMetadata.model_validate(metadata_data)
     except ValidationError as exc:
-        raise SubmissionHFValidationError(f"Invalid HF metadata.json schema: {exc}") from exc
-
-    try:
-        manifest = SubmissionPayloadManifest.model_validate(manifest_data)
-    except ValidationError as exc:
-        raise SubmissionHFValidationError(f"Invalid HF manifest.json schema: {exc}") from exc
+        raise SubmissionHFValidationError(
+            f"Invalid HF {leaderboard_constants.HF_SUBMISSION_METADATA_FILE} schema: {exc}"
+        ) from exc
 
     if metadata.submission_id != record.submission_id:
-        raise SubmissionHFValidationError("HF metadata.json submission_id does not match submission record")
-    if manifest.submission_id != record.submission_id:
-        raise SubmissionHFValidationError("HF manifest.json submission_id does not match submission record")
-    if manifest.hf_pr_id is None or manifest.hf_pr_url is None:
         raise SubmissionHFValidationError(
-            "HF manifest must include non-null hf_pr_id and hf_pr_url for uploaded submissions"
+            f"HF {leaderboard_constants.HF_SUBMISSION_METADATA_FILE} submission_id does not match submission record"
         )
-    if manifest.hf_pr_id != record.hf_pr_id or manifest.hf_pr_url != record.hf_pr_url:
-        raise SubmissionHFValidationError("HF manifest hf_pr_id/hf_pr_url must match submission record linkage")
-    if manifest.archive_sha256 != payload_sha256:
-        raise SubmissionHFValidationError(f"HF manifest archive_sha256 does not match {artifacts.checksum_file}")
-    if manifest.archive_size_bytes != len(payload_archive):
-        raise SubmissionHFValidationError(
-            f"HF manifest archive_size_bytes does not match {artifacts.archive_file} size"
-        )
-    LOGGER.info("HF metadata and manifest schema/invariants validated")
+
+    generated_manifest = SubmissionManifest(
+        manifest_version=1,
+        submission_id=metadata.submission_id,
+        hf_pr_id=record.hf_pr_id,
+        hf_pr_url=record.hf_pr_url,
+        payload_file=leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_archive),
+        metadata_file=leaderboard_constants.HF_SUBMISSION_METADATA_FILE,
+        metadata_sha256=metadata_sha256,
+        metadata_size_bytes=len(metadata_bytes),
+        submission_checksum=submission_checksum,
+    ).model_dump(mode="json")
+    LOGGER.info("Generated submission manifest with checksum=%s", generated_manifest["submission_checksum"])
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         extract_root = Path(tmp_dir)

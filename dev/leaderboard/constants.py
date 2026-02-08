@@ -5,21 +5,15 @@ from pathlib import Path
 
 # Hugging Face artifact archive containing all submission task outputs.
 HF_SUBMISSION_ARCHIVE_FILE = "submission-payload.tar.gz"
-# Checksum sidecar file for the submission archive.
-HF_SUBMISSION_SHA256_FILE = "submission-payload.sha256"
 # Submission metadata payload file.
-HF_SUBMISSION_METADATA_FILE = "metadata.json"
-# Submission manifest payload file.
-HF_SUBMISSION_MANIFEST_FILE = "manifest.json"
+HF_SUBMISSION_METADATA_FILE = "submission_metadata.json"
 # Required files expected in each linked HF submission payload directory.
 HF_REQUIRED_SUBMISSION_FILES = (
     HF_SUBMISSION_ARCHIVE_FILE,
-    HF_SUBMISSION_SHA256_FILE,
     HF_SUBMISSION_METADATA_FILE,
-    HF_SUBMISSION_MANIFEST_FILE,
 )
-# Regex pattern used to extract a SHA256 checksum token from the checksum sidecar file.
-HF_SHA256_CAPTURE_PATTERN = r"([0-9a-f]{64})"
+# 25 MB max compressed payload archive size.
+HF_SUBMISSION_ARCHIVE_MAX_BYTES = 25 * 1024 * 1024
 
 # Validation regex used by leaderboard model helpers.
 RFC3339_UTC_Z_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
