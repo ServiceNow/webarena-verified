@@ -7,9 +7,16 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from huggingface_hub import HfApi
 from invoke import task
 
-from dev.leaderboard.utils.hf_sync import build_submissions_json, run_discover_hf_submission_prs, run_hf_single_pr
+from dev.leaderboard import constants
+from dev.leaderboard.hf_discussion_client import HFDiscussionClient
+from dev.leaderboard.hf_submission_validator import HFSubmissionValidator
+from dev.leaderboard.settings import get_hf_sync_settings
+from dev.leaderboard.submission_record_repository import SubmissionRecordRepository
+from dev.leaderboard.submission_sync_orchestrator import SubmissionSyncOrchestrator
+from dev.leaderboard.template_renderer import TemplateRenderer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +33,15 @@ def resolve_hf_config(_ctx) -> None:
 @task(name="discover-hf-prs")
 def discover_hf_prs(_ctx) -> None:
     """Discover open HF submission PRs and emit workflow outputs."""
-    run_discover_hf_submission_prs()
+    settings = get_hf_sync_settings()
+    api = HfApi(token=settings.hf_token)
+    SubmissionSyncOrchestrator(
+        settings=settings,
+        discussion_client=HFDiscussionClient(api=api, hf_repo=settings.leaderboard_hf_repo, token=settings.hf_token),
+        validator=HFSubmissionValidator(token=settings.hf_token),
+        repository=SubmissionRecordRepository(root=constants.LEADERBOARD_SUBMISSIONS_ROOT),
+        template_renderer=TemplateRenderer(),
+    ).run_discover_hf_submission_prs()
 
 
 def _parse_bool(value: str | bool) -> bool:
@@ -38,7 +53,15 @@ def _parse_bool(value: str | bool) -> bool:
 @task(name="hf-handle-pr")
 def hf_handle_pr(_ctx, hf_pr_id: int, expected_head_sha: str = "", merge_accepted: str | bool = True) -> None:
     """Process one HF dataset PR by ID."""
-    run_hf_single_pr(
+    settings = get_hf_sync_settings()
+    api = HfApi(token=settings.hf_token)
+    SubmissionSyncOrchestrator(
+        settings=settings,
+        discussion_client=HFDiscussionClient(api=api, hf_repo=settings.leaderboard_hf_repo, token=settings.hf_token),
+        validator=HFSubmissionValidator(token=settings.hf_token),
+        repository=SubmissionRecordRepository(root=constants.LEADERBOARD_SUBMISSIONS_ROOT),
+        template_renderer=TemplateRenderer(),
+    ).run_hf_single_pr(
         hf_pr_id=int(hf_pr_id),
         expected_head_sha=expected_head_sha or None,
         merge_accepted=_parse_bool(merge_accepted),
@@ -82,7 +105,15 @@ def prepare_gh_pages_worktree(_ctx, worktree_path: str = "gh-pages-worktree") ->
 @task(name="build-gh-pages-json")
 def build_gh_pages_json(_ctx, output_path: str = ".tmp-gh-pages/submissions.json") -> None:
     """Build submissions JSON artifact for gh-pages publishing."""
-    build_submissions_json(output_path=Path(output_path))
+    settings = get_hf_sync_settings()
+    api = HfApi(token=settings.hf_token)
+    SubmissionSyncOrchestrator(
+        settings=settings,
+        discussion_client=HFDiscussionClient(api=api, hf_repo=settings.leaderboard_hf_repo, token=settings.hf_token),
+        validator=HFSubmissionValidator(token=settings.hf_token),
+        repository=SubmissionRecordRepository(root=constants.LEADERBOARD_SUBMISSIONS_ROOT),
+        template_renderer=TemplateRenderer(),
+    ).build_submissions_json(output_path=Path(output_path))
 
 
 @task(name="publish-from-processed")

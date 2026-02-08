@@ -56,7 +56,9 @@ class HFSubmissionValidator:
         try:
             payload = HFDiscussionState.model_validate(http_get_json(url, token=self._token))
         except (error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-            raise SubmissionHFValidationError(f"Unable to verify Hugging Face PR open state (fail-closed): {exc}") from exc
+            raise SubmissionHFValidationError(
+                f"Unable to verify Hugging Face PR open state (fail-closed): {exc}"
+            ) from exc
 
         status = payload.status
         if isinstance(status, str):
@@ -65,10 +67,12 @@ class HFSubmissionValidator:
             LOGGER.info("Hugging Face discussion is open")
             return
 
-        if payload.isClosed is True or payload.closedAt:
+        if payload.is_closed is True or payload.closed_at:
             raise SubmissionHFValidationError("Linked Hugging Face PR is not open")
 
-        raise SubmissionHFValidationError("Unable to determine Hugging Face PR open state from API response (fail-closed)")
+        raise SubmissionHFValidationError(
+            "Unable to determine Hugging Face PR open state from API response (fail-closed)"
+        )
 
     def validate_payload(self, record: SubmissionRecord) -> None:
         """Fetch and validate required payload artifacts from linked HF PR."""
@@ -81,7 +85,9 @@ class HFSubmissionValidator:
         payload_archive = files.payload_archive
         metadata_bytes = files.metadata
         self._validate_archive_members_before_extraction(payload_archive)
-        payload_sha256, metadata_sha256, submission_checksum = self._compute_submission_checksums(payload_archive, metadata_bytes)
+        payload_sha256, metadata_sha256, submission_checksum = self._compute_submission_checksums(
+            payload_archive, metadata_bytes
+        )
 
         metadata_data = json.loads(metadata_bytes.decode("utf-8"))
 
@@ -145,48 +151,54 @@ class HFSubmissionValidator:
             )
 
         try:
-            tar = tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz")
+            with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz") as tar:
+                task_entries = self._collect_archive_task_entries(tar)
         except (tarfile.TarError, OSError) as exc:
             raise SubmissionHFValidationError(
                 f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} is not a valid gzip tar archive: {exc}"
             ) from exc
 
+        self._validate_archive_task_entries(task_entries)
+
+    def _collect_archive_task_entries(self, tar: tarfile.TarFile) -> dict[str, set[str]]:
+        """Collect task directory file sets after validating member safety and shape."""
         allowed_task_files = {
             leaderboard_constants.TASK_AGENT_RESPONSE_FILE,
             leaderboard_constants.TASK_NETWORK_HAR_FILE,
             leaderboard_constants.TASK_MISSING_SENTINEL_FILE,
         }
         task_entries: dict[str, set[str]] = {}
-        with tar:
-            for member in tar.getmembers():
-                member_path = Path(member.name)
-                if member_path.is_absolute() or ".." in member_path.parts:
-                    raise SubmissionHFValidationError(
-                        f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} contains unsafe path '{member.name}'"
-                    )
-                if member.issym() or member.islnk() or member.ischr() or member.isblk() or member.isfifo():
-                    raise SubmissionHFValidationError(
-                        f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} contains unsupported entry type '{member.name}'"
-                    )
-                if member.isdir():
-                    continue
+        for member in tar.getmembers():
+            member_path = Path(member.name)
+            if member_path.is_absolute() or ".." in member_path.parts:
+                raise SubmissionHFValidationError(
+                    f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} contains unsafe path '{member.name}'"
+                )
+            if member.issym() or member.islnk() or member.ischr() or member.isblk() or member.isfifo():
+                raise SubmissionHFValidationError(
+                    f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} contains unsupported entry "
+                    f"type '{member.name}'"
+                )
+            if member.isdir():
+                continue
 
-                parts = [p for p in member_path.parts if p]
-                if len(parts) != 2:
-                    raise SubmissionHFValidationError(
-                        f"Invalid archive path '{member.name}': expected '<task_id>/<file>'"
-                    )
-                task_id, file_name = parts
-                if not task_id.isdigit():
-                    raise SubmissionHFValidationError(
-                        f"Invalid archive path '{member.name}': task_id directory must be numeric"
-                    )
-                if file_name not in allowed_task_files:
-                    raise SubmissionHFValidationError(
-                        f"Invalid archive path '{member.name}': file '{file_name}' is not allowed"
-                    )
-                task_entries.setdefault(task_id, set()).add(file_name)
+            parts = [part for part in member_path.parts if part]
+            if len(parts) != 2:
+                raise SubmissionHFValidationError(f"Invalid archive path '{member.name}': expected '<task_id>/<file>'")
+            task_id, file_name = parts
+            if not task_id.isdigit():
+                raise SubmissionHFValidationError(
+                    f"Invalid archive path '{member.name}': task_id directory must be numeric"
+                )
+            if file_name not in allowed_task_files:
+                raise SubmissionHFValidationError(
+                    f"Invalid archive path '{member.name}': file '{file_name}' is not allowed"
+                )
+            task_entries.setdefault(task_id, set()).add(file_name)
+        return task_entries
 
+    def _validate_archive_task_entries(self, task_entries: dict[str, set[str]]) -> None:
+        """Enforce required per-task file combinations after archive scan."""
         if not task_entries:
             raise SubmissionHFValidationError(
                 f"{leaderboard_constants.HF_SUBMISSION_ARCHIVE_FILE} must contain at least one task directory"
@@ -196,8 +208,8 @@ class HFSubmissionValidator:
             if leaderboard_constants.TASK_MISSING_SENTINEL_FILE in names:
                 if names != {leaderboard_constants.TASK_MISSING_SENTINEL_FILE}:
                     raise SubmissionHFValidationError(
-                        f"Task {task_id} is invalid: '{leaderboard_constants.TASK_MISSING_SENTINEL_FILE}' cannot coexist "
-                        "with other files"
+                        f"Task {task_id} is invalid: "
+                        f"'{leaderboard_constants.TASK_MISSING_SENTINEL_FILE}' cannot coexist with other files"
                     )
                 continue
             if {
@@ -271,7 +283,9 @@ class HFSubmissionValidator:
             self._validate_task_dir(task_dir)
         LOGGER.info("Validated %s extracted task directory(ies)", len(top_level_dirs))
 
-    def _download_required_payload_files(self, record: SubmissionRecord, artifacts: SubmissionArtifacts) -> SubmissionPayloadFiles:
+    def _download_required_payload_files(
+        self, record: SubmissionRecord, artifacts: SubmissionArtifacts
+    ) -> SubmissionPayloadFiles:
         """Download all required HF payload files for a submission record."""
         file_bytes: dict[str, bytes] = {}
         for file_name in (artifacts.archive_file, artifacts.metadata_file):
@@ -337,9 +351,10 @@ class HFSubmissionValidator:
 
     @staticmethod
     def _compute_submission_checksums(payload_archive: bytes, metadata_bytes: bytes) -> tuple[str, str, str]:
+        """Compute payload, metadata, and combined submission SHA256 checksums."""
         payload_sha256 = hashlib.sha256(payload_archive).hexdigest()
         metadata_sha256 = hashlib.sha256(metadata_bytes).hexdigest()
-        submission_checksum = hashlib.sha256(f"{payload_sha256}:{metadata_sha256}".encode("utf-8")).hexdigest()
+        submission_checksum = hashlib.sha256(f"{payload_sha256}:{metadata_sha256}".encode()).hexdigest()
         return payload_sha256, metadata_sha256, submission_checksum
 
 

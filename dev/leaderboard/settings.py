@@ -12,7 +12,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class HFSyncSettings(BaseSettings):
     """Environment-backed settings for HF sync workflow."""
 
-    model_config = SettingsConfigDict(extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore", populate_by_name=True)
 
     leaderboard_hf_repo: str = Field(alias="LEADERBOARD_HF_REPO")
     hf_token: str = Field(alias="HF_TOKEN")

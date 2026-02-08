@@ -44,8 +44,8 @@ class HFDiscussionState(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     status: str | None = None
-    isClosed: bool | None = None
-    closedAt: str | None = None
+    is_closed: bool | None = Field(default=None, alias="isClosed")
+    closed_at: str | None = Field(default=None, alias="closedAt")
 
 
 class SubmissionRecord(BaseModel):
@@ -257,4 +257,5 @@ class SubmissionsManfiest(BaseModel):
     @field_validator("generated_at_utc")
     @classmethod
     def validate_generated_at_utc(cls, value: str) -> str:
+        """Validate document generation timestamp format."""
         return validate_rfc3339_utc_z(value, "generated_at_utc")
