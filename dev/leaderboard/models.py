@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Callable, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -177,17 +177,8 @@ class SubmissionArtifacts(BaseModel):
     metadata_remote_path: str
     manifest_remote_path: str
 
-    archive_url: str
-    checksum_url: str
-    metadata_url: str
-    manifest_url: str
-
     @classmethod
-    def from_record(
-        cls,
-        record: SubmissionRecord,
-        resolve_url_fn: Callable[[str, str, str], str],
-    ) -> "SubmissionArtifacts":
+    def from_record(cls, record: SubmissionRecord) -> "SubmissionArtifacts":
         """Build derived artifact paths and URLs from submission record linkage."""
         ref = f"refs/pr/{record.hf_pr_id}"
         submission_root = f"submissions/accepted/{record.submission_id}"
@@ -213,8 +204,4 @@ class SubmissionArtifacts(BaseModel):
             checksum_remote_path=checksum_remote_path,
             metadata_remote_path=metadata_remote_path,
             manifest_remote_path=manifest_remote_path,
-            archive_url=resolve_url_fn(record.hf_repo, ref, archive_remote_path),
-            checksum_url=resolve_url_fn(record.hf_repo, ref, checksum_remote_path),
-            metadata_url=resolve_url_fn(record.hf_repo, ref, metadata_remote_path),
-            manifest_url=resolve_url_fn(record.hf_repo, ref, manifest_remote_path),
         )

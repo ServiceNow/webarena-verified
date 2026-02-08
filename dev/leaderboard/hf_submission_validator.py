@@ -9,8 +9,10 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
-from urllib import error, parse, request
+from urllib import error, parse
 
+from huggingface_hub import hf_hub_download
+from huggingface_hub.utils import EntryNotFoundError, HfHubHTTPError, RepositoryNotFoundError, RevisionNotFoundError
 from pydantic import ValidationError
 
 import dev.leaderboard.constants as leaderboard_constants
@@ -26,12 +28,17 @@ class SubmissionHFValidationError(Exception):
     """Raised when HF PR payload validation fails."""
 
 
-def _http_get_bytes(url: str) -> bytes:
-    """Fetch raw bytes from HTTP endpoint."""
-    LOGGER.debug("Downloading bytes from %s", url)
-    req = request.Request(url)
-    with request.urlopen(req, timeout=60) as resp:
-        return resp.read()
+def _hf_download_bytes(repo: str, ref: str, remote_path: str, token: str | None = None) -> bytes:
+    """Download payload file bytes from HF dataset PR via hub download API."""
+    LOGGER.debug("Downloading HF artifact via hub api repo=%s ref=%s path=%s", repo, ref, remote_path)
+    downloaded_path = hf_hub_download(
+        repo_id=repo,
+        repo_type="dataset",
+        revision=ref,
+        filename=remote_path,
+        token=token,
+    )
+    return Path(downloaded_path).read_bytes()
 
 
 def _extract_sha_from_payload_sha(payload_sha: bytes) -> str:
@@ -43,13 +50,6 @@ def _extract_sha_from_payload_sha(payload_sha: bytes) -> str:
             f"{leaderboard_constants.HF_SUBMISSION_SHA256_FILE} does not contain a valid lowercase SHA256 checksum"
         )
     return match.group(1)
-
-
-def _hf_resolve_url(repo: str, ref: str, path: str) -> str:
-    """Build HF resolve URL for a file in dataset repo/ref."""
-    quoted_ref = parse.quote(ref, safe="")
-    quoted_path = "/".join(parse.quote(part, safe="") for part in path.split("/"))
-    return f"https://huggingface.co/datasets/{repo}/resolve/{quoted_ref}/{quoted_path}?download=true"
 
 
 def validate_hf_discussion_open(repo: str, hf_pr_id: int, token: str | None = None) -> None:
@@ -156,22 +156,22 @@ def _validate_extracted_payload_structure(extract_root: Path) -> None:
     LOGGER.info("Validated %s extracted task directory(ies)", len(top_level_dirs))
 
 
-def validate_hf_payload(record: SubmissionRecord) -> None:
+def validate_hf_payload(record: SubmissionRecord, token: str | None = None) -> None:
     """Fetch and validate required payload artifacts from linked HF PR."""
     LOGGER.info("Validating HF payload artifacts for submission_id=%s", record.submission_id)
-    artifacts = SubmissionArtifacts.from_record(record, resolve_url_fn=_hf_resolve_url)
+    artifacts = SubmissionArtifacts.from_record(record)
 
     file_bytes: dict[str, bytes] = {}
-    for file_name, remote_path, file_url in (
-        (artifacts.archive_file, artifacts.archive_remote_path, artifacts.archive_url),
-        (artifacts.checksum_file, artifacts.checksum_remote_path, artifacts.checksum_url),
-        (artifacts.metadata_file, artifacts.metadata_remote_path, artifacts.metadata_url),
-        (artifacts.manifest_file, artifacts.manifest_remote_path, artifacts.manifest_url),
+    for file_name, remote_path in (
+        (artifacts.archive_file, artifacts.archive_remote_path),
+        (artifacts.checksum_file, artifacts.checksum_remote_path),
+        (artifacts.metadata_file, artifacts.metadata_remote_path),
+        (artifacts.manifest_file, artifacts.manifest_remote_path),
     ):
         LOGGER.info("Fetching payload file: %s", remote_path)
         try:
-            file_bytes[file_name] = _http_get_bytes(file_url)
-        except (error.URLError, TimeoutError) as exc:
+            file_bytes[file_name] = _hf_download_bytes(record.hf_repo, artifacts.ref, remote_path, token=token)
+        except (EntryNotFoundError, RepositoryNotFoundError, RevisionNotFoundError, HfHubHTTPError, OSError) as exc:
             raise SubmissionHFValidationError(
                 f"Missing or inaccessible HF payload file '{remote_path}' from linked PR: {exc}"
             ) from exc
@@ -226,5 +226,5 @@ def validate_hf_submission_record(record: SubmissionRecord, token: str | None = 
     """Run full HF validation checks for one linked submission record."""
     LOGGER.info("Starting full HF submission validation for submission_id=%s", record.submission_id)
     validate_hf_discussion_open(record.hf_repo, record.hf_pr_id, token=token)
-    validate_hf_payload(record)
+    validate_hf_payload(record, token=token)
     LOGGER.info("Finished full HF submission validation for submission_id=%s", record.submission_id)

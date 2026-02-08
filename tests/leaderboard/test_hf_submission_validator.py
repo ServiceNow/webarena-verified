@@ -47,14 +47,15 @@ def test_validate_task_dir_rejects_missing_plus_files(tmp_path: Path):
 def test_validate_hf_payload_rejects_checksum_mismatch(monkeypatch):
     record = _record()
 
-    def fake_get_bytes(url: str) -> bytes:
-        if url.endswith(f"{HF_SUBMISSION_ARCHIVE_FILE}?download=true"):
+    def fake_download_bytes(repo: str, ref: str, remote_path: str, token: str | None = None) -> bytes:
+        del repo, ref, token
+        if remote_path.endswith(HF_SUBMISSION_ARCHIVE_FILE):
             return b"payload-bytes"
-        if url.endswith(f"{HF_SUBMISSION_SHA256_FILE}?download=true"):
+        if remote_path.endswith(HF_SUBMISSION_SHA256_FILE):
             return ("0" * 64).encode("utf-8")
         return b"{}"
 
-    monkeypatch.setattr(hf_validator, "_http_get_bytes", fake_get_bytes)
+    monkeypatch.setattr(hf_validator, "_hf_download_bytes", fake_download_bytes)
 
     with pytest.raises(hf_validator.SubmissionHFValidationError, match="checksum mismatch"):
         hf_validator.validate_hf_payload(record)
