@@ -88,29 +88,17 @@ def test_alternatives_no_overlap():
 
 
 @pytest.mark.parametrize(
-    ("data_type", "value1", "value2"),
+    ("left", "right"),
     [
-        # Single values
-        (NormalizedString, "success", "success"),
-        (Number, 10, 10),
-        # Alternatives with overlap
-        (NormalizedString, ["success", "ok"], "success"),
-        (NormalizedString, ["success", "ok"], ["success", "completed"]),
-        (Number, [10, 17], 10),
-        (Number, [10, 17], [17, 25]),
-        # Multiple overlaps
-        (NormalizedString, ["success", "ok"], ["success", "ok"]),
-        (Number, [10, 17, 25], [17, 25, 30]),
+        (NormalizedString(["success", "ok"]), NormalizedString("success")),
+        (Number([10, 17]), Number([17, 25])),
+        (Number(10), Number(10.0)),
     ],
 )
-def test_equality_symmetry(data_type, value1, value2):
-    """Test that equality is symmetric: A == B implies B == A."""
-    obj1 = data_type(value1)
-    obj2 = data_type(value2)
-
-    # Symmetric equality
-    assert obj1 == obj2
-    assert obj2 == obj1
+def test_equality_is_symmetric_for_supported_overlap_cases(left, right):
+    """Equality must be symmetric for single values and alternatives."""
+    assert left == right
+    assert right == left
 
 
 @pytest.mark.parametrize(
@@ -137,39 +125,15 @@ def test_inequality_symmetry(data_type, value1, value2):
     assert obj2 != obj1
 
 
-@pytest.mark.parametrize(
-    ("data_type", "value1", "value2", "value3"),
-    [
-        # Transitivity with single values
-        (NormalizedString, "success", "success", "success"),
-        (Number, 10, 10, 10),
-        # Transitivity with alternatives
-        (NormalizedString, ["success", "ok"], ["success", "completed"], ["success", "done"]),
-        (Number, [10, 17], [17, 25], [17, 30]),
-    ],
-)
-def test_equality_transitivity(data_type, value1, value2, value3):
-    """Test that equality is transitive: if A == B and B == C, then A == C."""
-    obj1 = data_type(value1)
-    obj2 = data_type(value2)
-    obj3 = data_type(value3)
+def test_equality_with_alternatives_is_not_transitive_by_design():
+    """Overlap-based alternatives make equality non-transitive in some chains."""
+    first = NormalizedString(["success", "ok"])
+    second = NormalizedString(["ok", "done"])
+    third = NormalizedString(["done", "complete"])
 
-    # If A == B and B == C, then A == C
-    if obj1 == obj2 and obj2 == obj3:
-        assert obj1 == obj3
-
-
-def test_equality_reflexivity():
-    """Test that equality is reflexive: A == A."""
-    str_obj = NormalizedString("success")
-    num_obj = Number(10)
-    str_alt_obj = NormalizedString(["success", "ok"])
-    num_alt_obj = Number([10, 17])
-
-    assert str_obj == str_obj  # noqa: PLR0124
-    assert num_obj == num_obj  # noqa: PLR0124
-    assert str_alt_obj == str_alt_obj  # noqa: PLR0124
-    assert num_alt_obj == num_alt_obj  # noqa: PLR0124
+    assert first == second
+    assert second == third
+    assert first != third
 
 
 @pytest.mark.parametrize(

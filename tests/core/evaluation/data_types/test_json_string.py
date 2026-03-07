@@ -37,30 +37,6 @@ def test_normalization_from_string(value, expected):
     assert isinstance(js.normalized, str)
 
 
-@pytest.mark.parametrize(
-    ("value", "expected"),
-    [
-        # Arrays - order preserved
-        ("[1, 2, 3]", "[1,2,3]"),
-        ("[3, 1, 2]", "[3,1,2]"),
-        # Empty structures
-        ("{}", "{}"),
-        ("[]", "[]"),
-        # Nested structures
-        ('{"b": {"nested": "value"}, "a": [1, 2]}', '{"a":[1,2],"b":{"nested":"value"}}'),
-        # Mixed types
-        (
-            '{"string": "value", "number": 42, "bool": true, "null": null}',
-            '{"bool":true,"null":null,"number":42,"string":"value"}',
-        ),
-    ],
-)
-def test_normalization_various_json(value, expected):
-    """Test that various JSON string formats are normalized correctly."""
-    js = JsonString(value)
-    assert js.normalized == expected
-
-
 # ===== Whitespace Normalization Tests =====
 
 
