@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 REBUILD_WORKFLOW_PATH = Path(".github/workflows/leaderboard-rebuild.yml")
 HF_INGEST_WORKFLOW_PATH = Path(".github/workflows/leaderboard-hf-ingest.yml")
 HF_PUBLISH_WORKFLOW_PATH = Path(".github/workflows/leaderboard-hf-publish-pr.yml")
@@ -29,13 +28,13 @@ def test_rebuild_workflow_is_manual_only_on_leaderboard_submissions_branch() -> 
     assert "github.ref_name == 'leaderboard-submissions'" in workflow
 
 
-def test_hf_ingest_workflow_supports_dispatch_and_schedule() -> None:
+def test_hf_ingest_workflow_is_schedule_only() -> None:
     workflow = _read(HF_INGEST_WORKFLOW_PATH)
 
-    assert "repository_dispatch:" in workflow
-    assert "- hf_submission_event" in workflow
+    assert "repository_dispatch:" not in workflow
+    assert "hf_submission_event" not in workflow
     assert "schedule:" in workflow
-    assert "inv dev.leaderboard.hf-ingest" in workflow
+    assert "dev.leaderboard.hf-ingest" in workflow
 
 
 def test_hf_publish_pr_workflow_validates_rebuild_contract() -> None:

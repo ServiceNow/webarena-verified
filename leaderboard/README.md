@@ -3,10 +3,9 @@
 ## Architecture at a glance
 
 1. Authors submit data through Hugging Face dataset PRs.
-2. HF webhook receiver forwards events to GitHub `repository_dispatch`.
-3. `leaderboard-hf-ingest.yml` runs `dev.leaderboard.hf-ingest`, updates control/canonical records, and opens a publish PR.
-4. `leaderboard-hf-publish-pr.yml` validates scope + rebuild contract and auto-merges on success.
-5. Leaderboard UI reads `leaderboard_manifest.json` and generation files from `leaderboard-submissions`.
+2. `leaderboard-hf-ingest.yml` runs on schedule, reconciles HF PR refs, updates control/canonical records, and opens a publish PR.
+3. `leaderboard-hf-publish-pr.yml` validates scope + rebuild contract and auto-merges on success.
+4. Leaderboard UI reads `leaderboard_manifest.json` and generation files from `leaderboard-submissions`.
 
 ## Branch roles
 

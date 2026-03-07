@@ -1,10 +1,6 @@
 name: Leaderboard HF Ingest
 
 on:
-  repository_dispatch:
-    types:
-      - hf_submission_event
-  workflow_dispatch:
   schedule:
     - cron: "*/30 * * * *"
 
@@ -13,83 +9,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  ingest:
-    name: Ingest HF submission event
-    if: ${{ github.event_name != 'schedule' }}
-    runs-on: ubuntu-latest
-    concurrency:
-      group: hf-pr-${{ github.event.client_payload.hf_pr_number || 'manual' }}
-      cancel-in-progress: true
-
-    steps:
-      - name: Checkout leaderboard-submissions
-        uses: actions/checkout@v4
-        with:
-          ref: leaderboard-submissions
-          fetch-depth: 0
-
-      - name: Setup environment
-        uses: ./.github/actions/setup
-        with:
-          sync-args: --group dev
-          configure-git-identity: "true"
-
-      - name: Resolve HF settings
-        id: cfg
-        run: |
-          set -euo pipefail
-          HF_REPO="${{ vars.LEADERBOARD_HF_REPO }}"
-          if [ -z "$HF_REPO" ]; then
-            echo "Missing repository variable LEADERBOARD_HF_REPO"
-            exit 1
-          fi
-          EVALUATOR_VERSION="${{ vars.LEADERBOARD_EVALUATOR_VERSION }}"
-          echo "hf_repo=$HF_REPO" >> "$GITHUB_OUTPUT"
-          echo "evaluator_version=$EVALUATOR_VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Run HF ingest processor
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          set -euo pipefail
-          uv run inv dev.leaderboard.hf-ingest \
-            --event-path "$GITHUB_EVENT_PATH" \
-            --hf-repo "${{ steps.cfg.outputs.hf_repo }}" \
-            --github-repo "${{ github.repository }}" \
-            --hf-token "$HF_TOKEN" \
-            --evaluator-version "${{ steps.cfg.outputs.evaluator_version }}"
-
-      - name: Commit and open publish PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          git add -A submission_control submissions
-          if git diff --cached --quiet; then
-            echo "No ingest changes to commit"
-            exit 0
-          fi
-
-          SUBMISSION_ID="${{ github.event.client_payload.hf_pr_number || 'manual' }}"
-          BRANCH_NAME="hf-publish-${SUBMISSION_ID}"
-          git checkout -b "$BRANCH_NAME"
-          git commit -m "Ingest HF submission ${SUBMISSION_ID}"
-          git push -u origin "$BRANCH_NAME"
-
-          if gh pr view "$BRANCH_NAME" >/dev/null 2>&1; then
-            echo "Publish PR already exists for ${BRANCH_NAME}"
-            exit 0
-          fi
-
-          gh pr create \
-            --base "leaderboard-submissions" \
-            --head "$BRANCH_NAME" \
-            --title "Publish HF submission ${SUBMISSION_ID}" \
-            --body "Automated HF ingest output for submission ${SUBMISSION_ID}."
-
   reconcile:
     name: Reconcile schedule trigger
-    if: ${{ github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout leaderboard-submissions

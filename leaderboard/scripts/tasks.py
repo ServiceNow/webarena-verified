@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from invoke import task
+from invoke.tasks import task
 
 from leaderboard.scripts.hf_ingest import ingest_hf_submission
 from leaderboard.scripts.publish import publish_from_canonical
