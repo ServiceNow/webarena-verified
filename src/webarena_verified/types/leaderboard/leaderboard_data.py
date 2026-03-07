@@ -1,6 +1,7 @@
 """Published leaderboard data types."""
 
-from typing import Annotated, Literal
+from enum import StrEnum
+from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
@@ -13,6 +14,13 @@ from ._validators import (
 
 OverallScore = Annotated[float, AfterValidator(lambda v: validate_probability(v, "overall_score"))]
 SiteScore = Annotated[float, AfterValidator(lambda v: validate_probability_or_missing_sentinel(v, "site_score"))]
+
+
+class LeaderboardView(StrEnum):
+    """Published leaderboard table variants."""
+
+    FULL = "full"
+    HARD = "hard"
 
 
 class LeaderboardRow(BaseModel):
@@ -54,7 +62,7 @@ class LeaderboardTableFile(BaseModel):
     schema_version: str = Field(min_length=1)
     generation_id: str = Field(min_length=1)
     generated_at_utc: str
-    leaderboard: Literal["full", "hard"]
+    leaderboard: LeaderboardView
     rows: list[LeaderboardRow]
 
     @field_validator("generated_at_utc")

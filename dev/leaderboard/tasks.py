@@ -13,6 +13,7 @@ from invoke import task
 from dev.leaderboard import constants
 from dev.leaderboard.hf_discussion_client import HFDiscussionClient
 from dev.leaderboard.hf_submission_validator import HFSubmissionValidator
+from dev.leaderboard.pr_gate_intake_validator import PRGateValidationError, run_pr_gate_intake_validation
 from dev.leaderboard.settings import get_hf_sync_settings
 from dev.leaderboard.submission_record_repository import SubmissionRecordRepository
 from dev.leaderboard.submission_sync_orchestrator import SubmissionSyncOrchestrator
@@ -70,6 +71,22 @@ def hf_handle_pr(_ctx, hf_pr_id: int, expected_head_sha: str = "", merge_accepte
 
 def _run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=cwd, check=True, text=True, capture_output=True)
+
+
+@task(name="pr-gate-intake-validate")
+def pr_gate_intake_validate(_ctx, base_sha: str, head_sha: str, repo_root: str = ".") -> None:
+    """Validate one intake payload for PR Gate (C03-C05)."""
+    try:
+        result = run_pr_gate_intake_validation(
+            repo_root=Path(repo_root),
+            base_sha=base_sha,
+            head_sha=head_sha,
+        )
+    except PRGateValidationError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+    print(f"intake_id={result.intake_id}")
+    print(f"changed_files={len(result.changed_paths)}")
 
 
 @task(name="commit-control-plane")

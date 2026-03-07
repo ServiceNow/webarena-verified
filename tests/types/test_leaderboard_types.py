@@ -8,6 +8,8 @@ from webarena_verified.types.leaderboard import (
     LeaderboardManifest,
     LeaderboardRow,
     LeaderboardTableFile,
+    LeaderboardView,
+    SubmissionLeaderboard,
 )
 
 
@@ -193,12 +195,13 @@ def test_table_file_valid(leaderboard_row_payload: dict):
         leaderboard="full",
         rows=[LeaderboardRow(**leaderboard_row_payload)],
     )
-    assert table.leaderboard == "full"
+    assert table.leaderboard == LeaderboardView.FULL
 
 
 def test_intake_submission_valid(intake_submission_payload: dict):
     intake = IntakeSubmission(**intake_submission_payload)
     assert intake.packaging_summary.tasks_packaged == 100
+    assert intake.leaderboard == SubmissionLeaderboard.BOTH
 
 
 def test_intake_submission_rejects_unknown_field(intake_submission_payload: dict):

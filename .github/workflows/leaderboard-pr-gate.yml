@@ -1,0 +1,54 @@
+name: Leaderboard PR Gate
+
+on:
+  pull_request:
+    branches:
+      - leaderboard-submissions
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    paths:
+      - "submissions/inbox/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leaderboard-pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-gate:
+    name: Leaderboard PR Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head (read-only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+
+      - name: Validate intake contract and invariants
+        run: |
+          set -euo pipefail
+          uv run inv dev.leaderboard.pr-gate-intake-validate \
+            --base-sha "${{ github.event.pull_request.base.sha }}" \
+            --head-sha "${{ github.event.pull_request.head.sha }}"
+
+      - name: Publish gate summary
+        run: |
+          {
+            echo "## Leaderboard PR Gate"
+            echo ""
+            echo "- Trigger: pull_request on \\`leaderboard-submissions\\` with path filter \\`submissions/inbox/**\\`."
+            echo "- Permissions: \\`contents: read\\` only."
+            echo "- Checkout credentials persistence: \\`false\\` (no push token)."
+            echo "- C03-C05 gate checks: single intake folder, required files, manifest integrity, and task invariants."
+          } >> "$GITHUB_STEP_SUMMARY"
