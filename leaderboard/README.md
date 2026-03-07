@@ -119,8 +119,7 @@ Write ownership:
 Contract details and field-level schema are maintained in:
 
 - `leaderboard/spec/leaderboard_submission_spec.md`
-- `.wip/lane-b-contracts.md`
-- `.wip/leaderboard-alignment-plan.md`
+- `src/webarena_verified/types/leaderboard/`
 
 ## Workflow responsibilities
 
@@ -155,8 +154,6 @@ Active governance baseline (Lane A):
 - strict fork policy for non-contributors
 - contributor bypass roles: `write`, `maintain`, `admin`
 - default `GITHUB_TOKEN` workflow permission reduced to read; workflows grant write explicitly when required
-
-Reference: `.wip/lane-a-governance.md`
 
 ## Contributor change map
 
