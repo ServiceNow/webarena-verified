@@ -19,41 +19,6 @@ LEADERBOARD_DATA_DIR = Path(".")
 LEADERBOARD_MANIFEST_FILE = "leaderboard_manifest.json"
 _EMPTY_GENERATED_AT_UTC = "1970-01-01T00:00:00Z"
 
-# Required fields for publishing a leaderboard row from a processed submission record.
-_REQUIRED_ROW_FIELDS = [
-    "name",
-    "overall_score",
-    "shopping_score",
-    "reddit_score",
-    "gitlab_score",
-    "wikipedia_score",
-    "map_score",
-    "shopping_admin_score",
-    "success_count",
-    "failure_count",
-    "error_count",
-    "missing_count",
-    "webarena_verified_version",
-    "checksum",
-]
-
-_PUBLIC_ROW_FIELDS = (
-    "name",
-    "overall_score",
-    "shopping_score",
-    "reddit_score",
-    "gitlab_score",
-    "wikipedia_score",
-    "map_score",
-    "shopping_admin_score",
-    "success_count",
-    "failure_count",
-    "error_count",
-    "missing_count",
-    "webarena_verified_version",
-    "checksum",
-)
-
 
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -282,13 +247,6 @@ def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) ->
         "webarena_verified_version": record.evaluator_version,
         "checksum": record.checksum,
     }
-
-    missing_fields = [
-        field for field in _REQUIRED_ROW_FIELDS if field not in normalized_raw and field in _PUBLIC_ROW_FIELDS
-    ]
-    if missing_fields:
-        missing_list = ", ".join(missing_fields)
-        raise ValueError(f"accepted submission '{record.submission_id}' is missing leaderboard fields: {missing_list}")
 
     submission_id = _coerce_submission_id(
         raw.get("submission_id", record.submission_id),
