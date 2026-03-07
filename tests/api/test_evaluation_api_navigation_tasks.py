@@ -22,9 +22,8 @@ Test Data Format:
 - Special case variations (e.g., header variations, response status) are also included
 
 Test Optimization:
-- Uses a curated high-signal matrix of task IDs and transformations.
-- Focuses on behavior contracts that catch regressions without a large brittle
-  combinatorial suite.
+- Evaluates every navigation task at least once via a smoke test.
+- Uses a curated high-signal subset for strict valid/invalid assertions.
 """
 
 import json
@@ -39,7 +38,7 @@ from webarena_verified import WebArenaVerified
 from webarena_verified.core.utils.immutable_obj_helper import serialize_to_mutable
 from webarena_verified.types.eval import EvalStatus
 
-CURATED_NAVIGATION_TASK_IDS = (
+HIGH_SIGNAL_NAVIGATION_TASK_IDS = (
     44,
     45,
     46,
@@ -206,6 +205,26 @@ def _generate_alternative_combinations(data: Any, path: str = "") -> list[tuple[
     return combinations
 
 
+def _has_single_item_list(value: Any) -> bool:
+    """Detect single-item list structures that represent malformed alternatives."""
+    if isinstance(value, list):
+        if len(value) == 1:
+            return True
+        return any(_has_single_item_list(item) for item in value)
+
+    if isinstance(value, dict):
+        return any(_has_single_item_list(item) for item in value.values())
+
+    return False
+
+
+def _is_malformed_network_expected(task_id: int, dataset: MappingProxyType[int, MappingProxyType[str, Any]]) -> bool:
+    """Return True when the task's expected network config is currently malformed."""
+    network_config = _get_network_event_config(task_id, dataset)
+    expected = network_config.get("expected", {})
+    return _has_single_item_list(expected.get("post_data"))
+
+
 def _apply_invalid_transformation_to_network_event(
     network_event_config: dict[str, Any], variation_type: str
 ) -> dict[str, Any]:
@@ -326,17 +345,27 @@ def pytest_generate_tests(metafunc):
     - URL variations for tasks (loaded from JSON test files)
     - For invalid tests: multiple "default_*" variations with programmatic transformations
     """
+    project_root = Path(metafunc.config.rootpath)
+    dataset = _load_dataset(project_root)
+    navigation_task_ids = _get_navigation_task_ids(dataset)
+
+    if "smoke_task_id" in metafunc.fixturenames:
+        metafunc.parametrize(
+            "smoke_task_id",
+            navigation_task_ids,
+            ids=lambda task_id: f"task_{task_id}",
+        )
+        return
+
     if "task_id" not in metafunc.fixturenames or "variation_name" not in metafunc.fixturenames:
         return
 
     is_valid_test = "invalid" not in metafunc.function.__name__
-    project_root = Path(metafunc.config.rootpath)
-    dataset = _load_dataset(project_root)
-    available_task_ids = set(_get_navigation_task_ids(dataset))
+    available_task_ids = set(navigation_task_ids)
 
-    selected_task_ids = [task_id for task_id in CURATED_NAVIGATION_TASK_IDS if task_id in available_task_ids]
+    selected_task_ids = [task_id for task_id in HIGH_SIGNAL_NAVIGATION_TASK_IDS if task_id in available_task_ids]
     if not selected_task_ids:
-        raise ValueError("No curated navigation tasks found in dataset.")
+        raise ValueError("No high-signal navigation tasks found in dataset.")
 
     variation_names = VALID_NAVIGATION_VARIATIONS if is_valid_test else INVALID_NAVIGATION_VARIATIONS
     test_cases = [(task_id, variation_name) for task_id in selected_task_ids for variation_name in variation_names]
@@ -346,6 +375,29 @@ def pytest_generate_tests(metafunc):
         test_cases,
         ids=lambda params: f"task_{params[0]}_{params[1]}" if isinstance(params, tuple) else str(params),
     )
+
+
+def test_evaluate_navigation_task_smoke_all_tasks(
+    smoke_task_id: int,
+    wa: WebArenaVerified,
+    dataset: MappingProxyType[int, MappingProxyType[str, Any]],
+    har_file_example: Path,
+):
+    """Evaluate every navigation task once to ensure task configs remain executable."""
+    agent_response = _get_agent_response_config(smoke_task_id, dataset)
+
+    result = wa.evaluate_task(
+        task_id=smoke_task_id,
+        agent_response=json.dumps(agent_response),
+        network_trace=har_file_example,
+    )
+
+    assert result.task_id == smoke_task_id
+
+    if _is_malformed_network_expected(smoke_task_id, dataset):
+        assert result.status in {EvalStatus.FAILURE, EvalStatus.ERROR}
+    else:
+        assert result.status in {EvalStatus.SUCCESS, EvalStatus.FAILURE}
 
 
 def test_evaluate_navigation_task_valid_variations(
