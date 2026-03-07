@@ -73,7 +73,6 @@ a {
 .board-tab,
 .btn-primary,
 .btn-secondary,
-.quick-links a,
 .export-button,
 .version-link {
   transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
@@ -109,6 +108,11 @@ select:focus-visible {
   flex: 1;
   padding-top: var(--space-2xl);
   padding-bottom: var(--space-2xl);
+}
+
+.page-shell-wide {
+  padding-left: var(--space-lg);
+  padding-right: var(--space-lg);
 }
 
 /* --- Header --- */
@@ -199,31 +203,6 @@ select:focus-visible {
   color: var(--brand);
   font-weight: 700;
   font-size: 1.1rem;
-}
-
-/* --- Quick links --- */
-
-.quick-links {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--space-md);
-  margin-bottom: var(--space-lg);
-}
-
-.quick-links a {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  padding: var(--space-md) var(--space-lg);
-  text-decoration: none;
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.quick-links a:hover {
-  border-color: var(--line);
-  background: var(--surface-hover);
-  box-shadow: var(--shadow-sm);
 }
 
 /* --- Shared card styles --- */
@@ -517,7 +496,6 @@ button {
 
 #leaderboard-table.tabulator .tabulator-header,
 #leaderboard-table .tabulator .tabulator-header {
-  display: block;
   background: var(--surface-raised) !important;
   color: var(--ink) !important;
   border-bottom: 1px solid var(--line) !important;

@@ -69,6 +69,7 @@ export function createColumns() {
       sorter: "string",
       width: 420,
       minWidth: 420,
+      hozAlign: "center",
       responsive: 100
     },
     {
@@ -77,6 +78,7 @@ export function createColumns() {
       sorter: "string",
       width: 320,
       minWidth: 320,
+      hozAlign: "center",
       responsive: 99
     }
   ];
