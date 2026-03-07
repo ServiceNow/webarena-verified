@@ -12,6 +12,35 @@ The system is split into three workflow stages on `leaderboard-submissions`:
 
 The UI reads `leaderboard_manifest.json`, then fetches immutable generation files referenced by the manifest.
 
+## Flow diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Contributor PR
+    participant G as PR Gate
+    participant F as Finalize
+    participant H as HF Storage
+    participant R as Rebuild
+    participant U as Leaderboard UI
+
+    C->>G: Open or update PR with submissions/inbox/<intake_id>/
+    G->>G: Validate intake + manifest + task invariants
+    alt Gate fails
+        G-->>C: Check fails with actionable diagnostics
+    else Gate passes
+        C->>F: Merge PR to leaderboard-submissions
+        F->>F: Set submission_id = pr_number
+        F->>H: Upload canonical payload submissions/<submission_id>/
+        F->>F: Write submissions/<submission_id>.json and clean inbox
+        F->>R: Trigger rebuild
+        R->>R: Retain latest 100 canonical records
+        R->>R: Write leaderboard_full/hard.<generation_id>.json
+        R->>R: Switch leaderboard_manifest.json last
+        U->>R: Read manifest then generation files
+    end
+```
+
 ## Branch roles
 
 - `main`: source code, specs, and docs.
