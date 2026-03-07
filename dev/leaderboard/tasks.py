@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import os
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -12,6 +12,7 @@ from huggingface_hub import HfApi
 from invoke import task
 
 from dev.leaderboard import constants
+from dev.leaderboard.finalize import finalize_submission
 from dev.leaderboard.hf_discussion_client import HFDiscussionClient
 from dev.leaderboard.hf_submission_validator import HFSubmissionValidator
 from dev.leaderboard.pr_gate_intake_validator import PRGateValidationError, run_pr_gate_intake_validation
@@ -50,6 +51,29 @@ def _parse_bool(value: str | bool) -> bool:
     if isinstance(value, bool):
         return value
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+@task(name="finalize")
+def finalize(
+    _ctx,
+    event_path: str,
+    github_repo: str,
+    hf_repo: str,
+    github_token: str = "",
+    hf_token: str = "",
+    evaluator_version: str = "",
+) -> None:
+    """Finalize one merged intake PR into a canonical submission record."""
+    result = finalize_submission(
+        repo_root=Path.cwd(),
+        event_path=Path(event_path),
+        github_repo=github_repo,
+        github_token=github_token,
+        hf_repo=hf_repo,
+        hf_token=hf_token,
+        evaluator_version=evaluator_version,
+    )
+    print(result.model_dump_json(indent=2))
 
 
 @task(name="hf-handle-pr")

@@ -2,7 +2,6 @@
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .submission_payload import SubmissionLeaderboard
 from ._validators import (
     validate_checksum,
     validate_email,
@@ -10,6 +9,7 @@ from ._validators import (
     validate_model_name,
     validate_reference_url,
 )
+from .submission_payload import SubmissionLeaderboard
 
 
 class CanonicalSubmissionRecord(BaseModel):
