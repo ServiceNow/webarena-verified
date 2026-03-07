@@ -1,6 +1,7 @@
 from enum import StrEnum
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class SubmissionControlStatus(StrEnum):
@@ -22,7 +23,15 @@ class SubmissionStatusEvent(BaseModel):
     reason: str | None = None
     run_sha: str | None = None
     latest_sha: str | None = None
-    run_url: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_legacy_keys(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        payload = dict(value)
+        payload.pop("run_url", None)
+        return payload
 
 
 class SubmissionControlRecord(BaseModel):
@@ -42,9 +51,16 @@ class SubmissionControlRecord(BaseModel):
     processed_event_ids: list[str] = Field(default_factory=list)
     retry_count: int = Field(default=0, ge=0)
 
-    github_publish_pr_number: int | None = Field(default=None, ge=1)
-    github_publish_merge_sha: str | None = None
-    requires_manual_override: bool = False
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_legacy_keys(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        payload = dict(value)
+        payload.pop("github_publish_pr_number", None)
+        payload.pop("github_publish_merge_sha", None)
+        payload.pop("requires_manual_override", None)
+        return payload
 
 
 class HFDispatchContext(BaseModel):
@@ -53,9 +69,6 @@ class HFDispatchContext(BaseModel):
     hf_pr_number: int = Field(ge=1)
     hf_head_sha: str = Field(min_length=1)
     hf_pr_url: str | None = None
-    event_scope: str | None = None
-    event_action: str | None = None
-    event_ts: str | None = None
 
 
 class HFIngestResult(BaseModel):
