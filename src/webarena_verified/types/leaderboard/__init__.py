@@ -2,10 +2,22 @@
 
 from .leaderboard_data import LeaderboardRow, LeaderboardTableFile
 from .manifest import LeaderboardManifest
-from .submission_payload import SubmissionMetadata, SubmissionPayloadManifest
-from .submission_record import SubmissionRecord, SubmissionStatus
+from .submission_payload import (
+    IntakeManifest,
+    IntakeManifestFile,
+    IntakePackagingSummary,
+    IntakeSubmission,
+    SubmissionMetadata,
+    SubmissionPayloadManifest,
+)
+from .submission_record import CanonicalSubmissionRecord, SubmissionRecord, SubmissionStatus
 
 __all__ = [
+    "CanonicalSubmissionRecord",
+    "IntakeManifest",
+    "IntakeManifestFile",
+    "IntakePackagingSummary",
+    "IntakeSubmission",
     "LeaderboardManifest",
     "LeaderboardRow",
     "LeaderboardTableFile",

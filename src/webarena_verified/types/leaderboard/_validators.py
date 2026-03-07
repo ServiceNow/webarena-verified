@@ -1,6 +1,7 @@
 """Shared validators for leaderboard types."""
 
 import re
+from pathlib import PurePosixPath
 
 RFC3339_UTC_Z_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -17,6 +18,22 @@ def validate_sha256_hex(value: str, field_name: str) -> str:
     """Validate a lowercase 64-char SHA256 hex string."""
     if not SHA256_HEX_PATTERN.match(value):
         raise ValueError(f"{field_name} must be a lowercase 64-character SHA256 hex string")
+    return value
+
+
+def validate_relative_repo_path(value: str, field_name: str) -> str:
+    """Validate a repo-relative POSIX path without traversal segments."""
+    if not value.strip():
+        raise ValueError(f"{field_name} must be non-empty")
+
+    path = PurePosixPath(value)
+    if path.is_absolute():
+        raise ValueError(f"{field_name} must be a relative path")
+    if any(part == ".." for part in path.parts):
+        raise ValueError(f"{field_name} must not contain '..' segments")
+    if any(part in {"", "."} for part in path.parts):
+        raise ValueError(f"{field_name} must not contain empty or '.' segments")
+
     return value
 
 
