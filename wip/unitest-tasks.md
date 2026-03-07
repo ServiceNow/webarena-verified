@@ -27,66 +27,90 @@ This document captures issues found in the current unit test suite and proposes 
 ## Redundant or Low-Signal Tests
 
 ### 5) `tests/core/evaluation/data_types/test_json_string.py:40` - overlapping normalization tests
+- **Status**: Done.
 - **Issue**: `test_normalization_various_json` substantially duplicates `test_normalization_from_string`.
 - **Why we need to fix**: Duplicate coverage increases maintenance cost without adding meaningful signal.
 - **Suggested fix**: Merge into one parameterized test table and keep only distinct edge-case dimensions.
+- **Implemented**: Removed the duplicate `test_normalization_various_json` block and kept coverage in `test_normalization_from_string`.
 
 ### 6) `tests/core/evaluation/data_types/test_base.py:162` - reflexivity test (`x == x`) is mostly tautological
+- **Status**: Done.
 - **Issue**: The test mostly verifies Python's default equality expectations, not domain-specific behavior.
 - **Why we need to fix**: Low-signal tests consume runtime and review time while catching few real defects.
 - **Suggested fix**: Replace with invariants that target custom logic (normalization side effects, cross-type comparisons, and custom equality branches).
+- **Implemented**: Removed low-signal reflexivity checks in favor of behavior-focused assertions.
 
 ### 7) `tests/core/evaluation/data_types/test_base.py:106` - generic symmetry checks dominate
+- **Status**: Done.
 - **Issue**: Broad symmetry-law checks are repeated with little type-specific intent.
 - **Why we need to fix**: Laws are useful, but repetitive law-only tests crowd out behavioral edge cases.
 - **Suggested fix**: Keep one shared symmetry/law helper and move remaining effort to feature-level assertions per type.
+- **Implemented**: Replaced the wide matrix with `test_equality_is_symmetric_for_supported_overlap_cases`, covering key overlap scenarios with fewer, clearer cases.
 
 ### 8) `tests/core/evaluation/data_types/test_markdown_string.py:434` - repeated equality-law boilerplate
+- **Status**: Done.
 - **Issue**: Equality law tests duplicate patterns already exercised elsewhere.
 - **Why we need to fix**: Boilerplate-heavy suites become noisy and harder to evolve safely.
 - **Suggested fix**: Consolidate equality law tests into a reusable base fixture/helper and keep Markdown-specific assertions only in this file.
+- **Implemented**: Removed duplicate Markdown equality-law tests and kept Markdown-specific behavior checks.
 
 ### 9) `tests/core/evaluation/data_types/test_base64_string.py:477` - repeated equality-law boilerplate
+- **Status**: Done.
 - **Issue**: Same structural law checks are repeated again with minimal Base64-specific value.
 - **Why we need to fix**: Repetition creates maintenance drag and weakens test readability.
 - **Suggested fix**: Deduplicate by reusing shared law tests and retain only Base64-specific edge cases (padding, invalid alphabet, URL-safe variants).
+- **Implemented**: Removed duplicate Base64 equality-law tests and retained Base64-specific behavior coverage.
 
 ### 10) `tests/core/evaluation/data_types/test_base64_string.py:355` - set/dict usability test is low signal
+- **Status**: Done.
 - **Issue**: The test mostly verifies Python container behavior, not custom domain semantics.
 - **Why we need to fix**: It does not strongly guard against real regressions in normalization/comparison behavior.
 - **Suggested fix**: Replace with tests that assert stable hash/equality under equivalent but differently formatted Base64 inputs.
+- **Implemented**: Removed low-signal set/dict-specific tests; hash/equality consistency remains covered in shared/base tests.
 
 ### 11) `tests/core/evaluation/data_types/test_markdown_string.py:357` - set/dict usability test is low signal
+- **Status**: Done.
 - **Issue**: Similar to Base64 case, this primarily re-tests language-level container semantics.
 - **Why we need to fix**: It adds little confidence relative to cost.
 - **Suggested fix**: Focus on Markdown-specific canonicalization/equivalence behavior (whitespace normalization, emphasis token variants, link syntax differences).
+- **Implemented**: Removed low-signal set/dict-specific tests and kept Markdown canonicalization/equivalence tests as primary signal.
 
 ## Invalid, Incorrect, or Fragile Tests
 
 ### 12) `tests/types/test_eval_types.py:341` - tuple test does not use a tuple
+- **Status**: Done.
 - **Issue**: `test_tuple_with_normalized_types_serializes` passes a list, not a tuple.
 - **Why we need to fix**: Name/intent mismatch can hide real tuple serialization bugs.
 - **Suggested fix**: Update fixture input to an actual tuple and add a paired test asserting list-vs-tuple behavior explicitly.
+- **Implemented**: Updated test input to an actual tuple while keeping assertions on JSON list serialization.
 
 ### 13) `tests/core/evaluation/data_types/test_json_string.py:104` - contradiction between name and assertion
+- **Status**: Done.
 - **Issue**: Test name/doc says nested keys are not sorted, but assertions expect sorted nested keys.
 - **Why we need to fix**: Contradictory tests confuse maintainers and can block correct refactoring.
 - **Suggested fix**: Decide the intended behavior, then align the test name, docstring, and expected value to a single contract.
+- **Implemented**: Renamed to `test_nested_keys_are_sorted` and aligned doc/comment text with current canonicalization behavior.
 
 ### 14) `tests/core/evaluation/data_types/test_base.py:151` - vacuous transitivity check
+- **Status**: Done.
 - **Issue**: Test only asserts transitivity conditionally (`if A==B and B==C`), so many failures pass without detection.
 - **Why we need to fix**: Vacuous truth turns a core algebraic property into a near no-op.
 - **Suggested fix**: Build explicit triples that satisfy the premise by construction, then assert `A==C` unconditionally.
+- **Implemented**: Replaced the vacuous conditional transitivity test with an explicit overlap-chain test documenting the non-transitive behavior of overlap-based alternatives.
 
 ### 15) `tests/core/evaluation/test_value_comparator.py:989` - performance test without performance assertions
+- **Status**: Done.
 - **Issue**: The test is named as a performance check but validates only correctness.
 - **Why we need to fix**: Misnamed tests create false expectations and mask real performance regressions.
 - **Suggested fix**: Either rename to correctness-focused wording or add bounded runtime assertions via benchmark tooling/timeout thresholds.
+- **Implemented**: Renamed test to `test_large_array_comparison_correctness` and updated the docstring to reflect correctness scope.
 
 ### 16) `tests/api/test_data_reader.py:146` - brittle fixed-size expectations
+- **Status**: Done.
 - **Issue**: The test expects minimum counts tied to the current dataset composition.
 - **Why we need to fix**: Legitimate data updates can break tests for non-code reasons.
 - **Suggested fix**: Replace hard thresholds with deterministic fixture datasets and assert exact behavior from controlled inputs.
+- **Implemented**: Replaced hard minimum count assertions with behavior-based validation that the filtered task IDs exactly match the reader's site-filter semantics.
 
 ## Tests That Need Improvement
 
@@ -127,7 +151,7 @@ This document captures issues found in the current unit test suite and proposes 
 
 ## Recommended Execution Order
 
-1. Fix invalid/contradictory tests first (Tasks 12-16).
+1. Fix invalid/contradictory tests first (Tasks 12-16). **Done**.
 2. Unskip high-value tests (Tasks 1-4).
-3. Remove redundancy and consolidate law tests (Tasks 5-11).
+3. Remove redundancy and consolidate law tests (Tasks 5-11). **Done**.
 4. Strengthen weak suites with deterministic fixtures and edge cases (Tasks 17-23).

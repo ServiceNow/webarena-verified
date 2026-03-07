@@ -345,11 +345,11 @@ def test_tuple_with_normalized_types_serializes():
     Expected: Tuple items serialize to normalized values (as list in JSON)
     """
     model = NestedListModel(
-        items=[
+        items=(
             Number(1),
             Number(2),
             NormalizedString("Three"),
-        ]
+        )
     )
 
     json_str = model.model_dump_json()

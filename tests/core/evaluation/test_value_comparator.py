@@ -986,8 +986,8 @@ def test_unicode_in_nested_structures(comparator):
     assert_comparison_success(result)
 
 
-def test_large_array_performance(comparator):
-    """Test performance with large array (1000 elements)."""
+def test_large_array_comparison_correctness(comparator):
+    """Test correctness on a large ordered array (1000 elements)."""
     size = 1000
     expected = [NormalizedString(f"item_{i}") for i in range(size)]
     actual = [NormalizedString(f"item_{i}") for i in range(size)]

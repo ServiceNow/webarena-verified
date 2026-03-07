@@ -144,18 +144,20 @@ def test_get_task_by_id_not_found(data_reader: WebArenaVerifiedDataReader):
 # Filter Tests
 # ============================================================================
 @pytest.mark.parametrize(
-    ("site", "expected_min_count"),
+    "site",
     [
-        (WebArenaSite.SHOPPING, 50),  # Shopping has many tasks
-        (WebArenaSite.MAP, 20),  # Map has some tasks
-        (WebArenaSite.GITLAB, 100),  # GitLab has many tasks
+        WebArenaSite.SHOPPING,
+        WebArenaSite.MAP,
+        WebArenaSite.GITLAB,
     ],
 )
-def test_filter_by_sites(data_reader: WebArenaVerifiedDataReader, site: WebArenaSite, expected_min_count: int):
+def test_filter_by_sites(data_reader: WebArenaVerifiedDataReader, site: WebArenaSite):
     """Test filtering tasks by site."""
     filtered = data_reader.get_tasks_by_value_filter(sites=[site])
+    expected = [task for task in data_reader.tasks if sorted(task.sites) == [site]]
 
-    assert len(filtered) >= expected_min_count
+    assert len(filtered) == len(expected)
+    assert {task.task_id for task in filtered} == {task.task_id for task in expected}
     # Verify all filtered tasks have the specified site
     for task in filtered:
         assert site in task.sites

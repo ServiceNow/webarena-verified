@@ -77,12 +77,12 @@ def test_key_sorting_top_level(value, expected):
     assert js.normalized == expected
 
 
-def test_nested_keys_not_sorted():
-    """Test that nested object keys are NOT sorted (only top-level)."""
+def test_nested_keys_are_sorted():
+    """Test that nested object keys are sorted by JSON canonicalization."""
     # Nested object has keys in different order
     value = '{"a": {"z": 1, "b": 2}, "b": 1}'
     js = JsonString(value)
-    # Top-level sorted, nested keys also get sorted by json.dumps(sort_keys=True)
+    # Top-level and nested keys are sorted by json.dumps(sort_keys=True)
     assert js.normalized == '{"a":{"b":2,"z":1},"b":1}'
 
 
