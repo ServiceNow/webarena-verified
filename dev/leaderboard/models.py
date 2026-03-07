@@ -63,6 +63,7 @@ class SubmissionRecord(BaseModel):
     created_at_utc: str
     updated_at_utc: str
 
+    github_pr_number: int | None = None
     github_pr_url: str | None = None
     processed_at_utc: str | None = None
     result_reason: str | None = None

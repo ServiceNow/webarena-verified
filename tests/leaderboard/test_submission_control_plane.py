@@ -14,7 +14,7 @@ from dev.leaderboard.submission_control_plane import (
     validate_submission_control_plane,
     write_pending_submission,
 )
-from webarena_verified.types.leaderboard import SubmissionRecord, SubmissionStatus
+from dev.leaderboard.models import SubmissionRecord, SubmissionStatus
 
 
 def _pending_record_payload(submission_id: str = "sub-123") -> dict:

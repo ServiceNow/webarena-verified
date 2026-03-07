@@ -21,7 +21,7 @@ class LeaderboardRow(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     rank: int = Field(ge=1)
-    submission_id: str = Field(min_length=1)
+    submission_id: int = Field(ge=1)
     name: str = Field(min_length=1)
     overall_score: OverallScore
 

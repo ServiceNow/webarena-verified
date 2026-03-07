@@ -4,6 +4,11 @@
 
 Freeze intake, canonical, and leaderboard contracts.
 
+## Decision lock
+
+- `submission_id` is an integer everywhere (`int`, `>= 1`)
+- Canonical identity rule remains `submission_id = github_pr_number`
+
 ## Tasks
 
 - [ ] B01 Freeze intake path contract (`deps: none`)
@@ -37,3 +42,4 @@ Freeze intake, canonical, and leaderboard contracts.
 
 - Contract document with schema examples
 - Type/schema updates ready for workflow consumers
+- Detailed implementation plan: `.wip/lane-b-contracts-implementation-plan.md`

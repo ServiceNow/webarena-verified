@@ -19,7 +19,7 @@ from dev.leaderboard.constants import (
 )
 from dev.leaderboard.hf_validator import SubmissionHFValidationError, validate_hf_submission_record
 from dev.leaderboard.utils import http_get_json
-from webarena_verified.types.leaderboard import SubmissionRecord, SubmissionStatus
+from dev.leaderboard.models import SubmissionRecord, SubmissionStatus
 
 LOGGER = logging.getLogger(__name__)
 

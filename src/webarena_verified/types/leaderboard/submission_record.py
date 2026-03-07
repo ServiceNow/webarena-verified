@@ -1,71 +1,93 @@
-"""Submission control-plane record types."""
+"""Canonical leaderboard submission record types."""
 
-from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from ._validators import validate_rfc3339_utc_z
+from ._validators import (
+    validate_checksum,
+    validate_email,
+    validate_eval_completed_at_utc,
+    validate_model_name,
+    validate_reference_url,
+)
 
 
-class SubmissionStatus(StrEnum):
-    """Allowed submission states."""
+class CanonicalSubmissionRecord(BaseModel):
+    """Canonical accepted submission record stored at submissions/<submission_id>.json."""
 
-    PENDING = "pending"
-    ACCEPTED = "accepted"
-    REJECTED = "rejected"
+    model_config = ConfigDict(extra="forbid")
 
+    submission_id: int = Field(ge=1)
+    github_pr_number: int = Field(ge=1)
+    github_pr_url: str = Field(min_length=1)
 
-class SubmissionRecord(BaseModel):
-    """Control-plane submission record stored in main branch."""
+    source_repository_id: int = Field(ge=1)
+    source_repository_full_name: str = Field(min_length=1)
+    github_pr_author_id: int = Field(ge=1)
+    github_pr_author_login: str = Field(min_length=1)
 
-    model_config = ConfigDict(extra="allow")
+    eval_completed_at_utc: str
+    webarena_verified_version: str = Field(min_length=1)
 
-    submission_id: str = Field(min_length=1)
-    status: SubmissionStatus
+    huggingface_dataset_repo: str = Field(min_length=1)
+    huggingface_dataset_revision: str = Field(min_length=1)
 
-    hf_repo: str = Field(min_length=1)
-    hf_pr_id: int
-    hf_pr_url: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    leaderboard: Literal["hard", "full", "both"]
+    reference: str = Field(min_length=1)
+    model_version: str | None = None
+    contact_info: str | None = None
 
-    created_at_utc: str
-    updated_at_utc: str
+    overall_score: float = Field(ge=0)
+    shopping_score: float = Field(ge=0)
+    reddit_score: float = Field(ge=0)
+    gitlab_score: float = Field(ge=0)
+    wikipedia_score: float = Field(ge=0)
+    map_score: float = Field(ge=0)
+    shopping_admin_score: float = Field(ge=0)
 
-    github_pr_number: int | None = None
-    github_pr_url: str | None = None
-    processed_at_utc: str | None = None
-    result_reason: str | None = None
+    success_count: int = Field(ge=0)
+    failure_count: int = Field(ge=0)
+    error_count: int = Field(ge=0)
+    missing_count: int = Field(ge=0)
+    checksum: str
 
-    @field_validator("created_at_utc")
+    @field_validator("eval_completed_at_utc")
     @classmethod
-    def validate_created_at_utc(cls, value: str) -> str:
-        """Validate created timestamp format."""
-        return validate_rfc3339_utc_z(value, "created_at_utc")
+    def validate_eval_completed_timestamp(cls, value: str) -> str:
+        """Validate eval completion timestamp format."""
+        return validate_eval_completed_at_utc(value)
 
-    @field_validator("updated_at_utc")
+    @field_validator("name")
     @classmethod
-    def validate_updated_at_utc(cls, value: str) -> str:
-        """Validate updated timestamp format."""
-        return validate_rfc3339_utc_z(value, "updated_at_utc")
+    def validate_name(cls, value: str) -> str:
+        """Validate model/team name format."""
+        return validate_model_name(value)
+
+    @field_validator("reference")
+    @classmethod
+    def validate_reference(cls, value: str) -> str:
+        """Validate reference URL format."""
+        return validate_reference_url(value)
+
+    @field_validator("contact_info")
+    @classmethod
+    def validate_contact_info(cls, value: str | None) -> str | None:
+        """Validate optional contact email format."""
+        if value is None:
+            return None
+        return validate_email(value)
+
+    @field_validator("checksum")
+    @classmethod
+    def validate_checksum_sha(cls, value: str) -> str:
+        """Validate checksum hash format."""
+        return validate_checksum(value)
 
     @model_validator(mode="after")
-    def validate_state_fields(self) -> "SubmissionRecord":
-        """Enforce status-dependent required fields."""
-        if self.status == SubmissionStatus.PENDING:
-            if self.processed_at_utc is not None:
-                raise ValueError("processed_at_utc must be null when status=pending")
-            return self
-
-        if self.processed_at_utc is None:
-            raise ValueError("processed_at_utc is required when status is terminal")
-
-        if self.status == SubmissionStatus.REJECTED and not self.result_reason:
-            raise ValueError("result_reason is required when status=rejected")
-
-        return self
-
-    @model_validator(mode="after")
-    def validate_optional_timestamps(self) -> "SubmissionRecord":
-        """Validate optional processed timestamp when provided."""
-        if self.processed_at_utc is not None:
-            self.processed_at_utc = validate_rfc3339_utc_z(self.processed_at_utc, "processed_at_utc")
+    def validate_submission_identity(self) -> "CanonicalSubmissionRecord":
+        """Enforce canonical identity mapping submission_id == github_pr_number."""
+        if self.submission_id != self.github_pr_number:
+            raise ValueError("submission_id must equal github_pr_number")
         return self

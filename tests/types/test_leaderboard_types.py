@@ -2,34 +2,54 @@ import pytest
 from pydantic import ValidationError
 
 from webarena_verified.types.leaderboard import (
+    CanonicalSubmissionRecord,
+    IntakeManifest,
+    IntakeSubmission,
     LeaderboardManifest,
     LeaderboardRow,
     LeaderboardTableFile,
-    SubmissionMetadata,
-    SubmissionPayloadManifest,
-    SubmissionRecord,
-    SubmissionStatus,
 )
 
 
-def _valid_submission_record() -> dict:
+@pytest.fixture
+def canonical_submission_record_payload() -> dict:
     return {
-        "submission_id": "sub-123",
-        "status": "pending",
-        "hf_repo": "org/repo",
-        "hf_pr_id": 42,
-        "hf_pr_url": "https://huggingface.co/datasets/org/repo/discussions/42",
-        "created_at_utc": "2026-02-07T12:00:00Z",
-        "updated_at_utc": "2026-02-07T12:05:00Z",
-        "processed_at_utc": None,
-        "result_reason": None,
+        "submission_id": 123,
+        "github_pr_number": 123,
+        "github_pr_url": "https://github.com/owner/repo/pull/123",
+        "source_repository_id": 777,
+        "source_repository_full_name": "fork-owner/repo-fork",
+        "github_pr_author_id": 456,
+        "github_pr_author_login": "octocat",
+        "eval_completed_at_utc": "2026-02-07T12:10:00Z",
+        "webarena_verified_version": "1.2.3",
+        "huggingface_dataset_repo": "owner/dataset/submissions/123",
+        "huggingface_dataset_revision": "abc123",
+        "name": "TeamX/ModelY",
+        "leaderboard": "both",
+        "reference": "https://example.com/paper",
+        "model_version": "v1",
+        "contact_info": "team@example.com",
+        "overall_score": 0.95,
+        "shopping_score": 0.91,
+        "reddit_score": 0.88,
+        "gitlab_score": 0.9,
+        "wikipedia_score": 0.87,
+        "map_score": 0.86,
+        "shopping_admin_score": 0.92,
+        "success_count": 10,
+        "failure_count": 2,
+        "error_count": 0,
+        "missing_count": 1,
+        "checksum": "a" * 64,
     }
 
 
-def _valid_row() -> dict:
+@pytest.fixture
+def leaderboard_row_payload() -> dict:
     return {
         "rank": 1,
-        "submission_id": "sub-123",
+        "submission_id": 123,
         "name": "TeamX/ModelY",
         "overall_score": 0.95,
         "shopping_score": 0.91,
@@ -47,35 +67,70 @@ def _valid_row() -> dict:
     }
 
 
-def test_submission_record_pending_valid():
-    record = SubmissionRecord(**_valid_submission_record())
-    assert record.status == SubmissionStatus.PENDING
+@pytest.fixture
+def intake_submission_payload() -> dict:
+    return {
+        "name": "TeamX/ModelY",
+        "leaderboard": "both",
+        "reference": "https://example.com/paper",
+        "created_at_utc": "2026-02-07T12:00:00Z",
+        "packaging_summary": {
+            "tasks_packaged": 100,
+            "tasks_with_issues": 3,
+            "duplicate_tasks": 1,
+            "unknown_tasks": 1,
+            "missing_from_output": 1,
+        },
+        "version": "v1",
+        "contact_info": "team@example.com",
+    }
 
 
-def test_submission_record_rejected_requires_reason():
-    payload = _valid_submission_record()
-    payload["status"] = "rejected"
-    payload["processed_at_utc"] = "2026-02-07T13:00:00Z"
-    payload["result_reason"] = None
+@pytest.fixture
+def intake_manifest_payload() -> dict:
+    return {
+        "schema_version": "1.0",
+        "created_at_utc": "2026-02-07T12:00:00Z",
+        "files": [
+            {
+                "path": "submission.json",
+                "sha256": "b" * 64,
+                "size_bytes": 128,
+            },
+            {
+                "path": "tasks/1/agent_response.json",
+                "sha256": "c" * 64,
+                "size_bytes": 256,
+            },
+        ],
+    }
 
-    with pytest.raises(ValidationError, match="result_reason is required"):
-        SubmissionRecord(**payload)
+
+def test_canonical_submission_record_valid(canonical_submission_record_payload: dict):
+    record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    assert record.submission_id == 123
+    assert record.huggingface_dataset_revision == "abc123"
 
 
-def test_submission_record_pending_disallows_processed_timestamp():
-    payload = _valid_submission_record()
-    payload["processed_at_utc"] = "2026-02-07T13:00:00Z"
+def test_canonical_submission_record_requires_matching_identity(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload["github_pr_number"] = 456
 
-    with pytest.raises(ValidationError, match="processed_at_utc must be null"):
-        SubmissionRecord(**payload)
+    with pytest.raises(ValidationError, match="submission_id must equal github_pr_number"):
+        CanonicalSubmissionRecord(**canonical_submission_record_payload)
 
 
-def test_submission_record_timestamp_requires_rfc3339_utc_z():
-    payload = _valid_submission_record()
-    payload["created_at_utc"] = "2026-02-07T12:00:00+00:00"
+def test_canonical_submission_record_rejects_invalid_overall_score(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload["overall_score"] = -0.1
 
-    with pytest.raises(ValidationError, match="RFC3339 UTC ending with 'Z'"):
-        SubmissionRecord(**payload)
+    with pytest.raises(ValidationError, match="greater than or equal to 0"):
+        CanonicalSubmissionRecord(**canonical_submission_record_payload)
+
+
+def test_canonical_submission_record_rejects_invalid_contact_info(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload["contact_info"] = "not-an-email"
+
+    with pytest.raises(ValidationError, match="contact_info must be a valid email"):
+        CanonicalSubmissionRecord(**canonical_submission_record_payload)
 
 
 def test_manifest_validates_hashes_and_timestamp():
@@ -104,82 +159,80 @@ def test_manifest_rejects_invalid_hash():
         )
 
 
-def test_row_accepts_site_score_missing_sentinel():
-    row = LeaderboardRow(**_valid_row())
+def test_row_accepts_site_score_missing_sentinel(leaderboard_row_payload: dict):
+    row = LeaderboardRow(**leaderboard_row_payload)
     assert row.wikipedia_score == -1
 
 
-def test_row_rejects_invalid_site_score():
-    payload = _valid_row()
-    payload["shopping_score"] = 1.2
+def test_row_rejects_invalid_site_score(leaderboard_row_payload: dict):
+    leaderboard_row_payload["shopping_score"] = 1.2
 
     with pytest.raises(ValidationError, match="within \\[0, 1\\] or exactly -1"):
-        LeaderboardRow(**payload)
+        LeaderboardRow(**leaderboard_row_payload)
 
 
-def test_row_rejects_invalid_overall_score():
-    payload = _valid_row()
-    payload["overall_score"] = -0.1
+def test_row_rejects_invalid_overall_score(leaderboard_row_payload: dict):
+    leaderboard_row_payload["overall_score"] = -0.1
 
     with pytest.raises(ValidationError, match="overall_score must be within \\[0, 1\\]"):
-        LeaderboardRow(**payload)
+        LeaderboardRow(**leaderboard_row_payload)
 
 
-def test_table_file_valid():
+def test_row_rejects_non_integer_submission_id(leaderboard_row_payload: dict):
+    leaderboard_row_payload["submission_id"] = "sub-123"
+
+    with pytest.raises(ValidationError):
+        LeaderboardRow(**leaderboard_row_payload)
+
+
+def test_table_file_valid(leaderboard_row_payload: dict):
     table = LeaderboardTableFile(
         schema_version="1.0",
         generation_id="gen-abc",
         generated_at_utc="2026-02-07T12:00:00Z",
         leaderboard="full",
-        rows=[LeaderboardRow(**_valid_row())],
+        rows=[LeaderboardRow(**leaderboard_row_payload)],
     )
     assert table.leaderboard == "full"
 
 
-def test_submission_metadata_valid():
-    metadata = SubmissionMetadata(
-        submission_id="sub-123",
-        name="TeamX/ModelY",
-        leaderboard="both",
-        reference="https://example.com/paper",
-        created_at_utc="2026-02-07T12:00:00Z",
-        contact_info="team@example.com",
-    )
-    assert metadata.submission_id == "sub-123"
+def test_intake_submission_valid(intake_submission_payload: dict):
+    intake = IntakeSubmission(**intake_submission_payload)
+    assert intake.packaging_summary.tasks_packaged == 100
 
 
-def test_submission_metadata_rejects_invalid_name():
-    with pytest.raises(ValidationError, match="name must match"):
-        SubmissionMetadata(
-            submission_id="sub-123",
-            name="Invalid Name With Spaces",
-            leaderboard="hard",
-            reference="https://example.com",
-            created_at_utc="2026-02-07T12:00:00Z",
-        )
+def test_intake_submission_rejects_unknown_field(intake_submission_payload: dict):
+    intake_submission_payload["submission_id"] = 123
+
+    with pytest.raises(ValidationError):
+        IntakeSubmission(**intake_submission_payload)
 
 
-def test_submission_payload_manifest_valid():
-    manifest = SubmissionPayloadManifest(
-        submission_id="sub-123",
-        archive_file="payload.tar.zst",
-        archive_sha256="d" * 64,
-        archive_size_bytes=42,
-        created_at_utc="2026-02-07T12:00:00Z",
-        hf_pr_id=10,
-        hf_pr_url="https://huggingface.co/datasets/org/repo/discussions/10",
-    )
-    assert manifest.archive_file == "payload.tar.zst"
+def test_intake_manifest_valid(intake_manifest_payload: dict):
+    manifest = IntakeManifest(**intake_manifest_payload)
+    assert len(manifest.files) == 2
 
 
-def test_submission_payload_manifest_rejects_bad_hash():
-    with pytest.raises(ValidationError, match="64-character SHA256"):
-        SubmissionPayloadManifest(
-            submission_id="sub-123",
-            archive_file="payload.tar.zst",
-            archive_sha256="bad-hash",
-            archive_size_bytes=42,
-            created_at_utc="2026-02-07T12:00:00Z",
-            hf_pr_id=10,
-            hf_pr_url="https://huggingface.co/datasets/org/repo/discussions/10",
-        )
+def test_intake_manifest_rejects_duplicate_paths(intake_manifest_payload: dict):
+    intake_manifest_payload["files"] = [
+        {
+            "path": "tasks/1/network.har",
+            "sha256": "d" * 64,
+            "size_bytes": 1,
+        },
+        {
+            "path": "tasks/1/network.har",
+            "sha256": "e" * 64,
+            "size_bytes": 2,
+        },
+    ]
+
+    with pytest.raises(ValidationError, match="unique path"):
+        IntakeManifest(**intake_manifest_payload)
+
+
+def test_intake_manifest_rejects_path_traversal(intake_manifest_payload: dict):
+    intake_manifest_payload["files"][0]["path"] = "../submission.json"
+
+    with pytest.raises(ValidationError, match="must not contain '..'"):
+        IntakeManifest(**intake_manifest_payload)

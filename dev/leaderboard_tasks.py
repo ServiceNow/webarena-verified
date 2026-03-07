@@ -17,7 +17,7 @@ from dev.leaderboard.submission_control_plane import (
     validate_submission_control_plane,
 )
 from dev.utils import logging_utils
-from webarena_verified.types.leaderboard import SubmissionStatus
+from dev.leaderboard.models import SubmissionStatus
 
 if TYPE_CHECKING:
     from invoke.context import Context

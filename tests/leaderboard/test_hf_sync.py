@@ -5,8 +5,8 @@ import pytest
 
 from dev.leaderboard import hf_sync
 from dev.leaderboard.hf_validator import SubmissionHFValidationError
+from dev.leaderboard.models import SubmissionRecord
 from dev.leaderboard.submission_control_plane import read_pending_submission, read_processed_submission
-from webarena_verified.types.leaderboard import SubmissionRecord
 
 
 def _write_processed(root: Path, submission_id: str) -> None:

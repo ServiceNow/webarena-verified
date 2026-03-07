@@ -7,11 +7,12 @@ from dev.leaderboard.publish import (
     LEADERBOARD_DATA_DIR,
     LEADERBOARD_MANIFEST_FILE,
     generate_leaderboard_staging,
+    publish_from_processed,
     publish_staged_leaderboard,
 )
 
 
-def _row(submission_id: str, overall_score: float) -> dict:
+def _row(submission_id: int, overall_score: float) -> dict:
     return {
         "submission_id": submission_id,
         "name": f"Team/{submission_id}",
@@ -34,11 +35,11 @@ def _row(submission_id: str, overall_score: float) -> dict:
 def test_generate_is_deterministic_and_tie_breaks_by_submission_id(tmp_path: Path):
     staging_dir = tmp_path / "staging"
     full_rows = [
-        _row("sub-z", 0.9),
-        _row("sub-a", 0.9),
-        _row("sub-b", 0.95),
+        _row(10, 0.9),
+        _row(2, 0.9),
+        _row(7, 0.95),
     ]
-    hard_rows = [_row("sub-hard", 0.5)]
+    hard_rows = [_row(99, 0.5)]
 
     manifest = generate_leaderboard_staging(
         staging_dir=staging_dir,
@@ -54,7 +55,7 @@ def test_generate_is_deterministic_and_tie_breaks_by_submission_id(tmp_path: Pat
     ranked_ids = [row["submission_id"] for row in full_table["rows"]]
     ranked_positions = [row["rank"] for row in full_table["rows"]]
 
-    assert ranked_ids == ["sub-b", "sub-a", "sub-z"]
+    assert ranked_ids == [7, 2, 10]
     assert ranked_positions == [1, 2, 3]
 
 
@@ -85,8 +86,8 @@ def test_publish_is_atomic_and_replaces_old_generation_files(tmp_path: Path):
         staging_dir=staging_dir,
         generation_id="gen-atomic",
         generated_at_utc="2026-02-07T18:00:00Z",
-        full_rows=[_row("sub-1", 0.7)],
-        hard_rows=[_row("sub-2", 0.6)],
+        full_rows=[_row(1, 0.7)],
+        hard_rows=[_row(2, 0.6)],
     )
 
     publish_staged_leaderboard(staging_dir=staging_dir, gh_pages_root=gh_pages_root)
@@ -122,8 +123,8 @@ def test_publish_failure_never_switches_live_manifest(tmp_path: Path, monkeypatc
         staging_dir=staging_dir,
         generation_id="new-gen",
         generated_at_utc="2026-02-07T18:00:00Z",
-        full_rows=[_row("sub-1", 0.8)],
-        hard_rows=[_row("sub-2", 0.7)],
+        full_rows=[_row(1, 0.8)],
+        hard_rows=[_row(2, 0.7)],
     )
 
     copy2_impl = __import__("shutil").copy2
@@ -145,8 +146,8 @@ def test_publish_failure_never_switches_live_manifest(tmp_path: Path, monkeypatc
 def test_generate_rejects_duplicate_submission_ids(tmp_path: Path):
     staging_dir = tmp_path / "staging"
     duplicate_full_rows = [
-        _row("sub-dup", 0.9),
-        _row("sub-dup", 0.8),
+        _row(42, 0.9),
+        _row(42, 0.8),
     ]
 
     with pytest.raises(ValueError, match="duplicate submission_id"):
@@ -157,3 +158,51 @@ def test_generate_rejects_duplicate_submission_ids(tmp_path: Path):
             full_rows=duplicate_full_rows,
             hard_rows=[],
         )
+
+
+def test_publish_from_processed_supports_canonical_integer_records(tmp_path: Path):
+    processed_dir = tmp_path / "submissions"
+    processed_dir.mkdir(parents=True)
+    canonical_record = {
+        "submission_id": 101,
+        "github_pr_number": 101,
+        "github_pr_url": "https://github.com/owner/repo/pull/101",
+        "source_repository_id": 9,
+        "source_repository_full_name": "fork-owner/repo-fork",
+        "github_pr_author_id": 10,
+        "github_pr_author_login": "alice",
+        "eval_completed_at_utc": "2026-02-07T12:00:00Z",
+        "webarena_verified_version": "2.0.0",
+        "huggingface_dataset_repo": "owner/dataset/submissions/101",
+        "huggingface_dataset_revision": "deadbeef",
+        "name": "Team/Model",
+        "leaderboard": "full",
+        "reference": "https://example.com",
+        "overall_score": 0.9,
+        "shopping_score": 0.9,
+        "reddit_score": 0.9,
+        "gitlab_score": 0.9,
+        "wikipedia_score": 0.9,
+        "map_score": 0.9,
+        "shopping_admin_score": 0.9,
+        "success_count": 10,
+        "failure_count": 0,
+        "error_count": 0,
+        "missing_count": 0,
+        "checksum": "f" * 64,
+    }
+    (processed_dir / "101.json").write_text(json.dumps(canonical_record), encoding="utf-8")
+
+    staging_dir = tmp_path / "staging"
+    manifest = publish_from_processed(
+        gh_pages_root=tmp_path / "gh-pages",
+        processed_dir=processed_dir,
+        staging_dir=staging_dir,
+        generation_id="gen-canonical",
+        generated_at_utc="2026-02-07T18:00:00Z",
+        dry_run=True,
+    )
+
+    full_table = json.loads((staging_dir / manifest.full_file).read_text(encoding="utf-8"))
+    assert full_table["rows"][0]["submission_id"] == 101
+    assert full_table["rows"][0]["webarena_verified_version"] == "2.0.0"

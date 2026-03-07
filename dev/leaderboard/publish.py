@@ -11,11 +11,10 @@ from typing import Literal
 from uuid import uuid4
 
 from webarena_verified.types.leaderboard import (
+    CanonicalSubmissionRecord,
     LeaderboardManifest,
     LeaderboardRow,
     LeaderboardTableFile,
-    SubmissionRecord,
-    SubmissionStatus,
 )
 
 LEADERBOARD_DATA_DIR = Path("leaderboard/data")
@@ -56,24 +55,45 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _coerce_submission_id(value: object, *, context: str) -> int:
+    """Parse and validate submission_id as a positive integer."""
+    if isinstance(value, bool):
+        raise ValueError(f"{context}: submission_id must be a positive integer")
+    if isinstance(value, int):
+        if value >= 1:
+            return value
+        raise ValueError(f"{context}: submission_id must be >= 1")
+    if isinstance(value, str) and value.isdigit():
+        parsed = int(value)
+        if parsed >= 1:
+            return parsed
+    raise ValueError(f"{context}: submission_id must be a positive integer")
+
+
 def _assert_unique_submission_ids(rows: list[dict], *, board_name: str) -> None:
-    seen: set[str] = set()
-    duplicates: set[str] = set()
+    seen: set[int] = set()
+    duplicates: set[int] = set()
     for row in rows:
-        submission_id = str(row["submission_id"])
+        submission_id = _coerce_submission_id(row.get("submission_id"), context=f"{board_name} row")
         if submission_id in seen:
             duplicates.add(submission_id)
         seen.add(submission_id)
 
     if duplicates:
-        duplicate_list = ", ".join(sorted(duplicates))
+        duplicate_list = ", ".join(str(item) for item in sorted(duplicates))
         raise ValueError(f"duplicate submission_id(s) in {board_name}: {duplicate_list}")
 
 
 def rank_rows(rows: list[dict], *, board_name: str = "leaderboard") -> list[dict]:
     """Return rows sorted and ranked by deterministic spec order."""
     _assert_unique_submission_ids(rows, board_name=board_name)
-    sorted_rows = sorted(rows, key=lambda row: (-float(row["overall_score"]), str(row["submission_id"])))
+    sorted_rows = sorted(
+        rows,
+        key=lambda row: (
+            -float(row["overall_score"]),
+            _coerce_submission_id(row.get("submission_id"), context=f"{board_name} row"),
+        ),
+    )
     ranked_rows = []
     for index, row in enumerate(sorted_rows, start=1):
         ranked_rows.append({**row, "rank": index})
@@ -222,42 +242,43 @@ def publish_staged_leaderboard(*, staging_dir: Path, gh_pages_root: Path) -> Lea
     return manifest
 
 
-def _load_submission_record(record_path: Path) -> tuple[SubmissionRecord, dict]:
+def _load_submission_record(record_path: Path) -> tuple[CanonicalSubmissionRecord, dict]:
     raw = json.loads(record_path.read_text(encoding="utf-8"))
-    return SubmissionRecord(**raw), raw
+    return CanonicalSubmissionRecord.model_validate(raw), raw
 
 
-def _row_from_submission_record(record: SubmissionRecord, raw: dict) -> dict:
-    missing_fields = [field for field in _REQUIRED_ROW_FIELDS if field not in raw]
+def _record_timestamp(record: CanonicalSubmissionRecord, raw: dict) -> str | None:
+    """Resolve timestamp attached to exported leaderboard rows."""
+    if raw.get("submission_timestamp"):
+        return raw["submission_timestamp"]
+    return record.eval_completed_at_utc
+
+
+def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) -> dict:
+    normalized_raw = {
+        key: value for key, value in dict(raw).items() if key not in {"rank", "submission_id", "submission_timestamp"}
+    }
+
+    missing_fields = [field for field in _REQUIRED_ROW_FIELDS if field not in normalized_raw]
     if missing_fields:
         missing_list = ", ".join(missing_fields)
         raise ValueError(f"accepted submission '{record.submission_id}' is missing leaderboard fields: {missing_list}")
 
-    validated = LeaderboardRow.model_validate(
-        {
-            "rank": 1,
-            "submission_id": record.submission_id,
-            "name": raw["name"],
-            "overall_score": raw["overall_score"],
-            "shopping_score": raw["shopping_score"],
-            "reddit_score": raw["reddit_score"],
-            "gitlab_score": raw["gitlab_score"],
-            "wikipedia_score": raw["wikipedia_score"],
-            "map_score": raw["map_score"],
-            "shopping_admin_score": raw["shopping_admin_score"],
-            "success_count": raw["success_count"],
-            "failure_count": raw["failure_count"],
-            "error_count": raw["error_count"],
-            "missing_count": raw["missing_count"],
-            "webarena_verified_version": raw["webarena_verified_version"],
-            "checksum": raw["checksum"],
-            "submission_timestamp": raw.get("submission_timestamp") or record.processed_at_utc or record.updated_at_utc,
-        }
+    submission_id = _coerce_submission_id(
+        raw.get("submission_id", record.submission_id),
+        context=f"accepted submission '{record.submission_id}'",
+    )
+
+    validated = LeaderboardRow(
+        rank=1,
+        submission_id=submission_id,
+        submission_timestamp=_record_timestamp(record, raw),
+        **normalized_raw,
     )
     return validated.model_dump(mode="python")
 
 
-def _select_boards(raw: dict, *, submission_id: str) -> set[str]:
+def _select_boards(raw: dict, *, submission_id: int) -> set[str]:
     selection = raw.get("leaderboard", "both")
     if selection == "both":
         return {"full", "hard"}
@@ -277,11 +298,8 @@ def _rows_from_processed_dir(processed_dir: Path) -> tuple[list[dict], list[dict
 
     for record_path in sorted(processed_dir.glob("*.json")):
         record, raw = _load_submission_record(record_path)
-        if record.status != SubmissionStatus.ACCEPTED:
-            continue
-
         row = _row_from_submission_record(record, raw)
-        boards = _select_boards(raw, submission_id=record.submission_id)
+        boards = _select_boards(raw, submission_id=row["submission_id"])
         if "full" in boards:
             full_rows.append(row)
         if "hard" in boards:
