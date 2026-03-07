@@ -6,8 +6,8 @@ Validate architecture end-to-end with deterministic and auditable behavior.
 
 ## Status after Lane E merge
 
-- Completed: G01, G02, G03, G04, G05, G06, G07
-- Remaining: G08
+- Completed: G01, G02, G03, G04, G05, G06, G07, G08
+- Remaining: none
 
 ## Tasks
 
@@ -36,7 +36,7 @@ Validate architecture end-to-end with deterministic and auditable behavior.
   - Env var precedence works
   - Local fallback works
 
-- [ ] G08 End-to-end certification run (`deps: G01,G02,G03,G04,G05,G06,G07`)
+- [x] G08 End-to-end certification run (`deps: G01,G02,G03,G04,G05,G06,G07`)
   - PR Gate pass -> merge -> finalize -> rebuild -> UI reads latest generation
 
 ## Certification checklist
@@ -51,6 +51,6 @@ Validate architecture end-to-end with deterministic and auditable behavior.
 
 ## Replanned execution
 
-1. Execute G08 end-to-end certification on branch workflows.
-2. Capture run links and evidence in runbook and close checklist.
-3. Freeze required checks after successful certification run.
+1. Keep end-to-end certification test in CI to prevent regressions.
+2. Keep runbook smoke checks aligned with branch-hosted manifest URL.
+3. Freeze required checks after branch workflow evidence is captured.

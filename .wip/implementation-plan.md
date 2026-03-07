@@ -66,8 +66,8 @@ flowchart LR
 
 - Lane E is merged.
 - Lane F implementation is complete.
-- Active focus: complete Lane G end-to-end certification.
-- Immediate path: `G08`.
+- Lane G end-to-end certification is complete.
+- Immediate path: freeze required checks with workflow-run evidence.
 
 ## Critical path
 

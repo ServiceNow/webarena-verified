@@ -47,6 +47,18 @@ curl -fsSL "https://raw.githubusercontent.com/<org>/<repo>/leaderboard-submissio
 curl -fsSL "https://raw.githubusercontent.com/<org>/<repo>/leaderboard-submissions/$(jq -r '.hard_file' /tmp/manifest.json)" > /tmp/hard.json
 ```
 
+## End-to-End Certification (G08)
+
+```bash
+uv run pytest tests/leaderboard/test_end_to_end_certification.py
+```
+
+This certification test exercises the control-plane chain in order:
+- PR Gate intake validation passes for a valid inbox payload.
+- Finalize promotes merged intake to canonical `submissions/<submission_id>.json` and removes inbox.
+- Rebuild publishes `leaderboard_manifest.json` and immutable generation files.
+- Manifest and generation payloads validate against canonical leaderboard schemas.
+
 ## Retry/Failure Guidance
 - Invalid canonical record shape halts rebuild with actionable error.
 - Retention pruning keeps latest 100 by `eval_completed_at_utc desc`, tie `submission_id desc`.
