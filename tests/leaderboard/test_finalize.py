@@ -53,6 +53,31 @@ def test_resolve_single_intake_id_requires_exactly_one():
         )
 
 
+def test_resolve_single_intake_id_rejects_out_of_scope_paths():
+    with pytest.raises(finalize.FinalizeError, match="Out-of-scope paths"):
+        finalize.resolve_single_intake_id(
+            [
+                "submissions/inbox/intake-1/submission.json",
+                "README.md",
+            ]
+        )
+
+
+def test_list_merged_pr_changed_files_preserves_owner_repo_path(monkeypatch):
+    captured: dict[str, str] = {}
+
+    def _fake_get(url: str, token: str):
+        captured["url"] = url
+        return []
+
+    monkeypatch.setattr(finalize, "_http_get_json", _fake_get)
+
+    result = finalize.list_merged_pr_changed_files("owner/repo", 42, "token")
+
+    assert result == []
+    assert "/repos/owner/repo/pulls/42/files" in captured["url"]
+
+
 def test_finalize_submission_writes_canonical_record_and_deletes_inbox(tmp_path: Path, monkeypatch):
     repo_root = tmp_path
     event_path = repo_root / "event.json"

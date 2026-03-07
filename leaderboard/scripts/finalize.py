@@ -153,9 +153,15 @@ def list_merged_pr_changed_files(repo: str, pr_number: int, token: str) -> list[
     file_paths: list[str] = []
     page = 1
 
-    repo_quoted = parse.quote(repo, safe="")
+    if "/" not in repo:
+        raise FinalizeError(f"Invalid GitHub repository full name: '{repo}'")
+    owner, name = repo.split("/", maxsplit=1)
+    if not owner or not name:
+        raise FinalizeError(f"Invalid GitHub repository full name: '{repo}'")
+    owner_quoted = parse.quote(owner, safe="")
+    name_quoted = parse.quote(name, safe="")
     while True:
-        url = f"https://api.github.com/repos/{repo_quoted}/pulls/{pr_number}/files?per_page=100&page={page}"
+        url = f"https://api.github.com/repos/{owner_quoted}/{name_quoted}/pulls/{pr_number}/files?per_page=100&page={page}"
         payload = _http_get_json(url, token)
         if not isinstance(payload, list):
             raise FinalizeError(f"Unexpected GitHub file-list payload for PR #{pr_number}")
@@ -176,6 +182,14 @@ def list_merged_pr_changed_files(repo: str, pr_number: int, token: str) -> list[
 
 def resolve_single_intake_id(changed_files: list[str]) -> str:
     """Resolve exactly one intake folder ID from merged PR changed paths."""
+    out_of_scope = [path for path in changed_files if not path.startswith(_INTAKE_PREFIX)]
+    if out_of_scope:
+        joined = ", ".join(sorted(out_of_scope))
+        raise FinalizeError(
+            "Merged PR must only modify intake paths under submissions/inbox/<intake_id>/. "
+            f"Out-of-scope paths: {joined}"
+        )
+
     intake_ids: set[str] = set()
     for changed in changed_files:
         if not changed.startswith(_INTAKE_PREFIX):

@@ -26,10 +26,11 @@ class LeaderboardView(StrEnum):
 class LeaderboardRow(BaseModel):
     """Single leaderboard entry row."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="forbid")
 
     rank: int = Field(ge=1)
     submission_id: int = Field(ge=1)
+    submission_timestamp: str | None = None
     name: str = Field(min_length=1)
     overall_score: OverallScore
 
@@ -52,6 +53,13 @@ class LeaderboardRow(BaseModel):
     def validate_checksum(cls, value: str) -> str:
         """Validate checksum hash format."""
         return validate_sha256_hex(value, "checksum")
+
+    @field_validator("submission_timestamp")
+    @classmethod
+    def validate_submission_timestamp(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return validate_rfc3339_utc_z(value, "submission_timestamp")
 
 
 class LeaderboardTableFile(BaseModel):

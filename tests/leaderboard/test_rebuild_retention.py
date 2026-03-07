@@ -122,3 +122,24 @@ def test_publish_from_canonical_default_generation_is_deterministic(tmp_path: Pa
     assert (tmp_path / "leaderboard_manifest.json").read_text(encoding="utf-8") == snapshot_manifest
     assert (tmp_path / manifest_one.full_file).read_text(encoding="utf-8") == snapshot_full
     assert (tmp_path / manifest_one.hard_file).read_text(encoding="utf-8") == snapshot_hard
+
+
+def test_publish_from_canonical_does_not_leak_private_canonical_fields(tmp_path: Path):
+    canonical_dir = tmp_path / "submissions"
+    canonical_dir.mkdir(parents=True)
+    payload = _canonical_record(101, eval_completed_at_utc="2026-02-07T13:00:00Z")
+    payload["contact_info"] = "submitter@example.com"
+    payload["source_repository_full_name"] = "fork-owner/private-repo"
+    (canonical_dir / "101.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    manifest = publish_from_canonical(
+        branch_root=tmp_path,
+        canonical_dir=canonical_dir,
+        staging_dir=tmp_path / "staging",
+    )
+    full_payload = json.loads((tmp_path / manifest.full_file).read_text(encoding="utf-8"))
+    row = full_payload["rows"][0]
+
+    assert "contact_info" not in row
+    assert "source_repository_full_name" not in row
+    assert row["name"] == "Team/101"

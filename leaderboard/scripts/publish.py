@@ -40,6 +40,23 @@ _REQUIRED_ROW_FIELDS = [
     "checksum",
 ]
 
+_PUBLIC_ROW_FIELDS = (
+    "name",
+    "overall_score",
+    "shopping_score",
+    "reddit_score",
+    "gitlab_score",
+    "wikipedia_score",
+    "map_score",
+    "shopping_admin_score",
+    "success_count",
+    "failure_count",
+    "error_count",
+    "missing_count",
+    "webarena_verified_version",
+    "checksum",
+)
+
 
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -253,13 +270,25 @@ def _record_timestamp(record: CanonicalSubmissionRecord, raw: dict) -> str | Non
 
 def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) -> dict:
     normalized_raw = {
-        key: value for key, value in dict(raw).items() if key not in {"rank", "submission_id", "submission_timestamp"}
+        "name": record.name,
+        "overall_score": record.overall_score,
+        "shopping_score": record.shopping_score,
+        "reddit_score": record.reddit_score,
+        "gitlab_score": record.gitlab_score,
+        "wikipedia_score": record.wikipedia_score,
+        "map_score": record.map_score,
+        "shopping_admin_score": record.shopping_admin_score,
+        "success_count": record.success_count,
+        "failure_count": record.failure_count,
+        "error_count": record.error_count,
+        "missing_count": record.missing_count,
+        "webarena_verified_version": record.evaluator_version,
+        "checksum": record.checksum,
     }
 
-    if "webarena_verified_version" not in normalized_raw:
-        normalized_raw["webarena_verified_version"] = normalized_raw.get("evaluator_version", record.evaluator_version)
-
-    missing_fields = [field for field in _REQUIRED_ROW_FIELDS if field not in normalized_raw]
+    missing_fields = [
+        field for field in _REQUIRED_ROW_FIELDS if field not in normalized_raw and field in _PUBLIC_ROW_FIELDS
+    ]
     if missing_fields:
         missing_list = ", ".join(missing_fields)
         raise ValueError(f"accepted submission '{record.submission_id}' is missing leaderboard fields: {missing_list}")

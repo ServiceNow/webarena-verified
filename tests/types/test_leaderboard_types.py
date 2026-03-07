@@ -189,12 +189,33 @@ def test_row_rejects_non_integer_submission_id(leaderboard_row_payload: dict):
         LeaderboardRow(**leaderboard_row_payload)
 
 
+def test_row_accepts_submission_timestamp(leaderboard_row_payload: dict):
+    leaderboard_row_payload["submission_timestamp"] = "2026-02-07T12:00:00Z"
+
+    row = LeaderboardRow(**leaderboard_row_payload)
+    assert row.submission_timestamp == "2026-02-07T12:00:00Z"
+
+
+def test_row_rejects_invalid_submission_timestamp(leaderboard_row_payload: dict):
+    leaderboard_row_payload["submission_timestamp"] = "2026-02-07 12:00:00"
+
+    with pytest.raises(ValidationError, match="submission_timestamp"):
+        LeaderboardRow(**leaderboard_row_payload)
+
+
+def test_row_rejects_unknown_extra_field(leaderboard_row_payload: dict):
+    leaderboard_row_payload["contact_info"] = "submitter@example.com"
+
+    with pytest.raises(ValidationError):
+        LeaderboardRow(**leaderboard_row_payload)
+
+
 def test_table_file_valid(leaderboard_row_payload: dict):
     table = LeaderboardTableFile(
         schema_version="1.0",
         generation_id="gen-abc",
         generated_at_utc="2026-02-07T12:00:00Z",
-        leaderboard="full",
+        leaderboard=LeaderboardView.FULL,
         rows=[LeaderboardRow(**leaderboard_row_payload)],
     )
     assert table.leaderboard == LeaderboardView.FULL
