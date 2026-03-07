@@ -6,11 +6,11 @@ import datetime as dt
 import json
 import logging
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from jinja2 import Template
+from pydantic import BaseModel, ConfigDict, Field
 
 from dev.leaderboard.constants import (
     SUBMISSION_PENDING_DIR_PREFIX,
@@ -28,26 +28,28 @@ class SubmissionPRValidationError(Exception):
     """Raised when submission PR validation fails."""
 
 
-@dataclass(frozen=True)
-class ChangedFile:
+class ChangedFile(BaseModel):
     """Single changed file from git diff."""
 
-    status: str
-    path: str
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    status: str = Field(min_length=1)
+    path: str = Field(min_length=1)
 
 
-@dataclass(frozen=True)
-class SubmissionPRContext:
+class SubmissionPRContext(BaseModel):
     """Input context for submission PR validation."""
 
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
     repo_root: Path
-    base_sha: str
-    head_sha: str
-    repo: str
-    actor: str
+    base_sha: str = Field(min_length=1)
+    head_sha: str = Field(min_length=1)
+    repo: str = Field(min_length=1)
+    actor: str = Field(min_length=1)
     pr_number: int
-    pr_title: str
-    github_token: str
+    pr_title: str = Field(min_length=1)
+    github_token: str = Field(min_length=1)
 
 
 def _parse_iso_utc(value: str) -> dt.datetime:

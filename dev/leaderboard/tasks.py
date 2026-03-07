@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import logging
 import shutil
 import subprocess
@@ -13,6 +14,7 @@ from invoke import task
 from dev.leaderboard import constants
 from dev.leaderboard.hf_discussion_client import HFDiscussionClient
 from dev.leaderboard.hf_submission_validator import HFSubmissionValidator
+from dev.leaderboard.pr_gate_intake_validator import PRGateValidationError, run_pr_gate_intake_validation
 from dev.leaderboard.settings import get_hf_sync_settings
 from dev.leaderboard.submission_record_repository import SubmissionRecordRepository
 from dev.leaderboard.submission_sync_orchestrator import SubmissionSyncOrchestrator
@@ -70,6 +72,34 @@ def hf_handle_pr(_ctx, hf_pr_id: int, expected_head_sha: str = "", merge_accepte
 
 def _run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=cwd, check=True, text=True, capture_output=True)
+
+
+@task(name="pr-gate-intake-validate")
+def pr_gate_intake_validate(_ctx, base_sha: str, head_sha: str, repo_root: str = ".") -> None:
+    """Validate one intake payload for PR Gate (C03-C05)."""
+    expected_version = os.environ.get("LEADERBOARD_EVALUATOR_VERSION", "").strip() or None
+    try:
+        result = run_pr_gate_intake_validation(
+            repo_root=Path(repo_root),
+            base_sha=base_sha,
+            head_sha=head_sha,
+            expected_evaluator_version=expected_version,
+        )
+    except PRGateValidationError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+    preview = result.score_preview
+    preview_json = preview.model_dump_json()
+
+    print(f"intake_id={result.intake_id}")
+    print(f"changed_files={len(result.changed_paths)}")
+    print(f"evaluator_version={preview.evaluator_version}")
+    print(f"overall_score={preview.overall_score:.6f}")
+    print(f"success_count={preview.success_count}")
+    print(f"failure_count={preview.failure_count}")
+    print(f"error_count={preview.error_count}")
+    print(f"missing_count={preview.missing_count}")
+    print(f"score_preview_json={preview_json}")
 
 
 @task(name="commit-control-plane")
