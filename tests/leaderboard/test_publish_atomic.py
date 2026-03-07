@@ -7,7 +7,6 @@ from dev.leaderboard.publish import (
     LEADERBOARD_DATA_DIR,
     LEADERBOARD_MANIFEST_FILE,
     generate_leaderboard_staging,
-    publish_from_processed,
     publish_staged_leaderboard,
 )
 
@@ -158,53 +157,3 @@ def test_generate_rejects_duplicate_submission_ids(tmp_path: Path):
             full_rows=duplicate_full_rows,
             hard_rows=[],
         )
-
-
-def test_publish_from_processed_supports_canonical_integer_records(tmp_path: Path):
-    processed_dir = tmp_path / "submissions"
-    processed_dir.mkdir(parents=True)
-    canonical_record = {
-        "submission_id": 101,
-        "github_pr_number": 101,
-        "github_pr_url": "https://github.com/owner/repo/pull/101",
-        "source_repository_id": 9,
-        "source_repository_full_name": "fork-owner/repo-fork",
-        "github_pr_author_id": 10,
-        "github_pr_author_login": "alice",
-        "eval_completed_at_utc": "2026-02-07T12:00:00Z",
-        "evaluator_version": "2.0.0",
-        "status": "accepted",
-        "hf_repo": "owner/dataset",
-        "hf_path": "submissions/101",
-        "hf_revision": "deadbeef",
-        "name": "Team/Model",
-        "leaderboard": "full",
-        "reference": "https://example.com",
-        "overall_score": 0.9,
-        "shopping_score": 0.9,
-        "reddit_score": 0.9,
-        "gitlab_score": 0.9,
-        "wikipedia_score": 0.9,
-        "map_score": 0.9,
-        "shopping_admin_score": 0.9,
-        "success_count": 10,
-        "failure_count": 0,
-        "error_count": 0,
-        "missing_count": 0,
-        "checksum": "f" * 64,
-    }
-    (processed_dir / "101.json").write_text(json.dumps(canonical_record), encoding="utf-8")
-
-    staging_dir = tmp_path / "staging"
-    manifest = publish_from_processed(
-        gh_pages_root=tmp_path / "gh-pages",
-        processed_dir=processed_dir,
-        staging_dir=staging_dir,
-        generation_id="gen-canonical",
-        generated_at_utc="2026-02-07T18:00:00Z",
-        dry_run=True,
-    )
-
-    full_table = json.loads((staging_dir / manifest.full_file).read_text(encoding="utf-8"))
-    assert full_table["rows"][0]["submission_id"] == 101
-    assert full_table["rows"][0]["webarena_verified_version"] == "2.0.0"

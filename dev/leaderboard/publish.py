@@ -41,14 +41,6 @@ _REQUIRED_ROW_FIELDS = [
 ]
 
 
-def _utc_now_z() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _default_generation_id() -> str:
-    return f"gen-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}"
-
-
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -295,52 +287,6 @@ def _select_boards(raw: dict, *, submission_id: int) -> set[str]:
     raise ValueError(
         f"accepted submission '{submission_id}' has invalid leaderboard value '{selection}', expected hard|full|both"
     )
-
-
-def _rows_from_processed_dir(processed_dir: Path) -> tuple[list[dict], list[dict]]:
-    full_rows: list[dict] = []
-    hard_rows: list[dict] = []
-
-    if not processed_dir.exists():
-        return full_rows, hard_rows
-
-    for record_path in sorted(processed_dir.glob("*.json")):
-        record, raw = _load_submission_record(record_path)
-        row = _row_from_submission_record(record, raw)
-        boards = _select_boards(raw, submission_id=row["submission_id"])
-        if "full" in boards:
-            full_rows.append(row)
-        if "hard" in boards:
-            hard_rows.append(row)
-
-    return full_rows, hard_rows
-
-
-def publish_from_processed(
-    *,
-    gh_pages_root: Path,
-    processed_dir: Path,
-    staging_dir: Path,
-    generation_id: str | None = None,
-    generated_at_utc: str | None = None,
-    dry_run: bool = False,
-) -> LeaderboardManifest:
-    """Build and publish leaderboard artifacts from processed submission records."""
-    generation_id = generation_id or _default_generation_id()
-    generated_at_utc = generated_at_utc or _utc_now_z()
-
-    full_rows, hard_rows = _rows_from_processed_dir(processed_dir)
-    manifest = generate_leaderboard_staging(
-        staging_dir=staging_dir,
-        generation_id=generation_id,
-        generated_at_utc=generated_at_utc,
-        full_rows=full_rows,
-        hard_rows=hard_rows,
-    )
-    if dry_run:
-        return manifest
-
-    return publish_staged_leaderboard(staging_dir=staging_dir, gh_pages_root=gh_pages_root)
 
 
 def _parse_utc_z_timestamp(value: str, *, field_name: str, submission_id: int | str) -> datetime:

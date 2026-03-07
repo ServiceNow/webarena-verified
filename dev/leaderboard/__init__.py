@@ -5,7 +5,6 @@ from .publish import (
     LEADERBOARD_MANIFEST_FILE,
     generate_leaderboard_staging,
     publish_from_canonical,
-    publish_from_processed,
     publish_staged_leaderboard,
     rank_rows,
 )
@@ -15,7 +14,6 @@ __all__ = [
     "LEADERBOARD_MANIFEST_FILE",
     "generate_leaderboard_staging",
     "publish_from_canonical",
-    "publish_from_processed",
     "publish_staged_leaderboard",
     "rank_rows",
 ]
