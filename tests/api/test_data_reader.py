@@ -357,6 +357,21 @@ def test_with_temp_dataset(temp_dataset_file: Path):
     assert shopping_tasks[0].task_id == 0
 
 
+def test_filter_by_sites_is_deterministic_with_temp_dataset(temp_dataset_file: Path):
+    """Verify site filtering against a synthetic dataset with exact expected counts."""
+    config = WebArenaVerifiedConfig(test_data_file=temp_dataset_file)
+    reader = WebArenaVerifiedDataReader(config)
+
+    shopping_tasks = reader.get_tasks_by_value_filter(sites=[WebArenaSite.SHOPPING])
+    map_tasks = reader.get_tasks_by_value_filter(sites=[WebArenaSite.MAP])
+    gitlab_tasks = reader.get_tasks_by_value_filter(sites=[WebArenaSite.GITLAB])
+
+    assert [task.task_id for task in shopping_tasks] == [0]
+    assert [task.task_id for task in map_tasks] == [1]
+    assert len(gitlab_tasks) == 810
+    assert {task.task_id for task in gitlab_tasks} == set(range(2, 812))
+
+
 # ============================================================================
 # Task Subset Tests
 # ============================================================================

@@ -240,6 +240,14 @@ def test_eval_tasks_explicit_ids(
     assert exit_code == 0
     # Should be called 3 times (once per task)
     assert mock_evaluator.evaluate_task.call_count == 3
+    # Contract: each evaluated task gets an eval result file
+    for task_id in task_ids:
+        eval_result_path = tmp_output_dir / str(task_id) / mock_settings.eval_result_file_name
+        assert eval_result_path.exists()
+        eval_data = json.loads(eval_result_path.read_text())
+        assert eval_data["status"] == EvalStatus.SUCCESS.value
+    # Explicit --task-ids should skip summary file creation
+    assert not (tmp_output_dir / "eval_results.json").exists()
 
 
 def test_eval_tasks_discover_all(
@@ -299,6 +307,11 @@ def test_eval_tasks_discover_all(
     assert exit_code == 0
     # Should be called for all discovered tasks
     assert mock_evaluator.evaluate_task.call_count == 3
+    # Auto-discovery run should write summary file
+    summary_path = tmp_output_dir / "eval_results.json"
+    assert summary_path.exists()
+    summary = json.loads(summary_path.read_text())
+    assert summary["summary"]["overall"]["total"] == 3
 
 
 def test_eval_tasks_dry_run(tmp_output_dir: Path, mock_settings: WebArenaVerifiedConfig, create_task_files):

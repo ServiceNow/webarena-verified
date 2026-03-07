@@ -976,6 +976,34 @@ def test_all_elements_are_alternatives(comparator):
     assert_comparison_success(result)
 
 
+def test_unordered_array_respects_duplicate_multiplicity_with_alternatives(comparator):
+    """Unordered comparison should still enforce multiplicity when alternatives overlap."""
+    expected = [
+        Number([1, 2]),
+        Number([1, 2]),
+        Number(3),
+    ]
+    actual = [
+        Number(2),
+        Number(3),
+    ]
+
+    result = comparator.compare(actual, expected, ordered=False)
+
+    assert_comparison_failure(result)
+    assert_assertion_name_matches(result, r"array_values_mismatch")
+
+
+def test_unordered_array_with_mixed_primitive_types_reports_mismatch(comparator):
+    """Type differences in unordered primitive arrays should not be treated as matches."""
+    expected = [Number(1), Number(2)]
+    actual = [NormalizedString("1"), Number(2)]
+
+    result = comparator.compare(actual, expected, ordered=False)
+
+    assert_comparison_failure(result)
+
+
 def test_unicode_in_nested_structures(comparator):
     """Test unicode characters in nested structures."""
     expected = {"user": {"name": NormalizedString("Café"), "city": NormalizedString("Zürich")}}

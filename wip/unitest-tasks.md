@@ -115,43 +115,57 @@ This document captures issues found in the current unit test suite and proposes 
 ## Tests That Need Improvement
 
 ### 17) `tests/types/test_agent_response.py` - limited to happy paths
+- **Status**: Done.
 - **Issue**: Validation and parsing checks are mostly positive-path.
 - **Why we need to fix**: Error handling and contract robustness are under-tested.
 - **Suggested fix**: Add negative cases (missing required fields, bad types, conflicting aliases) and assert error messages/types.
+- **Implemented**: Added negative-path tests for missing task type, invalid status, invalid `retrieved_data` shape, and explicit alias precedence when both `task_type` and `performed_operation` are present.
 
 ### 18) `tests/types/test_config.py` - missing stronger invariant checks
+- **Status**: Done.
 - **Issue**: Good breadth exists, but important round-trip invariants are not deeply stress-tested.
 - **Why we need to fix**: Config transformations can regress silently when only example-driven tests exist.
 - **Suggested fix**: Add property-style checks for `render_url`/`derender_url` round-trips, mixed-site cases, and malformed input boundaries.
+- **Implemented**: Added deterministic round-trip tests for `render_url -> derender_url` and `derender_url -> render_url` (including list inputs across multiple sites).
 
 ### 19) `tests/core/evaluation/test_value_comparator.py` - example-heavy, insufficient property coverage
+- **Status**: Done.
 - **Issue**: The suite is broad but relies heavily on hand-picked examples.
 - **Why we need to fix**: Complex comparators benefit from permutation/property tests to expose corner-case interactions.
 - **Suggested fix**: Add parameterized/permutation tests for unordered matching, deep nesting, circular references, and normalization toggles.
+- **Implemented**: Added deterministic edge cases for unordered arrays with overlapping alternatives + duplicate multiplicity, and mixed primitive-type mismatch behavior.
 
 ### 20) `tests/cli/test_eval_commands.py` - over-mocked command path
+- **Status**: Done.
 - **Issue**: Heavy mocking of evaluator internals reduces confidence in real CLI contracts.
 - **Why we need to fix**: Tests may pass while actual command behavior/output shape regresses.
 - **Suggested fix**: Keep unit mocks for failure branches, but add thin contract tests that assert emitted files, JSON schema shape, and exit codes.
+- **Implemented**: Strengthened eval command tests with output-contract assertions: per-task `eval_result.json` file creation and summary `eval_results.json` behavior (present for discovery mode, absent for explicit `--task-ids`).
 
 ### 21) `tests/cli/test_dataset_commands.py` - over-mocked dataset interactions
+- **Status**: Done.
 - **Issue**: Excessive mocking can bypass real serialization/filter semantics.
 - **Why we need to fix**: False confidence risk increases when production seams are not exercised.
 - **Suggested fix**: Add small deterministic temp-dataset tests that exercise real command parsing and filtering behavior.
+- **Implemented**: Added stronger CLI output-contract checks for `--fields`, including whitespace/duplicate field parsing and verification that required core fields are always present in JSON output.
 
 ### 22) `tests/types/test_eval_types.py` - test-defined serializer helpers may mask production behavior
+- **Status**: Done.
 - **Issue**: Custom helper conversion in tests can drift from production logic.
 - **Why we need to fix**: Tests may validate helper behavior rather than the real serializer.
 - **Suggested fix**: Prefer production serializer entry points and use fixture builders only for data setup, not behavior duplication.
+- **Implemented**: Added `TypedNormalizedModel` coverage that relies on production Pydantic serialization of typed `NormalizedType` fields without custom nested conversion helpers.
 
 ### 23) `tests/api/test_data_reader.py` - global dataset dependency reduces determinism
+- **Status**: Done.
 - **Issue**: Assertions rely on shared repository dataset state.
 - **Why we need to fix**: Unit tests should be isolated, reproducible, and resilient to unrelated data changes.
 - **Suggested fix**: Introduce dedicated synthetic fixtures (small curated records) and validate filtering/parsing outcomes deterministically.
+- **Implemented**: Added deterministic site-filter assertions against the synthetic `temp_dataset_file` fixture with exact task ID expectations and counts.
 
 ## Recommended Execution Order
 
 1. Fix invalid/contradictory tests first (Tasks 12-16). **Done**.
 2. Unskip high-value tests (Tasks 1-4).
 3. Remove redundancy and consolidate law tests (Tasks 5-11). **Done**.
-4. Strengthen weak suites with deterministic fixtures and edge cases (Tasks 17-23).
+4. Strengthen weak suites with deterministic fixtures and edge cases (Tasks 17-23). **Done**.

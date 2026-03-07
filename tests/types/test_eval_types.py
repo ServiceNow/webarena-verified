@@ -117,6 +117,15 @@ class ComplexNestedModel(BaseModel):
         return {"data": convert_nested(self.data)}
 
 
+class TypedNormalizedModel(BaseModel):
+    """Model using typed fields to rely on production serializers directly."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    values: list[Number]
+    labels: dict[str, NormalizedString]
+
+
 # Basic Serialization Tests
 def test_simple_normalized_types_serialize():
     """Test that NormalizedType instances serialize as direct Pydantic fields.
@@ -547,3 +556,20 @@ def test_mixed_types_in_list_serialize():
     assert data["items"][5] is True
     assert data["items"][6] == "50.0"
     assert data["items"][7]["nested"] == "value"
+
+
+def test_typed_normalized_fields_serialize_without_custom_helpers():
+    """Typed fields should serialize via NormalizedType's production serializer."""
+    model = TypedNormalizedModel(
+        values=[Number(1), Number(2.5)],
+        labels={
+            "primary": NormalizedString(" Hello "),
+            "secondary": NormalizedString("WORLD"),
+        },
+    )
+
+    json_str = model.model_dump_json()
+    data = json.loads(json_str)
+
+    assert data["values"] == [1.0, 2.5]
+    assert data["labels"] == {"primary": "hello", "secondary": "world"}

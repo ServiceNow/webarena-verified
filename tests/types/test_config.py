@@ -254,3 +254,50 @@ def test_active_url_idx_auto_initialization():
     env_empty = EnvironmentConfig(urls=[])
     assert env_empty.active_url_idx is None  # Should remain None
     assert env_empty.active_url is None
+
+
+@pytest.mark.parametrize(
+    ("template", "sites"),
+    [
+        ("__SHOPPING__/products?id=1", [WebArenaSite.SHOPPING]),
+        ("__SHOPPING_ADMIN__/orders/42", [WebArenaSite.SHOPPING_ADMIN]),
+    ],
+)
+def test_render_then_derender_round_trip(template, sites):
+    """Rendering then derendering should preserve the original template."""
+    config = WebArenaVerifiedConfig.model_validate(
+        {
+            "environments": {
+                "shopping": {"urls": ["http://localhost:7770"]},
+                "shopping_admin": {"urls": ["http://localhost:7780/admin"]},
+            }
+        }
+    )
+
+    rendered = config.render_url(template, sites=sites)
+    derendered = config.derender_url(rendered, sites=sites)
+
+    assert derendered == template
+
+
+def test_derender_then_render_round_trip_for_url_list():
+    """Derendering and rendering a list should preserve each concrete URL."""
+    config = WebArenaVerifiedConfig.model_validate(
+        {
+            "environments": {
+                "shopping": {"urls": ["http://localhost:7770"]},
+                "reddit": {"urls": ["http://localhost:9999"]},
+            }
+        }
+    )
+
+    concrete_urls = [
+        "http://localhost:7770/products",
+        "http://localhost:9999/r/python",
+    ]
+
+    templates = config.derender_url(concrete_urls, sites=[WebArenaSite.SHOPPING, WebArenaSite.REDDIT])
+    rerendered = config.render_url(templates, sites=[WebArenaSite.SHOPPING, WebArenaSite.REDDIT])
+
+    assert templates == ["__SHOPPING__/products", "__REDDIT__/r/python"]
+    assert rerendered == concrete_urls
