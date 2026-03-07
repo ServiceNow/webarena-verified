@@ -17,8 +17,10 @@ from webarena_verified.types.leaderboard import (
     LeaderboardTableFile,
 )
 
-LEADERBOARD_DATA_DIR = Path("leaderboard/data")
+# Leaderboard artifacts are published at branch root.
+LEADERBOARD_DATA_DIR = Path(".")
 LEADERBOARD_MANIFEST_FILE = "leaderboard_manifest.json"
+_EMPTY_GENERATED_AT_UTC = "1970-01-01T00:00:00Z"
 
 # Required fields for publishing a leaderboard row from a processed submission record.
 _REQUIRED_ROW_FIELDS = [
@@ -195,48 +197,51 @@ def _validate_staging_bundle(staging_dir: Path, manifest: LeaderboardManifest) -
 
 
 def publish_staged_leaderboard(*, staging_dir: Path, gh_pages_root: Path) -> LeaderboardManifest:
-    """Publish a validated staging bundle with rollback-safe atomic swap semantics."""
+    """Publish a validated staging bundle with manifest-last semantics."""
     manifest = _load_manifest(staging_dir)
     _validate_staging_bundle(staging_dir, manifest)
 
     live_dir = gh_pages_root / LEADERBOARD_DATA_DIR
-    live_parent = live_dir.parent
-    live_parent.mkdir(parents=True, exist_ok=True)
+    live_dir.mkdir(parents=True, exist_ok=True)
 
     nonce = uuid4().hex
-    replacement_dir = live_parent / f".leaderboard-data.new.{nonce}"
-    backup_dir = live_parent / f".leaderboard-data.old.{nonce}"
+    tmp_full = live_dir / f".{manifest.full_file}.tmp.{nonce}"
+    tmp_hard = live_dir / f".{manifest.hard_file}.tmp.{nonce}"
+    tmp_manifest = live_dir / f".{LEADERBOARD_MANIFEST_FILE}.tmp.{nonce}"
+
+    full_dest = live_dir / manifest.full_file
+    hard_dest = live_dir / manifest.hard_file
+    manifest_dest = live_dir / LEADERBOARD_MANIFEST_FILE
 
     try:
-        replacement_dir.mkdir(parents=True, exist_ok=False)
+        # Write generation assets first.
+        shutil.copy2(staging_dir / manifest.full_file, tmp_full)
+        shutil.copy2(staging_dir / manifest.hard_file, tmp_hard)
 
-        # Upload generation assets first.
-        shutil.copy2(staging_dir / manifest.full_file, replacement_dir / manifest.full_file)
-        shutil.copy2(staging_dir / manifest.hard_file, replacement_dir / manifest.hard_file)
-
-        if _sha256_file(replacement_dir / manifest.full_file) != manifest.full_sha256:
+        if _sha256_file(tmp_full) != manifest.full_sha256:
             raise ValueError("published full file hash mismatch")
-        if _sha256_file(replacement_dir / manifest.hard_file) != manifest.hard_sha256:
+        if _sha256_file(tmp_hard) != manifest.hard_sha256:
             raise ValueError("published hard file hash mismatch")
 
-        # Switch manifest last by writing it after both assets are present and verified.
-        (replacement_dir / LEADERBOARD_MANIFEST_FILE).write_text(
-            (staging_dir / LEADERBOARD_MANIFEST_FILE).read_text(encoding="utf-8"),
-            encoding="utf-8",
-        )
+        tmp_full.replace(full_dest)
+        tmp_hard.replace(hard_dest)
 
-        if live_dir.exists():
-            live_dir.rename(backup_dir)
-        replacement_dir.rename(live_dir)
-        if backup_dir.exists():
-            shutil.rmtree(backup_dir)
+        # Switch manifest last only after generation assets are present and verified.
+        tmp_manifest.write_text((staging_dir / LEADERBOARD_MANIFEST_FILE).read_text(encoding="utf-8"), encoding="utf-8")
+        tmp_manifest.replace(manifest_dest)
+
+        # Remove stale generation files once manifest has switched.
+        for stale_file in live_dir.glob("leaderboard_full.*.json"):
+            if stale_file.name != manifest.full_file:
+                stale_file.unlink(missing_ok=True)
+        for stale_file in live_dir.glob("leaderboard_hard.*.json"):
+            if stale_file.name != manifest.hard_file:
+                stale_file.unlink(missing_ok=True)
 
     except Exception:
-        # Never leave a failed publish with a switched manifest.
-        if not live_dir.exists() and backup_dir.exists():
-            backup_dir.rename(live_dir)
-        if replacement_dir.exists():
-            shutil.rmtree(replacement_dir)
+        # Never leave temp artifacts behind after a failed publish.
+        for temp_file in (tmp_full, tmp_hard, tmp_manifest):
+            temp_file.unlink(missing_ok=True)
         raise
 
     return manifest
@@ -333,3 +338,124 @@ def publish_from_processed(
         return manifest
 
     return publish_staged_leaderboard(staging_dir=staging_dir, gh_pages_root=gh_pages_root)
+
+
+def _parse_utc_z_timestamp(value: str, *, field_name: str, submission_id: str) -> datetime:
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as exc:
+        raise ValueError(
+            f"canonical submission '{submission_id}' has invalid {field_name}: expected RFC3339 UTC ending with 'Z'"
+        ) from exc
+    return parsed.replace(tzinfo=UTC)
+
+
+def _submission_id_as_int(submission_id: str) -> int:
+    try:
+        return int(submission_id)
+    except ValueError as exc:
+        raise ValueError(f"canonical submission_id must be numeric, got '{submission_id}'") from exc
+
+
+def _load_canonical_entries(canonical_dir: Path) -> list[tuple[Path, SubmissionRecord, dict, datetime, int]]:
+    entries: list[tuple[Path, SubmissionRecord, dict, datetime, int]] = []
+    if not canonical_dir.exists():
+        return entries
+
+    for record_path in sorted(canonical_dir.glob("*.json")):
+        record, raw = _load_submission_record(record_path)
+        if record_path.stem != record.submission_id:
+            raise ValueError(
+                f"canonical file name '{record_path.name}' does not match submission_id '{record.submission_id}'"
+            )
+        eval_completed_at_utc = raw.get("eval_completed_at_utc")
+        if not isinstance(eval_completed_at_utc, str) or not eval_completed_at_utc:
+            raise ValueError(f"canonical submission '{record.submission_id}' is missing eval_completed_at_utc")
+        eval_completed_at = _parse_utc_z_timestamp(
+            eval_completed_at_utc,
+            field_name="eval_completed_at_utc",
+            submission_id=record.submission_id,
+        )
+        entries.append((record_path, record, raw, eval_completed_at, _submission_id_as_int(record.submission_id)))
+
+    return entries
+
+
+def _deterministic_generation_id(canonical_entries: list[tuple[Path, SubmissionRecord, dict, datetime, int]]) -> str:
+    if not canonical_entries:
+        return "gen-empty"
+
+    digest = hashlib.sha256()
+    for _, _, raw, _, _ in canonical_entries:
+        canonical_json = json.dumps(raw, sort_keys=True, separators=(",", ":"))
+        digest.update(canonical_json.encode("utf-8"))
+        digest.update(b"\n")
+    return f"gen-{digest.hexdigest()[:16]}"
+
+
+def _default_generated_at_utc(canonical_entries: list[tuple[Path, SubmissionRecord, dict, datetime, int]]) -> str:
+    if not canonical_entries:
+        return _EMPTY_GENERATED_AT_UTC
+    latest = max(entry[3] for entry in canonical_entries)
+    return latest.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _rows_from_canonical_entries(
+    canonical_entries: list[tuple[Path, SubmissionRecord, dict, datetime, int]],
+) -> tuple[list[dict], list[dict]]:
+    full_rows: list[dict] = []
+    hard_rows: list[dict] = []
+
+    for _, record, raw, _, _ in canonical_entries:
+        if record.status != SubmissionStatus.ACCEPTED:
+            continue
+
+        row = _row_from_submission_record(record, raw)
+        boards = _select_boards(raw, submission_id=record.submission_id)
+        if "full" in boards:
+            full_rows.append(row)
+        if "hard" in boards:
+            hard_rows.append(row)
+
+    return full_rows, hard_rows
+
+
+def publish_from_canonical(
+    *,
+    branch_root: Path,
+    canonical_dir: Path,
+    staging_dir: Path,
+    max_canonical_records: int = 100,
+    generation_id: str | None = None,
+    generated_at_utc: str | None = None,
+    dry_run: bool = False,
+) -> LeaderboardManifest:
+    """Build and publish leaderboard artifacts from canonical submission records."""
+    if max_canonical_records < 1:
+        raise ValueError("max_canonical_records must be >= 1")
+
+    canonical_entries = _load_canonical_entries(canonical_dir)
+    canonical_entries.sort(key=lambda entry: (entry[3], entry[4]), reverse=True)
+
+    retained_entries = canonical_entries[:max_canonical_records]
+    pruned_entries = canonical_entries[max_canonical_records:]
+
+    if not dry_run:
+        for pruned_path, _, _, _, _ in pruned_entries:
+            pruned_path.unlink(missing_ok=True)
+
+    generation_id = generation_id or _deterministic_generation_id(retained_entries)
+    generated_at_utc = generated_at_utc or _default_generated_at_utc(retained_entries)
+
+    full_rows, hard_rows = _rows_from_canonical_entries(retained_entries)
+    manifest = generate_leaderboard_staging(
+        staging_dir=staging_dir,
+        generation_id=generation_id,
+        generated_at_utc=generated_at_utc,
+        full_rows=full_rows,
+        hard_rows=hard_rows,
+    )
+    if dry_run:
+        return manifest
+
+    return publish_staged_leaderboard(staging_dir=staging_dir, gh_pages_root=branch_root)
