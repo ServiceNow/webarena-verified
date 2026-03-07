@@ -237,5 +237,5 @@ def test_intake_manifest_rejects_duplicate_paths(intake_manifest_payload: dict):
 def test_intake_manifest_rejects_path_traversal(intake_manifest_payload: dict):
     intake_manifest_payload["files"][0]["path"] = "../submission.json"
 
-    with pytest.raises(ValidationError, match="must not contain '..'"):
+    with pytest.raises(ValidationError, match=r"must not contain '\.\.'"):
         IntakeManifest(**intake_manifest_payload)
