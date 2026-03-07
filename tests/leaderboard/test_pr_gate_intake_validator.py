@@ -91,10 +91,13 @@ def test_select_single_intake_rejects_multiple_intake_ids():
 def test_validate_intake_tree_accepts_valid_payload(tmp_path: Path):
     intake_root = _create_valid_intake(tmp_path)
 
-    submission, manifest = validator.validate_intake_tree(intake_root)
+    submission, manifest, task_summary = validator.validate_intake_tree(intake_root)
 
     assert submission.leaderboard == "both"
     assert len(manifest.files) == 3
+    assert task_summary.total_tasks == 1
+    assert task_summary.artifact_tasks == 1
+    assert task_summary.missing_tasks == 0
 
 
 def test_validate_intake_tree_rejects_manifest_sha_mismatch(tmp_path: Path):
@@ -133,3 +136,27 @@ def test_run_pr_gate_intake_validation_uses_git_diff_selection(monkeypatch, tmp_
 
     assert result.intake_id == "intake-xyz"
     assert len(result.changed_paths) == 3
+    assert result.score_preview.success_count == 1
+    assert result.score_preview.missing_count == 0
+
+
+def test_run_pr_gate_intake_validation_rejects_evaluator_version_mismatch(monkeypatch, tmp_path: Path):
+    _create_valid_intake(tmp_path, intake_id="intake-xyz")
+
+    monkeypatch.setattr(
+        validator,
+        "_run_git_diff_paths",
+        lambda **_: [
+            "submissions/inbox/intake-xyz/submission.json",
+            "submissions/inbox/intake-xyz/manifest.json",
+            "submissions/inbox/intake-xyz/tasks/1/agent_response.json",
+        ],
+    )
+
+    with pytest.raises(validator.PRGateValidationError, match="C06_EVALUATOR_VERSION_MISMATCH"):
+        validator.run_pr_gate_intake_validation(
+            tmp_path,
+            base_sha="abc",
+            head_sha="def",
+            expected_evaluator_version="0.0.0",
+        )
