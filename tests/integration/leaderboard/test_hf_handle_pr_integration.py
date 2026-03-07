@@ -7,8 +7,9 @@ import re
 import tarfile
 import time
 import uuid
+from contextlib import suppress
 from datetime import UTC, datetime
-from pathlib import Path
+from typing import TYPE_CHECKING, TypedDict
 
 import pytest
 from huggingface_hub import HfApi
@@ -20,6 +21,15 @@ from dev.leaderboard.models import SubmissionStatus
 from dev.leaderboard.utils.hf_sync import STATUS_COMMENT_MARKER, run_hf_single_pr
 
 HF_TEST_REPO = "AmineHA/Webarena-Verified-Submissions-dev"
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
+
+
+class HandlePrFixture(TypedDict):
+    pr_id: int
+    submission_id: str
 
 
 def _now_utc_z() -> str:
@@ -65,7 +75,7 @@ def hf_api(hf_token: str) -> HfApi:
 
 
 @pytest.fixture
-def setup_handle_pr_fixture(hf_api: HfApi, hf_token: str):
+def setup_handle_pr_fixture(hf_api: HfApi, hf_token: str) -> Generator[HandlePrFixture, None, None]:
     nonce = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
     bootstrap_path = f"smoke-tests/{nonce}/bootstrap.txt"
     created_pr_id: int | None = None
@@ -156,7 +166,7 @@ def setup_handle_pr_fixture(hf_api: HfApi, hf_token: str):
         }
     finally:
         if created_pr_id is not None:
-            try:
+            with suppress(Exception):
                 hf_api.change_discussion_status(
                     repo_id=HF_TEST_REPO,
                     discussion_num=created_pr_id,
@@ -165,9 +175,6 @@ def setup_handle_pr_fixture(hf_api: HfApi, hf_token: str):
                     token=hf_token,
                     comment="integration test cleanup",
                 )
-            except Exception:
-                # Already merged/closed is fine for cleanup.
-                pass
 
         for path in local_record_paths:
             if path.exists():
@@ -175,9 +182,9 @@ def setup_handle_pr_fixture(hf_api: HfApi, hf_token: str):
 
 
 @pytest.mark.integration_hf
-def test_hf_handle_pr_merges_valid_submission(hf_api: HfApi, setup_handle_pr_fixture: dict[str, object]):
-    pr_id = int(setup_handle_pr_fixture["pr_id"])
-    submission_id = str(setup_handle_pr_fixture["submission_id"])
+def test_hf_handle_pr_merges_valid_submission(hf_api: HfApi, setup_handle_pr_fixture: HandlePrFixture):
+    pr_id = setup_handle_pr_fixture["pr_id"]
+    submission_id = setup_handle_pr_fixture["submission_id"]
 
     run_hf_single_pr(hf_pr_id=pr_id, merge_accepted=True)
 

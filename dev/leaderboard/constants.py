@@ -33,6 +33,11 @@ HF_SUBMISSION_DISCUSSION_TITLE_PREFIX = "Leaderboard Submission: "
 HF_REPO_TYPE_DATASET = "dataset"
 HF_SUBMISSION_TITLE_PATTERN = re.compile(rf"^{re.escape(HF_SUBMISSION_DISCUSSION_TITLE_PREFIX)}.+$")
 
+# Backward-compatible aliases for submission PR validation helpers.
+SUBMISSION_PR_TITLE_PREFIX = HF_SUBMISSION_DISCUSSION_TITLE_PREFIX
+SUBMISSION_PENDING_DIR_PREFIX = "leaderboard/data/submissions/pending/"
+SUBMISSION_PR_FAILURE_TEMPLATE_FILE = "submission_pr_validation_failed.md.jinja2"
+
 # Root directory for submission control-plane records.
 LEADERBOARD_SUBMISSIONS_ROOT = Path("leaderboard/data/submissions")
 

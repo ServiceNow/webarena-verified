@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 import uuid
-import re
+from typing import TYPE_CHECKING
 
 import pytest
 from huggingface_hub import HfApi
@@ -11,6 +12,9 @@ from huggingface_hub.errors import HfHubHTTPError
 
 from dev.leaderboard.constants import HF_SUBMISSION_DISCUSSION_TITLE_PREFIX
 from dev.leaderboard.utils.hf_sync import discover_submission_prs
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 HF_DISCOVER_TEST_REPO = "AmineHA/Webarena-Verified-Submissions-dev"
 
@@ -29,7 +33,7 @@ def hf_api(hf_token: str) -> HfApi:
 
 
 @pytest.fixture
-def setup_test_prs(hf_api: HfApi, hf_token: str) -> dict[str, int]:
+def setup_test_prs(hf_api: HfApi, hf_token: str) -> Generator[dict[str, int], None, None]:  # noqa: C901
     nonce = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
     matching_open_title = f"{HF_SUBMISSION_DISCUSSION_TITLE_PREFIX}discover-it-open-{nonce}"
     non_matching_closed_title = f"Not a submission discover-it-closed-{nonce}"

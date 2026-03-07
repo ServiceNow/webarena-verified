@@ -57,7 +57,9 @@ def _valid_payload_archive_bytes() -> bytes:
 def test_validate_hf_payload_rejects_metadata_submission_id_mismatch(monkeypatch):
     record = _record()
 
-    def fake_download_required_payload_files(record: SubmissionRecord, artifacts, token: str | None = None) -> dict[str, bytes]:
+    def fake_download_required_payload_files(
+        record: SubmissionRecord, artifacts, token: str | None = None
+    ) -> dict[str, bytes]:
         del record, token
         return {
             artifacts.archive_file: _valid_payload_archive_bytes(),

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import dev.leaderboard.utils.hf_sync as hf_sync
+from dev.leaderboard.utils import hf_sync
 
 
 def test_discover_submission_prs_returns_structured_data(monkeypatch):

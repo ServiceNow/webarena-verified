@@ -371,3 +371,8 @@ def validate_hf_payload(record: SubmissionRecord, token: str | None = None) -> N
 def validate_hf_submission_record(record: SubmissionRecord, token: str | None = None) -> None:
     """Backward-compatible wrapper for full submission validation."""
     HFSubmissionValidator(token=token).validate_submission_record(record)
+
+
+def _validate_task_dir(task_dir: Path) -> None:
+    """Backward-compatible module helper for task directory checks."""
+    HFSubmissionValidator()._validate_task_dir(task_dir)
