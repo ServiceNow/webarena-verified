@@ -1,0 +1,120 @@
+name: Leaderboard PR Gate
+
+on:
+  pull_request:
+    branches:
+      - leaderboard-submissions
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    paths:
+      - "submissions/inbox/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leaderboard-pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-gate:
+    name: Leaderboard PR Gate
+    runs-on: ubuntu-latest
+    env:
+      LEADERBOARD_EVALUATOR_VERSION: "1.2.3"
+    steps:
+      - name: Checkout PR head (read-only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+
+      - name: Validate intake contract, invariants, and score preview
+        id: gate
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+
+          set +e
+          GATE_OUTPUT="$(uv run inv dev.leaderboard.pr-gate-intake-validate \
+            --base-sha "${{ github.event.pull_request.base.sha }}" \
+            --head-sha "${{ github.event.pull_request.head.sha }}" 2>&1)"
+          GATE_EXIT=$?
+          set -e
+
+          printf '%s\n' "$GATE_OUTPUT"
+
+          echo "gate_exit_code=$GATE_EXIT" >> "$GITHUB_OUTPUT"
+          {
+            echo "gate_output<<EOF"
+            printf '%s\n' "$GATE_OUTPUT"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$GATE_EXIT" -eq 0 ]; then
+            INTAKE_ID="$(printf '%s\n' "$GATE_OUTPUT" | sed -n 's/^intake_id=//p' | tail -n 1)"
+            CHANGED_FILES="$(printf '%s\n' "$GATE_OUTPUT" | sed -n 's/^changed_files=//p' | tail -n 1)"
+            EVALUATOR_VERSION="$(printf '%s\n' "$GATE_OUTPUT" | sed -n 's/^evaluator_version=//p' | tail -n 1)"
+            OVERALL_SCORE="$(printf '%s\n' "$GATE_OUTPUT" | sed -n 's/^overall_score=//p' | tail -n 1)"
+            SUCCESS_COUNT="$(printf '%s\n' "$GATE_OUTPUT" | sed -n 's/^success_count=//p' | tail -n 1)"
+            FAILURE_COUNT="$(printf '%s\n' "$GATE_OUTPUT" | sed -n 's/^failure_count=//p' | tail -n 1)"
+            ERROR_COUNT="$(printf '%s\n' "$GATE_OUTPUT" | sed -n 's/^error_count=//p' | tail -n 1)"
+            MISSING_COUNT="$(printf '%s\n' "$GATE_OUTPUT" | sed -n 's/^missing_count=//p' | tail -n 1)"
+
+            echo "intake_id=$INTAKE_ID" >> "$GITHUB_OUTPUT"
+            echo "changed_files=$CHANGED_FILES" >> "$GITHUB_OUTPUT"
+            echo "evaluator_version=$EVALUATOR_VERSION" >> "$GITHUB_OUTPUT"
+            echo "overall_score=$OVERALL_SCORE" >> "$GITHUB_OUTPUT"
+            echo "success_count=$SUCCESS_COUNT" >> "$GITHUB_OUTPUT"
+            echo "failure_count=$FAILURE_COUNT" >> "$GITHUB_OUTPUT"
+            echo "error_count=$ERROR_COUNT" >> "$GITHUB_OUTPUT"
+            echo "missing_count=$MISSING_COUNT" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish gate summary
+        if: always()
+        run: |
+          {
+            echo "## Leaderboard PR Gate"
+            echo ""
+            echo "- Trigger: pull_request on \\`leaderboard-submissions\\` with path filter \\`submissions/inbox/**\\`."
+            echo "- Permissions: \\`contents: read\\` only."
+            echo "- Checkout credentials persistence: \\`false\\` (no push token)."
+            echo "- Evaluator version pin (prefix): \\`${LEADERBOARD_EVALUATOR_VERSION}\\`."
+            if [ "${{ steps.gate.outputs.gate_exit_code }}" = "0" ]; then
+              echo ""
+              echo "### Score Preview"
+              echo "- Intake ID: \\`${{ steps.gate.outputs.intake_id }}\\`"
+              echo "- Changed files: \\`${{ steps.gate.outputs.changed_files }}\\`"
+              echo "- Evaluator version: \\`${{ steps.gate.outputs.evaluator_version }}\\`"
+              echo "- Overall score: \\`${{ steps.gate.outputs.overall_score }}\\`"
+              echo "- success_count: \\`${{ steps.gate.outputs.success_count }}\\`"
+              echo "- failure_count: \\`${{ steps.gate.outputs.failure_count }}\\`"
+              echo "- error_count: \\`${{ steps.gate.outputs.error_count }}\\`"
+              echo "- missing_count: \\`${{ steps.gate.outputs.missing_count }}\\`"
+            else
+              echo ""
+              echo "### Validation Failure"
+              echo "- Gate exited with code: \\`${{ steps.gate.outputs.gate_exit_code }}\\`"
+              echo ""
+              echo "```text"
+              printf '%s\n' "${{ steps.gate.outputs.gate_output }}"
+              echo "```"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce gate result
+        if: always()
+        run: |
+          if [ "${{ steps.gate.outputs.gate_exit_code }}" != "0" ]; then
+            echo "PR Gate failed"
+            exit 1
+          fi

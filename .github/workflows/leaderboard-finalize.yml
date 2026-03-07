@@ -1,0 +1,79 @@
+name: Leaderboard Finalize
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - leaderboard-submissions
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    name: Finalize merged leaderboard submission
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: leaderboard-finalize-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout leaderboard-submissions
+        uses: actions/checkout@v4
+        with:
+          ref: leaderboard-submissions
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+          configure-git-identity: "true"
+
+      - name: Resolve finalize settings
+        id: cfg
+        run: |
+          set -euo pipefail
+          HF_REPO="${{ vars.LEADERBOARD_HF_REPO }}"
+          if [ -z "$HF_REPO" ]; then
+            echo "Missing repository variable LEADERBOARD_HF_REPO"
+            exit 1
+          fi
+
+          EVALUATOR_VERSION="${{ vars.LEADERBOARD_EVALUATOR_VERSION }}"
+
+          echo "hf_repo=$HF_REPO" >> "$GITHUB_OUTPUT"
+          echo "evaluator_version=$EVALUATOR_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Run finalize processor
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          uv run inv dev.leaderboard.finalize \
+            --event-path "$GITHUB_EVENT_PATH" \
+            --github-repo "${{ github.repository }}" \
+            --hf-repo "${{ steps.cfg.outputs.hf_repo }}" \
+            --github-token "$GITHUB_TOKEN" \
+            --hf-token "$HF_TOKEN" \
+            --evaluator-version "${{ steps.cfg.outputs.evaluator_version }}"
+
+      - name: Commit and push finalized state
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- submissions; then
+            echo "No submission changes detected after finalize"
+            exit 0
+          fi
+          git add submissions
+          git commit -m "Finalize leaderboard submission #${{ github.event.pull_request.number }}"
+          git push origin HEAD:leaderboard-submissions
+
+      - name: Finalize summary
+        run: |
+          echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "submission_id=${{ github.event.pull_request.number }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "hf_repo=${{ steps.cfg.outputs.hf_repo }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "handoff=push trigger on submissions/*.json" >> "$GITHUB_STEP_SUMMARY"

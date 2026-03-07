@@ -1,6 +1,7 @@
 """Submission intake contracts for leaderboard-submissions."""
 
-from typing import Annotated, Literal
+from enum import StrEnum
+from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
@@ -21,6 +22,14 @@ ManifestPath = Annotated[str, Field(min_length=1), AfterValidator(validate_manif
 ManifestSha256 = Annotated[str, AfterValidator(validate_manifest_sha256)]
 
 
+class SubmissionLeaderboard(StrEnum):
+    """Allowed leaderboard targets for intake and canonical records."""
+
+    HARD = "hard"
+    FULL = "full"
+    BOTH = "both"
+
+
 class IntakePackagingSummary(BaseModel):
     """Packaging summary embedded in submission.json."""
 
@@ -39,7 +48,7 @@ class IntakeSubmission(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Name
-    leaderboard: Literal["hard", "full", "both"]
+    leaderboard: SubmissionLeaderboard
     reference: ReferenceURL
     created_at_utc: CreatedAtUTC
     packaging_summary: IntakePackagingSummary

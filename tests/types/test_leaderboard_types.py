@@ -8,6 +8,8 @@ from webarena_verified.types.leaderboard import (
     LeaderboardManifest,
     LeaderboardRow,
     LeaderboardTableFile,
+    LeaderboardView,
+    SubmissionLeaderboard,
 )
 
 
@@ -193,12 +195,13 @@ def test_table_file_valid(leaderboard_row_payload: dict):
         leaderboard="full",
         rows=[LeaderboardRow(**leaderboard_row_payload)],
     )
-    assert table.leaderboard == "full"
+    assert table.leaderboard == LeaderboardView.FULL
 
 
 def test_intake_submission_valid(intake_submission_payload: dict):
     intake = IntakeSubmission(**intake_submission_payload)
     assert intake.packaging_summary.tasks_packaged == 100
+    assert intake.leaderboard == SubmissionLeaderboard.BOTH
 
 
 def test_intake_submission_rejects_unknown_field(intake_submission_payload: dict):
@@ -234,5 +237,5 @@ def test_intake_manifest_rejects_duplicate_paths(intake_manifest_payload: dict):
 def test_intake_manifest_rejects_path_traversal(intake_manifest_payload: dict):
     intake_manifest_payload["files"][0]["path"] = "../submission.json"
 
-    with pytest.raises(ValidationError, match="must not contain '..'"):
+    with pytest.raises(ValidationError, match=r"must not contain '\.\.'"):
         IntakeManifest(**intake_manifest_payload)

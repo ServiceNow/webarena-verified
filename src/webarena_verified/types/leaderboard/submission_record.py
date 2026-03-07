@@ -1,7 +1,5 @@
 """Canonical leaderboard submission record types."""
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ._validators import (
@@ -11,6 +9,7 @@ from ._validators import (
     validate_model_name,
     validate_reference_url,
 )
+from .submission_payload import SubmissionLeaderboard
 
 
 class CanonicalSubmissionRecord(BaseModel):
@@ -34,7 +33,7 @@ class CanonicalSubmissionRecord(BaseModel):
     huggingface_dataset_revision: str = Field(min_length=1)
 
     name: str = Field(min_length=1)
-    leaderboard: Literal["hard", "full", "both"]
+    leaderboard: SubmissionLeaderboard
     reference: str = Field(min_length=1)
     model_version: str | None = None
     contact_info: str | None = None
