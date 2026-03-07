@@ -51,19 +51,14 @@ def hf_ingest(
     _ctx,
     event_path: str,
     hf_repo: str,
-    github_repo: str = "",
     hf_token: str = "",
     evaluator_version: str = "",
 ) -> None:
-    github_repo = github_repo or os.environ.get("GITHUB_REPOSITORY", "")
     hf_token = hf_token or os.environ.get("HF_TOKEN", "")
-    if not github_repo:
-        raise RuntimeError("github_repo is required (arg or GITHUB_REPOSITORY)")
 
     result = ingest_hf_submission(
         repo_root=Path.cwd(),
         event_path=Path(event_path),
-        github_repo=github_repo,
         hf_repo_canonical=hf_repo,
         hf_token=hf_token,
         evaluator_version=evaluator_version,

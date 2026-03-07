@@ -42,7 +42,6 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_REPO: ${{ steps.cfg.outputs.hf_repo }}
-          GH_REPO: ${{ github.repository }}
           EVALUATOR_VERSION: ${{ steps.cfg.outputs.evaluator_version }}
         run: |
           set -euo pipefail
@@ -54,7 +53,6 @@ jobs:
           from huggingface_hub import HfApi
 
           hf_repo = os.environ["HF_REPO"]
-          gh_repo = os.environ["GH_REPO"]
           evaluator_version = os.environ.get("EVALUATOR_VERSION", "")
           hf_token = os.environ.get("HF_TOKEN", "")
 
@@ -111,8 +109,6 @@ jobs:
                       str(event_path),
                       "--hf-repo",
                       hf_repo,
-                      "--github-repo",
-                      gh_repo,
                       "--hf-token",
                       hf_token,
                       "--evaluator-version",

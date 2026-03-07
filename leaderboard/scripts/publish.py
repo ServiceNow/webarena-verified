@@ -223,14 +223,7 @@ def _load_submission_record(record_path: Path) -> tuple[CanonicalSubmissionRecor
     return CanonicalSubmissionRecord.model_validate(raw), raw
 
 
-def _record_timestamp(record: CanonicalSubmissionRecord, raw: dict) -> str | None:
-    """Resolve timestamp attached to exported leaderboard rows."""
-    if raw.get("submission_timestamp"):
-        return raw["submission_timestamp"]
-    return record.eval_completed_at_utc
-
-
-def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) -> dict:
+def _row_from_submission_record(record: CanonicalSubmissionRecord) -> dict:
     normalized_raw = {
         "name": record.name,
         "overall_score": record.overall_score,
@@ -248,22 +241,17 @@ def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) ->
         "checksum": record.checksum,
     }
 
-    submission_id = _coerce_submission_id(
-        raw.get("submission_id", record.submission_id),
-        context=f"accepted submission '{record.submission_id}'",
-    )
-
     validated = LeaderboardRow(
         rank=1,
-        submission_id=submission_id,
-        submission_timestamp=_record_timestamp(record, raw),
+        submission_id=record.submission_id,
+        submission_timestamp=record.eval_completed_at_utc,
         **normalized_raw,
     )
     return validated.model_dump(mode="python")
 
 
-def _select_boards(raw: dict, *, submission_id: int) -> set[str]:
-    selection = raw.get("leaderboard", "both")
+def _select_boards(record: CanonicalSubmissionRecord, *, submission_id: int) -> set[str]:
+    selection = record.leaderboard.value
     if selection == "both":
         return {"full", "hard"}
     if selection in {"full", "hard"}:
@@ -283,13 +271,6 @@ def _parse_utc_z_timestamp(value: str, *, field_name: str, submission_id: int | 
     return parsed.replace(tzinfo=UTC)
 
 
-def _submission_id_as_int(submission_id: int | str) -> int:
-    try:
-        return int(submission_id)
-    except ValueError as exc:
-        raise ValueError(f"canonical submission_id must be numeric, got '{submission_id}'") from exc
-
-
 def _load_canonical_entries(canonical_dir: Path) -> list[tuple[Path, CanonicalSubmissionRecord, dict, datetime, int]]:
     entries: list[tuple[Path, CanonicalSubmissionRecord, dict, datetime, int]] = []
     if not canonical_dir.exists():
@@ -301,15 +282,20 @@ def _load_canonical_entries(canonical_dir: Path) -> list[tuple[Path, CanonicalSu
             raise ValueError(
                 f"canonical file name '{record_path.name}' does not match submission_id '{record.submission_id}'"
             )
-        eval_completed_at_utc = raw.get("eval_completed_at_utc")
-        if not isinstance(eval_completed_at_utc, str) or not eval_completed_at_utc:
-            raise ValueError(f"canonical submission '{record.submission_id}' is missing eval_completed_at_utc")
         eval_completed_at = _parse_utc_z_timestamp(
-            eval_completed_at_utc,
+            record.eval_completed_at_utc,
             field_name="eval_completed_at_utc",
             submission_id=record.submission_id,
         )
-        entries.append((record_path, record, raw, eval_completed_at, _submission_id_as_int(record.submission_id)))
+        entries.append(
+            (
+                record_path,
+                record,
+                raw,
+                eval_completed_at,
+                _coerce_submission_id(record.submission_id, context="canonical submission_id"),
+            )
+        )
 
     return entries
 
@@ -344,8 +330,8 @@ def _rows_from_canonical_entries(
     hard_rows: list[dict] = []
 
     for _, record, raw, _, _ in canonical_entries:
-        row = _row_from_submission_record(record, raw)
-        boards = _select_boards(raw, submission_id=record.submission_id)
+        row = _row_from_submission_record(record)
+        boards = _select_boards(record, submission_id=record.submission_id)
         if "full" in boards:
             full_rows.append(row)
         if "hard" in boards:
