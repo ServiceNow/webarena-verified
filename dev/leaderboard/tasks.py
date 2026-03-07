@@ -16,6 +16,7 @@ from dev.leaderboard.finalize import finalize_submission
 from dev.leaderboard.hf_discussion_client import HFDiscussionClient
 from dev.leaderboard.hf_submission_validator import HFSubmissionValidator
 from dev.leaderboard.pr_gate_intake_validator import PRGateValidationError, run_pr_gate_intake_validation
+from dev.leaderboard.publish import publish_from_canonical
 from dev.leaderboard.settings import get_hf_sync_settings
 from dev.leaderboard.submission_record_repository import SubmissionRecordRepository
 from dev.leaderboard.submission_sync_orchestrator import SubmissionSyncOrchestrator
@@ -200,6 +201,41 @@ def publish_from_processed(
     _run(["git", "commit", "-m", message], cwd=worktree)
     _run(["git", "push", "origin", "HEAD:gh-pages"], cwd=worktree)
     LOGGER.info("Published submissions.json to gh-pages")
+
+
+@task(name="rebuild-canonical")
+def rebuild_canonical(
+    _ctx,
+    repo_root: str = ".",
+    canonical_dir: str = "submissions",
+    staging_dir: str = ".tmp/leaderboard-staging",
+    max_canonical_records: int = 100,
+    generation_id: str = "",
+    generated_at_utc: str = "",
+    dry_run: bool = False,
+) -> None:
+    """Rebuild leaderboard artifacts from canonical submission records."""
+    root = Path(repo_root)
+    canonical_root = root / canonical_dir
+    canonical_before = len(list(canonical_root.glob("*.json"))) if canonical_root.exists() else 0
+
+    manifest = publish_from_canonical(
+        branch_root=root,
+        canonical_dir=canonical_root,
+        staging_dir=root / staging_dir,
+        max_canonical_records=max_canonical_records,
+        generation_id=generation_id or None,
+        generated_at_utc=generated_at_utc or None,
+        dry_run=dry_run,
+    )
+
+    canonical_after = len(list(canonical_root.glob("*.json"))) if canonical_root.exists() else 0
+    print(f"generation_id={manifest.generation_id}")
+    print(f"full_file={manifest.full_file}")
+    print(f"hard_file={manifest.hard_file}")
+    print(f"canonical_count_before={canonical_before}")
+    print(f"canonical_count_after={canonical_after}")
+    print(f"dry_run={str(dry_run).lower()}")
 
 
 @task(name="write-sync-summary")

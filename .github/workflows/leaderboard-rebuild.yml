@@ -1,0 +1,103 @@
+name: Leaderboard Rebuild
+
+on:
+  workflow_run:
+    workflows:
+      - Leaderboard Finalize
+    types:
+      - completed
+    branches:
+      - leaderboard-submissions
+  workflow_dispatch:
+    inputs:
+      max_canonical_records:
+        description: "Retention size for canonical records"
+        required: false
+        default: "100"
+      generation_id:
+        description: "Optional generation id override"
+        required: false
+        default: ""
+      generated_at_utc:
+        description: "Optional RFC3339 UTC timestamp override"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: leaderboard-data-writer
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    name: Rebuild canonical leaderboard artifacts
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TARGET_BRANCH }}
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+          configure-git-identity: "true"
+
+      - name: Rebuild leaderboard artifacts from canonical records
+        id: rebuild
+        run: |
+          set -euo pipefail
+
+          MAX_RECORDS="${{ github.event.inputs.max_canonical_records || '100' }}"
+          GENERATION_ID="${{ github.event.inputs.generation_id }}"
+          GENERATED_AT_UTC="${{ github.event.inputs.generated_at_utc }}"
+
+          uv run inv dev.leaderboard.rebuild-canonical \
+            --repo-root "." \
+            --canonical-dir "submissions" \
+            --staging-dir ".tmp/leaderboard-staging" \
+            --max-canonical-records "$MAX_RECORDS" \
+            --generation-id "$GENERATION_ID" \
+            --generated-at-utc "$GENERATED_AT_UTC"
+
+      - name: Commit and push branch updates
+        id: commit
+        run: |
+          set -euo pipefail
+
+          git add -A submissions leaderboard_manifest.json
+
+          shopt -s nullglob
+          generation_files=(leaderboard_full.*.json leaderboard_hard.*.json)
+          if [ "${#generation_files[@]}" -gt 0 ]; then
+            git add -A "${generation_files[@]}"
+          fi
+
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No leaderboard changes to commit"
+            exit 0
+          fi
+
+          GENERATION_ID="$(jq -r '.generation_id' leaderboard_manifest.json)"
+          git commit -m "Rebuild leaderboard generation ${GENERATION_ID}"
+          git push origin HEAD:"${TARGET_BRANCH}"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "generation_id=$GENERATION_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild summary
+        run: |
+          {
+            echo "target_branch=${TARGET_BRANCH}"
+            echo "changed=${{ steps.commit.outputs.changed || 'false' }}"
+            echo "generation_id=${{ steps.commit.outputs.generation_id || 'n/a' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
