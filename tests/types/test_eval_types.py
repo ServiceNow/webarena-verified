@@ -91,6 +91,29 @@ class NestedListModel(BaseModel):
         return {"items": convert_nested(self.items)}
 
 
+class NestedTupleModel(BaseModel):
+    """Model with NormalizedTypes nested in tuples."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    items: tuple
+
+    @model_serializer
+    def _serialize(self) -> dict[str, Any]:
+        """Custom serializer to handle nested NormalizedTypes."""
+
+        def convert_nested(obj: Any) -> Any:
+            if isinstance(obj, (MappingProxyType, dict)):
+                return {k: convert_nested(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [convert_nested(item) for item in obj]
+            if isinstance(obj, NormalizedType):
+                return obj.normalized
+            return obj
+
+        return {"items": convert_nested(self.items)}
+
+
 class ComplexNestedModel(BaseModel):
     """Model with deeply nested NormalizedTypes.
 
@@ -353,7 +376,7 @@ def test_tuple_with_normalized_types_serializes():
     Scenario: Create model with tuple containing NormalizedType instances
     Expected: Tuple items serialize to normalized values (as list in JSON)
     """
-    model = NestedListModel(
+    model = NestedTupleModel(
         items=(
             Number(1),
             Number(2),
