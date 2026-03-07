@@ -1,9 +1,9 @@
 # Leaderboard Site
 
-Astro static site. Package manager: **pnpm**.
+Astro static site. Package manager: **npm**.
 
 ```bash
-pnpm install | pnpm dev | pnpm build | pnpm test | pnpm lint
+npm ci | npm run dev | npm run build | npm test | npm run lint
 ```
 
 ## Local Data
