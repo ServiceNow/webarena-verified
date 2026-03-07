@@ -4,15 +4,47 @@ This document explains how the leaderboard system is structured, which component
 
 ## Architecture at a glance
 
-The system is split into three workflow stages on `leaderboard-submissions`:
+Main components:
 
-1. PR Gate (`pull_request`): validate intake payload and compute score preview (read-only).
-2. Finalize (post-merge): canonicalize accepted submission and persist canonical record.
-3. Rebuild (single writer): regenerate leaderboard artifacts and switch manifest atomically.
+1. User or contributor submits a PR with intake files.
+2. `leaderboard-submissions` branch receives submission PRs under `submissions/inbox/<intake_id>/...`.
+3. CI workflows (`PR Gate`, `Finalize`, `Rebuild`) validate, canonicalize, and publish leaderboard data.
+4. Hugging Face dataset stores canonical payload artifacts at `submissions/<submission_id>/`.
+5. Leaderboard dashboard reads `leaderboard_manifest.json` and generation files.
 
-The UI reads `leaderboard_manifest.json`, then fetches immutable generation files referenced by the manifest.
+### Why PR-based intake?
 
-## Flow diagram
+PRs make the process transparent and easy to track:
+
+- review and approval happen before acceptance
+- every submission has an auditable change history and discussion thread
+- CI feedback is attached directly to the submission event
+- canonical identity is deterministic and traceable (`submission_id = pr_number`)
+
+### Why Hugging Face dataset storage?
+
+Canonical payload artifacts are stored in Hugging Face to keep this repository lightweight.
+This avoids repository bloat from large submission payloads, reduces clone/fetch overhead, and helps avoid disk/storage pressure in git history.
+
+### High-level flow
+
+```mermaid
+flowchart LR
+    U[User or Contributor]
+    PR[PR to leaderboard-submissions<br/>submissions/inbox/<intake_id>/...]
+    CI[CI Workflows<br/>PR Gate -> Finalize -> Rebuild]
+    HF[Hugging Face Dataset<br/>canonical payload storage]
+    DATA[Leaderboard Data<br/>manifest + generation files]
+    UI[Leaderboard Dashboard]
+
+    U --> PR
+    PR --> CI
+    CI --> HF
+    CI --> DATA
+    DATA --> UI
+```
+
+## Detailed flow diagram
 
 ```mermaid
 sequenceDiagram
