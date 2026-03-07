@@ -9,11 +9,10 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from dev.leaderboard.constants import TASK_AGENT_RESPONSE_FILE, TASK_MISSING_SENTINEL_FILE, TASK_NETWORK_HAR_FILE
-from webarena_verified.types.leaderboard import SubmissionLeaderboard
-from webarena_verified.types.leaderboard._validators import validate_rfc3339_utc_z, validate_sha256_hex
+from webarena_verified.types.leaderboard import IntakeManifest, IntakeManifestFile, IntakeSubmission
 
 INBOX_PREFIX = "submissions/inbox/"
 
@@ -24,70 +23,6 @@ class PRGateValidationError(Exception):
 
 def _fail(code: str, message: str) -> None:
     raise PRGateValidationError(f"[{code}] {message}")
-
-
-class IntakeSubmission(BaseModel):
-    """Intake payload contract for submission.json."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    name: str = Field(min_length=1)
-    leaderboard: SubmissionLeaderboard
-    reference: str = Field(min_length=1)
-    created_at_utc: str
-    packaging_summary: dict[str, Any]
-    version: str | None = None
-    contact_info: str | None = None
-
-    @field_validator("reference")
-    @classmethod
-    def validate_reference(cls, value: str) -> str:
-        if not value.startswith(("http://", "https://")):
-            raise ValueError("reference must be an http(s) URL")
-        return value
-
-    @field_validator("created_at_utc")
-    @classmethod
-    def validate_created_at_utc(cls, value: str) -> str:
-        return validate_rfc3339_utc_z(value, "created_at_utc")
-
-
-class IntakeManifestFile(BaseModel):
-    """Single manifest file entry."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    path: str = Field(min_length=1)
-    sha256: str
-    size_bytes: int = Field(ge=0)
-
-    @field_validator("sha256")
-    @classmethod
-    def validate_entry_sha256(cls, value: str) -> str:
-        return validate_sha256_hex(value, "sha256")
-
-
-class IntakeManifest(BaseModel):
-    """Intake payload contract for manifest.json."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    created_at_utc: str
-    schema_version: str = Field(min_length=1)
-    files: list[IntakeManifestFile] = Field(min_length=1)
-
-    @field_validator("created_at_utc")
-    @classmethod
-    def validate_created_at_utc(cls, value: str) -> str:
-        return validate_rfc3339_utc_z(value, "created_at_utc")
-
-    @field_validator("files")
-    @classmethod
-    def validate_unique_paths(cls, files: list[IntakeManifestFile]) -> list[IntakeManifestFile]:
-        paths = [entry.path for entry in files]
-        if len(paths) != len(set(paths)):
-            raise ValueError("manifest files paths must be unique")
-        return files
 
 
 class PRGateValidationResult(BaseModel):
@@ -253,6 +188,12 @@ def validate_task_invariants(tasks_root: Path) -> TaskInvariantSummary:
     artifact_tasks = 0
 
     for task_dir in task_dirs:
+        if not task_dir.name.isdigit():
+            _fail(
+                "C05_TASK_DIR_INVALID",
+                f"Task directory name must be numeric, got '{task_dir.name}' in {task_dir}",
+            )
+
         names = {entry.name for entry in task_dir.iterdir() if entry.is_file()}
         if not names:
             _fail("C05_TASK_EMPTY_DIR", f"Task directory has no files: {task_dir}")

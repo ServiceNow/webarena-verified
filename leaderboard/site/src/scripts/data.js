@@ -151,8 +151,8 @@ async function fetchJson(url, options = undefined) {
   return response.json();
 }
 
-function resolveManifestFilePath(manifestUrl, manifestFile) {
-  return new URL(manifestFile, new URL(manifestUrl, window.location.origin)).pathname;
+function resolveManifestFileUrl(manifestUrl, manifestFile) {
+  return new URL(manifestFile, new URL(manifestUrl, window.location.origin)).href;
 }
 
 export async function loadLeaderboardData(manifestUrl = MANIFEST_URL) {
@@ -167,8 +167,8 @@ export async function loadLeaderboardData(manifestUrl = MANIFEST_URL) {
   let hardPayload;
   try {
     [fullPayload, hardPayload] = await Promise.all([
-      fetchJson(resolveManifestFilePath(manifestUrl, manifest.full_file), GENERATION_FETCH_OPTIONS),
-      fetchJson(resolveManifestFilePath(manifestUrl, manifest.hard_file), GENERATION_FETCH_OPTIONS)
+      fetchJson(resolveManifestFileUrl(manifestUrl, manifest.full_file), GENERATION_FETCH_OPTIONS),
+      fetchJson(resolveManifestFileUrl(manifestUrl, manifest.hard_file), GENERATION_FETCH_OPTIONS)
     ]);
   } catch (error) {
     throw new TableLoadError(error.message);

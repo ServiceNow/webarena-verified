@@ -26,11 +26,24 @@ jobs:
     env:
       LEADERBOARD_EVALUATOR_VERSION: "1.2.3"
     steps:
-      - name: Checkout PR head (read-only)
+      - name: Checkout trusted base branch source (read-only)
         uses: actions/checkout@v4
         with:
+          ref: leaderboard-submissions
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Overlay PR intake payload as data only
+        id: pr-head
+        run: |
+          set -euo pipefail
+
+          git fetch --no-tags --depth=1 origin "pull/${{ github.event.pull_request.number }}/head"
+          PR_HEAD_SHA="$(git rev-parse FETCH_HEAD)"
+          echo "pr_head_sha=$PR_HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+          rm -rf submissions/inbox
+          git checkout "$PR_HEAD_SHA" -- submissions/inbox || true
 
       - name: Setup environment
         uses: ./.github/actions/setup
@@ -46,7 +59,7 @@ jobs:
           set +e
           GATE_OUTPUT="$(uv run inv dev.leaderboard.pr-gate-intake-validate \
             --base-sha "${{ github.event.pull_request.base.sha }}" \
-            --head-sha "${{ github.event.pull_request.head.sha }}" 2>&1)"
+            --head-sha "${{ steps.pr-head.outputs.pr_head_sha }}" 2>&1)"
           GATE_EXIT=$?
           set -e
 

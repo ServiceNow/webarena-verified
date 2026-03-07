@@ -1,4 +1,5 @@
 import json
+from urllib import error as urlerror
 from pathlib import Path
 
 import pytest
@@ -65,7 +66,13 @@ def test_finalize_submission_writes_canonical_record_and_deletes_inbox(tmp_path:
             "leaderboard": "both",
             "reference": "https://example.com/paper",
             "created_at_utc": "2026-03-07T10:00:00Z",
-            "packaging_summary": {"tasks_packaged": 2},
+            "packaging_summary": {
+                "tasks_packaged": 2,
+                "tasks_with_issues": 0,
+                "duplicate_tasks": 0,
+                "unknown_tasks": 0,
+                "missing_from_output": 0,
+            },
         },
     )
     _write_json(
@@ -100,7 +107,7 @@ def test_finalize_submission_writes_canonical_record_and_deletes_inbox(tmp_path:
             "failure_count": 1,
             "error_count": 0,
             "missing_count": 0,
-            "webarena_verified_version": "1.2.3",
+            "evaluator_version": "1.2.3",
         },
     )
     monkeypatch.setattr(
@@ -131,5 +138,68 @@ def test_finalize_submission_writes_canonical_record_and_deletes_inbox(tmp_path:
 
     canonical_payload = json.loads(canonical_path.read_text(encoding="utf-8"))
     assert canonical_payload["github_pr_number"] == 42
-    assert canonical_payload["huggingface_dataset_revision"] == "hf-rev-1"
+    assert canonical_payload["hf_revision"] == "hf-rev-1"
+    assert canonical_payload["status"] == "accepted"
     assert canonical_payload["submission_id"] == 42
+
+
+def test_http_get_json_retries_on_transient_errors(monkeypatch):
+    calls = {"count": 0}
+
+    class _Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return b'{"ok": true}'
+
+    def _fake_urlopen(*_args, **_kwargs):
+        calls["count"] += 1
+        if calls["count"] < 3:
+            raise urlerror.URLError("temporary network error")
+        return _Response()
+
+    monkeypatch.setattr(finalize.request, "urlopen", _fake_urlopen)
+    monkeypatch.setattr(finalize.time, "sleep", lambda _seconds: None)
+
+    payload = finalize._http_get_json("https://example.com", "")
+    assert payload == {"ok": True}
+    assert calls["count"] == 3
+
+
+def test_persist_payload_to_hf_retries_transient_errors(tmp_path: Path, monkeypatch):
+    intake_root = tmp_path / "submissions" / "inbox" / "intake-1"
+    intake_root.mkdir(parents=True, exist_ok=True)
+    (intake_root / "submission.json").write_text("{}", encoding="utf-8")
+
+    calls = {"count": 0}
+
+    class _CommitInfo:
+        oid = "hf-rev-123"
+
+    class _FakeHfApi:
+        def __init__(self, token):
+            self.token = token
+
+        def upload_folder(self, **_kwargs):
+            calls["count"] += 1
+            if calls["count"] < 3:
+                raise RuntimeError("transient hf error")
+            return _CommitInfo()
+
+    monkeypatch.setattr(finalize, "HfApi", _FakeHfApi)
+    monkeypatch.setattr(finalize.time, "sleep", lambda _seconds: None)
+
+    result = finalize.persist_payload_to_hf(
+        repo_root=tmp_path,
+        intake_id="intake-1",
+        submission_id=42,
+        hf_repo="owner/dataset",
+        hf_token="hf-token",
+    )
+
+    assert result.hf_revision == "hf-rev-123"
+    assert calls["count"] == 3

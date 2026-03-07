@@ -24,9 +24,11 @@ def canonical_submission_record_payload() -> dict:
         "github_pr_author_id": 456,
         "github_pr_author_login": "octocat",
         "eval_completed_at_utc": "2026-02-07T12:10:00Z",
-        "webarena_verified_version": "1.2.3",
-        "huggingface_dataset_repo": "owner/dataset/submissions/123",
-        "huggingface_dataset_revision": "abc123",
+        "evaluator_version": "1.2.3",
+        "status": "accepted",
+        "hf_repo": "owner/dataset",
+        "hf_path": "submissions/123",
+        "hf_revision": "abc123",
         "name": "TeamX/ModelY",
         "leaderboard": "both",
         "reference": "https://example.com/paper",
@@ -111,7 +113,7 @@ def intake_manifest_payload() -> dict:
 def test_canonical_submission_record_valid(canonical_submission_record_payload: dict):
     record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
     assert record.submission_id == 123
-    assert record.huggingface_dataset_revision == "abc123"
+    assert record.hf_revision == "abc123"
 
 
 def test_canonical_submission_record_requires_matching_identity(canonical_submission_record_payload: dict):

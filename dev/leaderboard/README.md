@@ -1,7 +1,8 @@
 ## Leaderboard Ingestion
 
-Leaderboard ingestion is HF scheduled sync only.
+Leaderboard ingestion is PR-based on the `leaderboard-submissions` branch.
 
-- Source of truth: Hugging Face dataset state
-- Ingestion mode: scheduled synchronization jobs
-- Legacy GitHub submission-PR ingestion path: removed
+- Intake path: `submissions/inbox/<intake_id>/...` in a submission PR
+- PR gate: `inv dev.leaderboard.pr-gate-intake-validate`
+- Finalization: `inv dev.leaderboard.finalize` writes `submissions/<submission_id>.json` and removes merged inbox payload
+- Rebuild: `inv dev.leaderboard.rebuild-canonical` regenerates `leaderboard_full.*.json`, `leaderboard_hard.*.json`, and `leaderboard_manifest.json`

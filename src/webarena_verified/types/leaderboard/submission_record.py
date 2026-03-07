@@ -1,5 +1,7 @@
 """Canonical leaderboard submission record types."""
 
+from typing import Any, Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ._validators import (
@@ -27,10 +29,12 @@ class CanonicalSubmissionRecord(BaseModel):
     github_pr_author_login: str = Field(min_length=1)
 
     eval_completed_at_utc: str
-    webarena_verified_version: str = Field(min_length=1)
+    evaluator_version: str = Field(min_length=1)
+    status: Literal["accepted"] = "accepted"
 
-    huggingface_dataset_repo: str = Field(min_length=1)
-    huggingface_dataset_revision: str = Field(min_length=1)
+    hf_repo: str = Field(min_length=1)
+    hf_path: str = Field(min_length=1)
+    hf_revision: str = Field(min_length=1)
 
     name: str = Field(min_length=1)
     leaderboard: SubmissionLeaderboard
@@ -51,6 +55,35 @@ class CanonicalSubmissionRecord(BaseModel):
     error_count: int = Field(ge=0)
     missing_count: int = Field(ge=0)
     checksum: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_legacy_keys(cls, value: Any) -> Any:
+        """Normalize legacy canonical record keys to the current schema."""
+        if not isinstance(value, dict):
+            return value
+
+        payload = dict(value)
+
+        if "evaluator_version" not in payload and "webarena_verified_version" in payload:
+            payload["evaluator_version"] = payload["webarena_verified_version"]
+
+        if "hf_revision" not in payload and "huggingface_dataset_revision" in payload:
+            payload["hf_revision"] = payload["huggingface_dataset_revision"]
+
+        if "hf_repo" not in payload and "huggingface_dataset_repo" in payload:
+            legacy_repo = payload["huggingface_dataset_repo"]
+            if isinstance(legacy_repo, str):
+                marker = "/submissions/"
+                if marker in legacy_repo:
+                    prefix, suffix = legacy_repo.split(marker, maxsplit=1)
+                    payload["hf_repo"] = prefix
+                    payload["hf_path"] = f"submissions/{suffix}"
+                else:
+                    payload["hf_repo"] = legacy_repo
+
+        payload.setdefault("status", "accepted")
+        return payload
 
     @field_validator("eval_completed_at_utc")
     @classmethod

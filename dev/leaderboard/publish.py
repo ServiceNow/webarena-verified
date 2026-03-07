@@ -264,6 +264,9 @@ def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) ->
         key: value for key, value in dict(raw).items() if key not in {"rank", "submission_id", "submission_timestamp"}
     }
 
+    if "webarena_verified_version" not in normalized_raw:
+        normalized_raw["webarena_verified_version"] = normalized_raw.get("evaluator_version", record.evaluator_version)
+
     missing_fields = [field for field in _REQUIRED_ROW_FIELDS if field not in normalized_raw]
     if missing_fields:
         missing_list = ", ".join(missing_fields)

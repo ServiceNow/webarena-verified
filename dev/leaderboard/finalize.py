@@ -6,7 +6,9 @@ import datetime as dt
 import hashlib
 import json
 import shutil
+import time
 from typing import TYPE_CHECKING, Any
+from urllib import error as urlerror
 from urllib import parse, request
 
 from huggingface_hub import HfApi
@@ -25,6 +27,8 @@ _MISSING_SENTINEL_FILE = ".missing"
 _AGENT_RESPONSE_FILE = "agent_response.json"
 _NETWORK_HAR_FILE = "network.har"
 _SITE_KEYS = ("shopping", "reddit", "gitlab", "wikipedia", "map", "shopping_admin")
+_NETWORK_RETRY_ATTEMPTS = 3
+_NETWORK_RETRY_DELAY_SECONDS = 1.0
 _REQUIRED_SUBMISSION_FIELDS = (
     "name",
     "leaderboard",
@@ -93,13 +97,22 @@ def _require_non_empty_str(obj: Any, *, field_name: str) -> str:
 
 
 def _http_get_json(url: str, token: str) -> Any:
-    req = request.Request(url)
-    req.add_header("Accept", "application/vnd.github+json")
-    req.add_header("X-GitHub-Api-Version", "2022-11-28")
-    if token:
-        req.add_header("Authorization", f"Bearer {token}")
-    with request.urlopen(req, timeout=60) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    last_error: Exception | None = None
+    for attempt in range(1, _NETWORK_RETRY_ATTEMPTS + 1):
+        try:
+            req = request.Request(url)
+            req.add_header("Accept", "application/vnd.github+json")
+            req.add_header("X-GitHub-Api-Version", "2022-11-28")
+            if token:
+                req.add_header("Authorization", f"Bearer {token}")
+            with request.urlopen(req, timeout=60) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except (urlerror.URLError, TimeoutError) as exc:
+            last_error = exc
+            if attempt == _NETWORK_RETRY_ATTEMPTS:
+                break
+            time.sleep(_NETWORK_RETRY_DELAY_SECONDS * attempt)
+    raise FinalizeError(f"GitHub API request failed after {_NETWORK_RETRY_ATTEMPTS} attempts: {last_error}")
 
 
 def parse_finalize_event(event_path: Path) -> FinalizeContext:
@@ -302,7 +315,7 @@ def run_evaluation(repo_root: Path, intake_id: str, evaluator_version: str) -> d
         "failure_count": failure_count,
         "error_count": error_count,
         "missing_count": missing_count,
-        "webarena_verified_version": resolved_version,
+        "evaluator_version": resolved_version,
     }
 
 
@@ -320,13 +333,27 @@ def persist_payload_to_hf(
         raise FinalizeError(f"Intake path does not exist: {intake_root}")
 
     hf_path = f"submissions/{submission_id}"
-    commit_info = HfApi(token=hf_token or None).upload_folder(
-        repo_id=hf_repo,
-        repo_type="dataset",
-        folder_path=str(intake_root),
-        path_in_repo=hf_path,
-        commit_message=f"Finalize leaderboard submission {submission_id}",
-    )
+    last_error: Exception | None = None
+    commit_info = None
+    for attempt in range(1, _NETWORK_RETRY_ATTEMPTS + 1):
+        try:
+            commit_info = HfApi(token=hf_token or None).upload_folder(
+                repo_id=hf_repo,
+                repo_type="dataset",
+                folder_path=str(intake_root),
+                path_in_repo=hf_path,
+                commit_message=f"Finalize leaderboard submission {submission_id}",
+            )
+            break
+        except Exception as exc:
+            last_error = exc
+            if attempt == _NETWORK_RETRY_ATTEMPTS:
+                raise FinalizeError(f"HF upload failed after {_NETWORK_RETRY_ATTEMPTS} attempts: {last_error}") from exc
+            time.sleep(_NETWORK_RETRY_DELAY_SECONDS * attempt)
+
+    if commit_info is None:
+        raise FinalizeError("HF upload did not return commit metadata")
+
     hf_revision = getattr(commit_info, "oid", "")
     if not isinstance(hf_revision, str) or not hf_revision:
         raise FinalizeError("Unable to capture HF revision from upload result")
@@ -361,9 +388,11 @@ def build_canonical_record(
         "github_pr_author_id": context.github_pr_author_id,
         "github_pr_author_login": context.github_pr_author_login,
         "eval_completed_at_utc": now_utc,
-        "webarena_verified_version": eval_summary["webarena_verified_version"],
-        "huggingface_dataset_repo": f"{hf_result.hf_repo}/{hf_result.hf_path}",
-        "huggingface_dataset_revision": hf_result.hf_revision,
+        "evaluator_version": eval_summary["evaluator_version"],
+        "status": "accepted",
+        "hf_repo": hf_result.hf_repo,
+        "hf_path": hf_result.hf_path,
+        "hf_revision": hf_result.hf_revision,
         "name": intake_submission["name"],
         "leaderboard": intake_submission["leaderboard"],
         "reference": intake_submission["reference"],

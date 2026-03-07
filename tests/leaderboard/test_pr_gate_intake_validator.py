@@ -29,7 +29,13 @@ def _create_valid_intake(repo_root: Path, intake_id: str = "intake-1") -> Path:
             "leaderboard": "both",
             "reference": "https://example.com/paper",
             "created_at_utc": "2026-03-07T12:00:00Z",
-            "packaging_summary": {"tasks_packaged": 1},
+            "packaging_summary": {
+                "tasks_packaged": 1,
+                "tasks_with_issues": 0,
+                "duplicate_tasks": 0,
+                "unknown_tasks": 0,
+                "missing_from_output": 0,
+            },
         },
     )
 
@@ -116,6 +122,17 @@ def test_validate_task_invariants_rejects_missing_xor_violation(tmp_path: Path):
     _write_json(invalid_task_root / "agent_response.json", {"ok": True})
 
     with pytest.raises(validator.PRGateValidationError, match="cannot coexist"):
+        validator.validate_task_invariants(intake_root / "tasks")
+
+
+def test_validate_task_invariants_rejects_non_numeric_task_directory(tmp_path: Path):
+    intake_root = _create_valid_intake(tmp_path)
+    invalid_task_root = intake_root / "tasks" / "alpha"
+    invalid_task_root.mkdir(parents=True, exist_ok=True)
+    _write_json(invalid_task_root / "agent_response.json", {"ok": True})
+    _write_json(invalid_task_root / "network.har", {"log": {"entries": []}})
+
+    with pytest.raises(validator.PRGateValidationError, match="C05_TASK_DIR_INVALID"):
         validator.validate_task_invariants(intake_root / "tasks")
 
 

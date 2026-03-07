@@ -29,7 +29,13 @@ def _create_intake(repo_root: Path, intake_id: str) -> Path:
             "leaderboard": "both",
             "reference": "https://example.com/paper",
             "created_at_utc": "2026-03-07T12:00:00Z",
-            "packaging_summary": {"tasks_packaged": 1},
+            "packaging_summary": {
+                "tasks_packaged": 1,
+                "tasks_with_issues": 0,
+                "duplicate_tasks": 0,
+                "unknown_tasks": 0,
+                "missing_from_output": 0,
+            },
         },
     )
     _write_json(intake_root / "tasks" / "1" / "agent_response.json", {"ok": True})
@@ -112,7 +118,7 @@ def test_g08_end_to_end_certification_flow(monkeypatch, tmp_path: Path):
             "failure_count": 0,
             "error_count": 0,
             "missing_count": 0,
-            "webarena_verified_version": "1.2.3",
+            "evaluator_version": "1.2.3",
         },
     )
     monkeypatch.setattr(

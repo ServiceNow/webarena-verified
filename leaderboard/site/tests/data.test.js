@@ -199,10 +199,10 @@ describe("loadLeaderboardData caching behavior", () => {
       if (url === "https://data.example.com/leaderboard_manifest.json") {
         return { ok: true, json: async () => manifest };
       }
-      if (url === "/leaderboard_full.gen-1.json") {
+      if (url === "https://data.example.com/leaderboard_full.gen-1.json") {
         return { ok: true, json: async () => fullTable };
       }
-      if (url === "/leaderboard_hard.gen-1.json") {
+      if (url === "https://data.example.com/leaderboard_hard.gen-1.json") {
         return { ok: true, json: async () => hardTable };
       }
       return { ok: false, status: 404, json: async () => ({}) };
@@ -213,7 +213,7 @@ describe("loadLeaderboardData caching behavior", () => {
     expect(payload.manifest.generation_id).toBe("gen-1");
     expect(calls).toHaveLength(3);
     expect(calls[0]).toEqual(["https://data.example.com/leaderboard_manifest.json", MANIFEST_FETCH_OPTIONS]);
-    expect(calls[1]).toEqual(["/leaderboard_full.gen-1.json", GENERATION_FETCH_OPTIONS]);
-    expect(calls[2]).toEqual(["/leaderboard_hard.gen-1.json", GENERATION_FETCH_OPTIONS]);
+    expect(calls[1]).toEqual(["https://data.example.com/leaderboard_full.gen-1.json", GENERATION_FETCH_OPTIONS]);
+    expect(calls[2]).toEqual(["https://data.example.com/leaderboard_hard.gen-1.json", GENERATION_FETCH_OPTIONS]);
   });
 });
