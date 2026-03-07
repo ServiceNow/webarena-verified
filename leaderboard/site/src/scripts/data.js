@@ -1,6 +1,9 @@
 const baseUrl = import.meta.env.BASE_URL || "/";
 const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-const MANIFEST_URL = `${normalizedBaseUrl}data/leaderboard_manifest.json`;
+const envManifestUrl = import.meta.env.PUBLIC_LEADERBOARD_MANIFEST_URL;
+const MANIFEST_URL = typeof envManifestUrl === "string" && envManifestUrl.trim().length > 0
+  ? envManifestUrl.trim()
+  : `${normalizedBaseUrl}data/leaderboard_manifest.json`;
 
 const REQUIRED_MANIFEST_FIELDS = [
   "schema_version",
