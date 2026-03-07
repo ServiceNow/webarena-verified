@@ -6,17 +6,20 @@ from dev.leaderboard.publish import publish_from_canonical
 
 def _canonical_record(submission_id: int, *, eval_completed_at_utc: str) -> dict:
     return {
-        "submission_id": str(submission_id),
-        "status": "accepted",
-        "hf_repo": "org/repo",
-        "hf_pr_id": submission_id,
-        "hf_pr_url": f"https://huggingface.co/datasets/org/repo/discussions/{submission_id}",
-        "created_at_utc": "2026-02-07T12:00:00Z",
-        "updated_at_utc": eval_completed_at_utc,
-        "processed_at_utc": eval_completed_at_utc,
+        "submission_id": submission_id,
+        "github_pr_number": submission_id,
+        "github_pr_url": f"https://github.com/owner/repo/pull/{submission_id}",
+        "source_repository_id": 777,
+        "source_repository_full_name": "fork-owner/repo-fork",
+        "github_pr_author_id": 456,
+        "github_pr_author_login": "octocat",
         "eval_completed_at_utc": eval_completed_at_utc,
+        "webarena_verified_version": "1.0.0",
+        "huggingface_dataset_repo": f"owner/dataset/submissions/{submission_id}",
+        "huggingface_dataset_revision": f"rev-{submission_id}",
         "name": f"Team/{submission_id}",
         "leaderboard": "both",
+        "reference": "https://example.com/paper",
         "overall_score": 0.8,
         "shopping_score": 0.8,
         "reddit_score": 0.8,
@@ -28,7 +31,6 @@ def _canonical_record(submission_id: int, *, eval_completed_at_utc: str) -> dict
         "failure_count": 0,
         "error_count": 0,
         "missing_count": 0,
-        "webarena_verified_version": "1.0.0",
         "checksum": f"{submission_id:064x}"[-64:],
     }
 

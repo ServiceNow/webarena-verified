@@ -340,7 +340,7 @@ def publish_from_processed(
     return publish_staged_leaderboard(staging_dir=staging_dir, gh_pages_root=gh_pages_root)
 
 
-def _parse_utc_z_timestamp(value: str, *, field_name: str, submission_id: str) -> datetime:
+def _parse_utc_z_timestamp(value: str, *, field_name: str, submission_id: int | str) -> datetime:
     try:
         parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
     except ValueError as exc:
@@ -350,21 +350,21 @@ def _parse_utc_z_timestamp(value: str, *, field_name: str, submission_id: str) -
     return parsed.replace(tzinfo=UTC)
 
 
-def _submission_id_as_int(submission_id: str) -> int:
+def _submission_id_as_int(submission_id: int | str) -> int:
     try:
         return int(submission_id)
     except ValueError as exc:
         raise ValueError(f"canonical submission_id must be numeric, got '{submission_id}'") from exc
 
 
-def _load_canonical_entries(canonical_dir: Path) -> list[tuple[Path, SubmissionRecord, dict, datetime, int]]:
-    entries: list[tuple[Path, SubmissionRecord, dict, datetime, int]] = []
+def _load_canonical_entries(canonical_dir: Path) -> list[tuple[Path, CanonicalSubmissionRecord, dict, datetime, int]]:
+    entries: list[tuple[Path, CanonicalSubmissionRecord, dict, datetime, int]] = []
     if not canonical_dir.exists():
         return entries
 
     for record_path in sorted(canonical_dir.glob("*.json")):
         record, raw = _load_submission_record(record_path)
-        if record_path.stem != record.submission_id:
+        if record_path.stem != str(record.submission_id):
             raise ValueError(
                 f"canonical file name '{record_path.name}' does not match submission_id '{record.submission_id}'"
             )
@@ -381,7 +381,9 @@ def _load_canonical_entries(canonical_dir: Path) -> list[tuple[Path, SubmissionR
     return entries
 
 
-def _deterministic_generation_id(canonical_entries: list[tuple[Path, SubmissionRecord, dict, datetime, int]]) -> str:
+def _deterministic_generation_id(
+    canonical_entries: list[tuple[Path, CanonicalSubmissionRecord, dict, datetime, int]],
+) -> str:
     if not canonical_entries:
         return "gen-empty"
 
@@ -393,7 +395,9 @@ def _deterministic_generation_id(canonical_entries: list[tuple[Path, SubmissionR
     return f"gen-{digest.hexdigest()[:16]}"
 
 
-def _default_generated_at_utc(canonical_entries: list[tuple[Path, SubmissionRecord, dict, datetime, int]]) -> str:
+def _default_generated_at_utc(
+    canonical_entries: list[tuple[Path, CanonicalSubmissionRecord, dict, datetime, int]],
+) -> str:
     if not canonical_entries:
         return _EMPTY_GENERATED_AT_UTC
     latest = max(entry[3] for entry in canonical_entries)
@@ -401,15 +405,12 @@ def _default_generated_at_utc(canonical_entries: list[tuple[Path, SubmissionReco
 
 
 def _rows_from_canonical_entries(
-    canonical_entries: list[tuple[Path, SubmissionRecord, dict, datetime, int]],
+    canonical_entries: list[tuple[Path, CanonicalSubmissionRecord, dict, datetime, int]],
 ) -> tuple[list[dict], list[dict]]:
     full_rows: list[dict] = []
     hard_rows: list[dict] = []
 
     for _, record, raw, _, _ in canonical_entries:
-        if record.status != SubmissionStatus.ACCEPTED:
-            continue
-
         row = _row_from_submission_record(record, raw)
         boards = _select_boards(raw, submission_id=record.submission_id)
         if "full" in boards:
