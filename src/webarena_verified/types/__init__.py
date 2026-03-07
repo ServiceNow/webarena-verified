@@ -5,6 +5,10 @@ from .container import ContainerStartResult, ContainerStatus, ContainerStatusRes
 from .environment import EnvCtrlResult
 from .leaderboard import (
     CanonicalSubmissionRecord,
+    CanonicalSubmissionStatus,
+    EvaluationSummary,
+    HFDispatchContext,
+    HFIngestResult,
     IntakeManifest,
     IntakeManifestFile,
     IntakePackagingSummary,
@@ -12,6 +16,9 @@ from .leaderboard import (
     LeaderboardManifest,
     LeaderboardRow,
     LeaderboardTableFile,
+    SubmissionControlRecord,
+    SubmissionControlStatus,
+    SubmissionStatusEvent,
 )
 from .task import (
     AgentResponseEvaluatorCfg,
@@ -24,6 +31,8 @@ from .task import (
 __all__ = [
     "AgentResponseEvaluatorCfg",
     "CanonicalSubmissionRecord",
+    "CanonicalSubmissionStatus",
+    "EvaluationSummary",
     "ContainerStartResult",
     "ContainerStatus",
     "ContainerStatusResult",
@@ -38,8 +47,13 @@ __all__ = [
     "LeaderboardRow",
     "LeaderboardTableFile",
     "MainObjectiveType",
+    "HFDispatchContext",
+    "HFIngestResult",
     "NetworkEventEvaluatorCfg",
     "Status",
+    "SubmissionControlRecord",
+    "SubmissionControlStatus",
+    "SubmissionStatusEvent",
     "WebArenaSite",
     "WebArenaVerifiedTask",
 ]

@@ -1,92 +1,28 @@
-# Leaderboard System Guide (Contributors)
-
-This document explains how the leaderboard system is structured, which component owns which data, and where to make changes safely.
+# Leaderboard System Guide (HF Direct)
 
 ## Architecture at a glance
 
-Main components:
-
-1. User or contributor submits a PR with intake files.
-2. `leaderboard-submissions` branch receives submission PRs under `submissions/inbox/<intake_id>/...`.
-3. CI workflows (`PR Gate`, `Finalize`, `Rebuild`) validate, canonicalize, and publish leaderboard data.
-4. Hugging Face dataset stores canonical payload artifacts at `submissions/<submission_id>/`.
-5. Leaderboard dashboard reads `leaderboard_manifest.json` and generation files.
-
-### Why PR-based intake?
-
-PRs make the process transparent and easy to track:
-
-- review and approval happen before acceptance
-- every submission has an auditable change history and discussion thread
-- CI feedback is attached directly to the submission event
-- canonical identity is deterministic and traceable (`submission_id = pr_number`)
-
-### Why Hugging Face dataset storage?
-
-Canonical payload artifacts are stored in Hugging Face to keep this repository lightweight.
-This avoids repository bloat from large submission payloads, reduces clone/fetch overhead, and helps avoid disk/storage pressure in git history.
-
-### High-level flow
-
-```mermaid
-flowchart LR
-    U[User or Contributor]
-    PR[PR to leaderboard-submissions<br/>submissions/inbox/<intake_id>/...]
-    CI[CI Workflows<br/>PR Gate -> Finalize -> Rebuild]
-    HF[Hugging Face Dataset<br/>canonical payload storage]
-    DATA[Leaderboard Data<br/>manifest + generation files]
-    UI[Leaderboard Dashboard]
-
-    U --> PR
-    PR --> CI
-    CI --> HF
-    CI --> DATA
-    DATA --> UI
-```
-
-## Detailed flow diagram
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant C as Contributor PR
-    participant G as PR Gate
-    participant F as Finalize
-    participant H as HF Storage
-    participant R as Rebuild
-    participant U as Leaderboard UI
-
-    C->>G: Open or update PR with submissions/inbox/<intake_id>/
-    G->>G: Validate intake + manifest + task invariants
-    alt Gate fails
-        G-->>C: Check fails with actionable diagnostics
-    else Gate passes
-        C->>F: Merge PR to leaderboard-submissions
-        F->>F: Set submission_id = pr_number
-        F->>H: Upload canonical payload submissions/<submission_id>/
-        F->>F: Write submissions/<submission_id>.json and clean inbox
-        F->>R: Trigger rebuild
-        R->>R: Retain latest 100 canonical records
-        R->>R: Write leaderboard_full/hard.<generation_id>.json
-        R->>R: Switch leaderboard_manifest.json last
-        U->>R: Read manifest then generation files
-    end
-```
+1. Authors submit data through Hugging Face dataset PRs.
+2. HF webhook receiver forwards events to GitHub `repository_dispatch`.
+3. `leaderboard-hf-ingest.yml` runs `dev.leaderboard.hf-ingest`, updates control/canonical records, and opens a publish PR.
+4. `leaderboard-hf-publish-pr.yml` validates scope + rebuild contract and auto-merges on success.
+5. Leaderboard UI reads `leaderboard_manifest.json` and generation files from `leaderboard-submissions`.
 
 ## Branch roles
 
 - `main`: source code, specs, and docs.
-- `leaderboard-submissions`: intake payloads, canonical records, and leaderboard data outputs.
-- `gh-pages`: docs-only site artifacts.
+- `leaderboard-submissions`: control records, canonical accepted records, and leaderboard artifacts.
+- `gh-pages`: docs site artifacts.
 
-Contributor rule of thumb: treat `leaderboard-submissions` as data/control-plane state, not feature development code.
-
-## Storage model and ownership boundaries
+## Storage model
 
 ```text
+submission_control/
+  <submission_id>.json
+
 submissions/
   inbox/
-    <intake_id>/
+    pr-<hf_pr_number>/
       submission.json
       manifest.json
       tasks/
@@ -100,64 +36,20 @@ leaderboard_hard.<generation_id>.json
 leaderboard_manifest.json
 ```
 
-Write ownership:
+## Ownership boundaries
 
-- user-editable path: `submissions/inbox/<intake_id>/**`
-- Finalize-only write: `submissions/<submission_id>.json`
-- Rebuild-only writes:
-  - `leaderboard_full.<generation_id>.json`
-  - `leaderboard_hard.<generation_id>.json`
+- HF ingestion writes: `submission_control/<submission_id>.json`, `submissions/<submission_id>.json`.
+- Rebuild writes: `leaderboard_full.*.json`, `leaderboard_hard.*.json`, `leaderboard_manifest.json`.
+- Publish gating allows only:
+  - `submission_control/**`
+  - `submissions/**`
   - `leaderboard_manifest.json`
+  - `leaderboard_full.*.json`
+  - `leaderboard_hard.*.json`
 
-## Canonical identity and contracts
+## Identity and status contracts
 
-- canonical id rule: `submission_id = <github_pr_number>`
-- intake path: `submissions/inbox/<intake_id>/...`
-- canonical accepted record: `submissions/<submission_id>.json`
-- canonical record carries PR/source provenance plus scoring fields used by rebuild
-
-Contract details and field-level schema are maintained in:
-
-- `leaderboard/spec/leaderboard_submission_spec.md`
-- `src/webarena_verified/types/leaderboard/`
-
-## Workflow responsibilities
-
-PR Gate:
-
-- trigger: submission PRs on `leaderboard-submissions`
-- validates folder shape, manifest hash/size integrity, task invariants
-- posts actionable diagnostics
-- no branch writes, no HF writes
-
-Finalize:
-
-- trigger: merged submission PR
-- sets canonical id from PR number
-- captures provenance from PR event
-- uploads canonical payload to HF path `submissions/<submission_id>/`
-- writes `submissions/<submission_id>.json`
-- removes merged inbox folder
-
-Rebuild:
-
-- trigger: finalize success or manual dispatch
-- single-writer concurrency group for leaderboard outputs
-- retains latest 100 canonical records
-- writes generation files first, manifest last
-
-Leaderboard site build:
-
-- trigger: `main` changes under `leaderboard/site/**` or manual dispatch
-- resolves `PUBLIC_LEADERBOARD_MANIFEST_URL` at build time
-- default source points to `leaderboard-submissions` branch-hosted `leaderboard_manifest.json`
-- runs site tests and build to verify env-driven data-source contract
-
-## Governance and policy
-
-Active governance baseline (Lane A):
-
-- PR-only intake on `leaderboard-submissions` (no direct pushes)
-- strict fork policy for non-contributors
-- contributor bypass roles: `write`, `maintain`, `admin`
-- default `GITHUB_TOKEN` workflow permission reduced to read; workflows grant write explicitly when required
+- `submission_id = hf_pr_number`
+- `submission_uid = hf:{hf_repo}:pr-{hf_pr_number}@{hf_head_sha}`
+- Control statuses use `SubmissionControlStatus` enum values.
+- Canonical records remain accepted records used by rebuild/publish.

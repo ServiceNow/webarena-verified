@@ -17,6 +17,7 @@ from webarena_verified.types.leaderboard import (
 def canonical_submission_record_payload() -> dict:
     return {
         "submission_id": 123,
+        "submission_uid": "hf:owner/dataset:pr-123@abc123",
         "github_pr_number": 123,
         "github_pr_url": "https://github.com/owner/repo/pull/123",
         "source_repository_id": 777,
@@ -29,6 +30,9 @@ def canonical_submission_record_payload() -> dict:
         "hf_repo": "owner/dataset",
         "hf_path": "submissions/123",
         "hf_revision": "abc123",
+        "hf_pr_number": 123,
+        "hf_head_sha": "abc123",
+        "hf_pr_url": "https://huggingface.co/datasets/owner/dataset/discussions/123",
         "name": "TeamX/ModelY",
         "leaderboard": "both",
         "reference": "https://example.com/paper",
@@ -116,11 +120,21 @@ def test_canonical_submission_record_valid(canonical_submission_record_payload: 
     assert record.hf_revision == "abc123"
 
 
-def test_canonical_submission_record_requires_matching_identity(canonical_submission_record_payload: dict):
+def test_canonical_submission_record_allows_decoupled_github_identity(canonical_submission_record_payload: dict):
     canonical_submission_record_payload["github_pr_number"] = 456
 
-    with pytest.raises(ValidationError, match="submission_id must equal github_pr_number"):
-        CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    assert record.github_pr_number == 456
+
+
+def test_canonical_submission_record_allows_missing_legacy_source_fields(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload.pop("source_repository_id")
+    canonical_submission_record_payload.pop("source_repository_full_name")
+    canonical_submission_record_payload.pop("github_pr_author_id")
+    canonical_submission_record_payload.pop("github_pr_author_login")
+
+    record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    assert record.source_repository_id is None
 
 
 def test_canonical_submission_record_rejects_invalid_overall_score(canonical_submission_record_payload: dict):

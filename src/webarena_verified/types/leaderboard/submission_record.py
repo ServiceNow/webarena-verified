@@ -1,6 +1,6 @@
 """Canonical leaderboard submission record types."""
 
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -11,6 +11,7 @@ from ._validators import (
     validate_model_name,
     validate_reference_url,
 )
+from .canonical_submission_status import CanonicalSubmissionStatus
 from .submission_payload import SubmissionLeaderboard
 
 
@@ -20,21 +21,25 @@ class CanonicalSubmissionRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     submission_id: int = Field(ge=1)
-    github_pr_number: int = Field(ge=1)
-    github_pr_url: str = Field(min_length=1)
+    submission_uid: str | None = None
+    github_pr_number: int | None = Field(default=None, ge=1)
+    github_pr_url: str | None = Field(default=None, min_length=1)
 
-    source_repository_id: int = Field(ge=1)
-    source_repository_full_name: str = Field(min_length=1)
-    github_pr_author_id: int = Field(ge=1)
-    github_pr_author_login: str = Field(min_length=1)
+    source_repository_id: int | None = Field(default=None, ge=1)
+    source_repository_full_name: str | None = Field(default=None, min_length=1)
+    github_pr_author_id: int | None = Field(default=None, ge=1)
+    github_pr_author_login: str | None = Field(default=None, min_length=1)
 
     eval_completed_at_utc: str
     evaluator_version: str = Field(min_length=1)
-    status: Literal["accepted"] = "accepted"
+    status: CanonicalSubmissionStatus = CanonicalSubmissionStatus.ACCEPTED
 
     hf_repo: str = Field(min_length=1)
     hf_path: str = Field(min_length=1)
     hf_revision: str = Field(min_length=1)
+    hf_pr_number: int | None = Field(default=None, ge=1)
+    hf_head_sha: str | None = None
+    hf_pr_url: str | None = None
 
     name: str = Field(min_length=1)
     leaderboard: SubmissionLeaderboard
@@ -82,7 +87,7 @@ class CanonicalSubmissionRecord(BaseModel):
                 else:
                     payload["hf_repo"] = legacy_repo
 
-        payload.setdefault("status", "accepted")
+        payload.setdefault("status", CanonicalSubmissionStatus.ACCEPTED)
         return payload
 
     @field_validator("eval_completed_at_utc")
@@ -116,10 +121,3 @@ class CanonicalSubmissionRecord(BaseModel):
     def validate_checksum_sha(cls, value: str) -> str:
         """Validate checksum hash format."""
         return validate_checksum(value)
-
-    @model_validator(mode="after")
-    def validate_submission_identity(self) -> "CanonicalSubmissionRecord":
-        """Enforce canonical identity mapping submission_id == github_pr_number."""
-        if self.submission_id != self.github_pr_number:
-            raise ValueError("submission_id must equal github_pr_number")
-        return self
