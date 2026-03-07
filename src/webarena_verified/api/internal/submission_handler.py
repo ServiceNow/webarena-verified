@@ -3,7 +3,6 @@
 import datetime
 import re
 import shutil
-import tarfile
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
@@ -31,7 +30,7 @@ class SubmissionHandler:
     """Handler for creating submission packages.
 
     Scans output directories for completed tasks, trims network traces,
-    and packages them into a tar.gz archive or folder.
+    and packages them into a submission folder.
     """
 
     def __init__(
@@ -74,7 +73,6 @@ class SubmissionHandler:
         self,
         output_root: Path,
         *,
-        no_tar: bool = False,
         custom_name: str | None = None,
         progress_callback: Callable[[int, int, int], None] | None = None,
     ) -> SubmissionResult:
@@ -84,7 +82,6 @@ class SubmissionHandler:
 
         Args:
             output_root: Root directory where submission will be created
-            no_tar: If True, output as folder instead of tar.gz
             custom_name: Optional custom name for the submission package (auto-generates timestamp if None)
             progress_callback: Optional callback for progress updates (current, total, task_id)
 
@@ -96,20 +93,19 @@ class SubmissionHandler:
             FileExistsError: If output path already exists
         """
         # Generate output path (custom or auto-generated with timestamp)
-        output_path = self._generate_output_path(output_root, no_tar, custom_name)
+        output_path = self._generate_output_path(output_root, custom_name)
 
         # Discover tasks using reader's task IDs as source of truth
         discovery_result = self._discover_task_outputs()
 
         # Package tasks (never fails, creates summary.json)
-        return self._package_tasks(discovery_result, output_path, no_tar, progress_callback)
+        return self._package_tasks(discovery_result, output_path, progress_callback)
 
-    def _generate_output_path(self, output_root: Path, no_tar: bool, custom_name: str | None = None) -> Path:
+    def _generate_output_path(self, output_root: Path, custom_name: str | None = None) -> Path:
         """Generate output path with custom or auto-generated name.
 
         Args:
             output_root: Root directory for output
-            no_tar: If True, output as folder; if False, output as tar.gz
             custom_name: Optional custom name (if None, auto-generates timestamp)
 
         Returns:
@@ -120,12 +116,9 @@ class SubmissionHandler:
             FileExistsError: If output path already exists
         """
         if custom_name:
-            # Strip .tar.gz or .tar extension if user provided it (case-insensitive)
             name = custom_name
-            for suffix in (".tar.gz", ".TAR.GZ", ".tar", ".TAR"):
-                name = name.removesuffix(suffix)
 
-            # Validate custom name (after stripping extensions)
+            # Validate custom name
             self._validate_custom_name(name)
         else:
             # Auto-generate timestamp-based name
@@ -133,10 +126,7 @@ class SubmissionHandler:
             name = f"webarena-verified-submission-{timestamp}"
 
         # Construct full path
-        if no_tar:
-            output_path = output_root / name
-        else:
-            output_path = output_root / f"{name}.tar.gz"
+        output_path = output_root / name
 
         # Check for conflicts
         if output_path.exists():
@@ -287,7 +277,6 @@ class SubmissionHandler:
         self,
         discovery_result: dict[str, Any],
         output_path: Path,
-        no_tar: bool,
         progress_callback: Callable[[int, int, int], None] | None = None,
     ) -> SubmissionResult:
         """Package tasks into output.
@@ -295,7 +284,6 @@ class SubmissionHandler:
         Args:
             discovery_result: Result from _discover_task_outputs()
             output_path: Final output path (with timestamp)
-            no_tar: If True, output as folder
 
         Returns:
             SubmissionResult with summary file included
@@ -366,31 +354,12 @@ class SubmissionHandler:
             summary_file = tmp_path / "summary.json"
             summary_file.write_text(summary_data.model_dump_json(indent=2))
 
-            # Output as folder or tar
-            archive_size = None
-            summary_file_path = None
-            if no_tar:
-                shutil.copytree(tmp_path, output_path)
-                summary_file_path = str(output_path / "summary.json")
-            else:
-                with tarfile.open(output_path, "w:gz") as tar:
-                    # Add summary.json at root level
-                    tar.add(summary_file, arcname="summary.json")
-
-                    # Add task subdirectories
-                    for task_subdir in sorted(tmp_path.iterdir()):
-                        if task_subdir.name != "summary.json":
-                            tar.add(task_subdir, arcname=task_subdir.name)
-                archive_size = output_path.stat().st_size
-
-                # Create external summary file alongside the tar
-                external_summary_path = output_path.parent / f"{output_path.stem}_summary.json"
-                external_summary_path.write_text(summary_data.model_dump_json(indent=2))
-                summary_file_path = str(external_summary_path)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(tmp_path, output_path)
+            summary_file_path = str(output_path / "summary.json")
 
         return SubmissionResult(
             output_path=str(output_path),
-            is_tar=not no_tar,
             tasks_packaged=packaged_tasks,
             missing_agent_response=missing_agent_response,
             missing_network_har=missing_network_har,
@@ -400,6 +369,5 @@ class SubmissionHandler:
             duplicate_task_ids=sorted(discovery_result["duplicate_tasks"].keys()),
             unknown_task_ids=sorted(discovery_result["unknown_tasks"].keys()),
             missing_task_ids=discovery_result["missing_tasks"],
-            archive_size=archive_size,
             summary_file=summary_file_path,
         )

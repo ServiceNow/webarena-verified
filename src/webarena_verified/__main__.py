@@ -389,10 +389,10 @@ def create_parser() -> argparse.ArgumentParser:
     agent_input_get_parser.add_argument("--output", type=str, help="Output JSON file path")
 
     # create-submission-pkg subcommand
-    submission_tar_parser = subparsers.add_parser(
+    submission_parser = subparsers.add_parser(
         "create-submission-pkg",
         help="Create submission package from task outputs",
-        description="Package agent responses and trimmed network traces into a tar archive or folder",
+        description="Package agent responses and trimmed network traces into a submission folder",
         epilog=textwrap.dedent("""
             examples:
               # Create submission from single directory
@@ -404,38 +404,30 @@ def create_parser() -> argparse.ArgumentParser:
               # Mix explicit paths and glob patterns
               webarena-verified create-submission-pkg --run-output-dir ./special "./runs/run_*" --output ./submissions
 
-              # Output as folder instead of tar
-              webarena-verified create-submission-pkg --run-output-dir ./output --output ./submissions --no-tar
-
               # Use custom name instead of auto-generated timestamp
               webarena-verified create-submission-pkg --run-output-dir ./output \\
                 --output ./submissions --name experiment-001
 
             Output naming:
-              - Default (auto-generated): webarena-verified-submission-YYYYMMDD_HHMMSS.tar.gz
-              - Custom name: {custom-name}.tar.gz (or {custom-name}/ for folder mode)
+              - Default (auto-generated): webarena-verified-submission-YYYYMMDD_HHMMSS/
+              - Custom name: {custom-name}/
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    submission_tar_parser.add_argument(
+    submission_parser.add_argument(
         "--run-output-dir",
         type=str,
         nargs="+",
         required=True,
         help="One or more run output directories (supports glob patterns like './runs/run_*')",
     )
-    submission_tar_parser.add_argument(
+    submission_parser.add_argument(
         "--output",
         type=str,
         required=True,
         help="Output root directory (submission created inside with timestamp)",
     )
-    submission_tar_parser.add_argument(
-        "--no-tar",
-        action="store_true",
-        help="Skip tar creation, output as folder instead",
-    )
-    submission_tar_parser.add_argument(
+    submission_parser.add_argument(
         "--name",
         type=str,
         default=None,
@@ -1458,7 +1450,6 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     command_info = {
         "Command": "create-submission-pkg",
         "Output Root": args.output,
-        "Format": "Folder" if args.no_tar else "Tar Archive",
         "Run Output Directories": "\n" + "\n".join(f"  • {path}" for path in args.run_output_dir),
     }
     logging_helper.print_panel("Submission Package Creation", command_info)
@@ -1488,7 +1479,6 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
         result = wa.create_submission(
             output_dirs=output_dirs,
             output_root=output_root,
-            no_tar=args.no_tar,
             custom_name=args.name,
             progress_callback=show_progress,
         )
@@ -1516,7 +1506,6 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     # Create summary dict with counts only (no lists)
     summary_info = {
         "Output Path": result.output_path,
-        "Type": "Tar Archive" if result.is_tar else "Folder",
         "Tasks Packaged": f"{len(result.tasks_packaged)}/{total_expected}",
         "Missing Agent Response": len(result.missing_agent_response),
         "Missing Network HAR": len(result.missing_network_har),
@@ -1527,9 +1516,6 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
         "Unknown Tasks": len(result.unknown_task_ids),
         "Missing from Output": len(result.missing_task_ids),
     }
-
-    if result.archive_size:
-        summary_info["Archive Size"] = f"{result.archive_size:,} bytes"
 
     summary_info["Summary File"] = result.summary_file
 

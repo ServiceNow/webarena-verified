@@ -4,7 +4,7 @@ Tests the full flow:
 1. CLI argument parsing and validation
 2. Output directory discovery and task file collection
 3. HAR file trimming and copying
-4. Submission package creation (tar.gz or folder)
+4. Submission package creation
 5. Summary JSON generation
 6. Error handling and edge cases
 """
@@ -12,7 +12,6 @@ Tests the full flow:
 import argparse
 import json
 import shutil
-import tarfile
 from pathlib import Path
 
 import pytest
@@ -75,13 +74,12 @@ def create_task_output(har_file_example: Path):
 def mock_args():
     """Helper to create mock argparse args for create_submission_pkg command."""
 
-    def _create(run_output_dir, output, no_tar=False, name=None):
+    def _create(run_output_dir, output, name=None):
         """Create argparse.Namespace with command arguments.
 
         Args:
             run_output_dir: List of output directories or single directory
             output: Output root directory
-            no_tar: If True, create folder instead of tar
             name: Custom name for submission
         """
         if isinstance(run_output_dir, (str, Path)):
@@ -92,7 +90,6 @@ def mock_args():
         return argparse.Namespace(
             run_output_dir=run_output_dir,
             output=str(output),
-            no_tar=no_tar,
             name=name,
         )
 
@@ -104,8 +101,8 @@ def mock_args():
 # ============================================================================
 
 
-def test_create_submission_tar_single_directory(tmp_path, create_task_output, mock_args):
-    """Test creating tar submission from single directory with valid tasks."""
+def test_create_submission_single_directory(tmp_path, create_task_output, mock_args):
+    """Test creating submission from single directory with valid tasks."""
     # Setup: Create output directory with 3 valid tasks
     output_dir = tmp_path / "output"
     output_dir.mkdir()
@@ -125,29 +122,22 @@ def test_create_submission_tar_single_directory(tmp_path, create_task_output, mo
     # Verify
     assert exit_code == 0
 
-    # Find created tar file (has timestamp in name)
-    tar_files = list(submission_root.glob("webarena-verified-submission-*.tar.gz"))
-    assert len(tar_files) == 1
-    tar_path = tar_files[0]
+    submission_dirs = [d for d in submission_root.glob("webarena-verified-submission-*") if d.is_dir()]
+    assert len(submission_dirs) == 1
+    submission_dir = submission_dirs[0]
 
-    # Verify tar contents
-    with tarfile.open(tar_path, "r:gz") as tar:
-        members = tar.getnames()
-        assert "summary.json" in members
-        assert "1/agent_response.json" in members
-        assert "1/network.har" in members
-        assert "2/agent_response.json" in members
-        assert "2/network.har" in members
-        assert "3/agent_response.json" in members
-        assert "3/network.har" in members
-
-    # Verify summary file exists
-    summary_files = list(submission_root.glob("webarena-verified-submission-*_summary.json"))
-    assert len(summary_files) == 1
+    # Verify folder structure
+    assert (submission_dir / "summary.json").exists()
+    assert (submission_dir / "1" / "agent_response.json").exists()
+    assert (submission_dir / "1" / "network.har").exists()
+    assert (submission_dir / "2" / "agent_response.json").exists()
+    assert (submission_dir / "2" / "network.har").exists()
+    assert (submission_dir / "3" / "agent_response.json").exists()
+    assert (submission_dir / "3" / "network.har").exists()
 
 
-def test_create_submission_folder_output(tmp_path, create_task_output, mock_args):
-    """Test creating folder submission (no tar) with valid tasks."""
+def test_create_submission_two_tasks(tmp_path, create_task_output, mock_args):
+    """Test creating submission with two valid tasks."""
     # Setup
     output_dir = tmp_path / "output"
     output_dir.mkdir()
@@ -158,7 +148,7 @@ def test_create_submission_folder_output(tmp_path, create_task_output, mock_args
     submission_root = tmp_path / "submissions"
     submission_root.mkdir()
 
-    args = mock_args(run_output_dir=output_dir, output=submission_root, no_tar=True)
+    args = mock_args(run_output_dir=output_dir, output=submission_root)
 
     # Execute
     exit_code = create_submission_pkg(args)
@@ -199,10 +189,10 @@ def test_create_submission_custom_name(tmp_path, create_task_output, mock_args):
     assert exit_code == 0
 
     # Verify custom name is used
-    tar_path = submission_root / "my-submission.tar.gz"
-    assert tar_path.exists()
+    submission_path = submission_root / "my-submission"
+    assert submission_path.is_dir()
 
-    summary_path = submission_root / "my-submission.tar_summary.json"
+    summary_path = submission_root / "my-submission" / "summary.json"
     assert summary_path.exists()
 
 
@@ -236,15 +226,14 @@ def test_create_submission_multiple_directories(tmp_path, create_task_output, mo
     assert exit_code == 0
 
     # Verify all tasks are included
-    tar_files = list(submission_root.glob("*.tar.gz"))
-    assert len(tar_files) == 1
+    submission_dirs = [d for d in submission_root.glob("webarena-verified-submission-*") if d.is_dir()]
+    assert len(submission_dirs) == 1
+    submission_dir = submission_dirs[0]
 
-    with tarfile.open(tar_files[0], "r:gz") as tar:
-        members = tar.getnames()
-        assert "1/agent_response.json" in members
-        assert "2/agent_response.json" in members
-        assert "3/agent_response.json" in members
-        assert "4/agent_response.json" in members
+    assert (submission_dir / "1" / "agent_response.json").exists()
+    assert (submission_dir / "2" / "agent_response.json").exists()
+    assert (submission_dir / "3" / "agent_response.json").exists()
+    assert (submission_dir / "4" / "agent_response.json").exists()
 
 
 # ============================================================================
@@ -275,7 +264,7 @@ def test_create_submission_missing_agent_response(tmp_path, create_task_output, 
     assert exit_code == 0
 
     # Load summary
-    summary_path = submission_root / "test-missing.tar_summary.json"
+    summary_path = submission_root / "test-missing" / "summary.json"
     assert summary_path.exists()
     summary = json.loads(summary_path.read_text())
 
@@ -308,7 +297,7 @@ def test_create_submission_missing_har(tmp_path, create_task_output, mock_args):
     assert exit_code == 0
 
     # Load summary
-    summary_path = submission_root / "test-missing-har.tar_summary.json"
+    summary_path = submission_root / "test-missing-har" / "summary.json"
     summary = json.loads(summary_path.read_text())
 
     # Verify task 2 is in missing_network_har
@@ -345,7 +334,7 @@ def test_create_submission_invalid_har_file(tmp_path, create_task_output, mock_a
     assert exit_code == 0
 
     # Load summary
-    summary_path = submission_root / "test-invalid-har.tar_summary.json"
+    summary_path = submission_root / "test-invalid-har" / "summary.json"
     summary = json.loads(summary_path.read_text())
 
     # Verify task 2 is in invalid_har_files
@@ -399,6 +388,30 @@ def test_create_submission_no_valid_tasks(tmp_path, mock_args):
     assert exit_code == 1
 
 
+def test_create_submission_nonexistent_output_root(tmp_path, create_task_output, mock_args):
+    """Test that a nested, non-existent output root is created automatically."""
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    create_task_output(output_dir, 1)
+
+    # Given: output root does not exist (nested path)
+    submission_root = tmp_path / "nested" / "deep" / "submissions"
+    assert not submission_root.exists()
+
+    args = mock_args(run_output_dir=output_dir, output=submission_root, name="nested-test")
+
+    # When
+    exit_code = create_submission_pkg(args)
+
+    # Then
+    assert exit_code == 0
+    submission_dir = submission_root / "nested-test"
+    assert submission_dir.is_dir()
+    assert (submission_dir / "summary.json").exists()
+    assert (submission_dir / "1" / "agent_response.json").exists()
+    assert (submission_dir / "1" / "network.har").exists()
+
+
 # ============================================================================
 # Tests: Summary Validation
 # ============================================================================
@@ -436,7 +449,7 @@ def test_create_submission_summary_structure(tmp_path, create_task_output, mock_
     assert exit_code == 0
 
     # Load and validate summary
-    summary_path = submission_root / "summary-test.tar_summary.json"
+    summary_path = submission_root / "summary-test" / "summary.json"
     assert summary_path.exists()
 
     summary = json.loads(summary_path.read_text())

@@ -244,7 +244,6 @@ class WebArenaVerified:
         output_dirs: list[Path],
         output_root: Path,
         *,
-        no_tar: bool = False,
         custom_name: str | None = None,
         progress_callback: Callable[[int, int, int], None] | None = None,
     ) -> "SubmissionResult":
@@ -255,14 +254,12 @@ class WebArenaVerified:
         Args:
             output_dirs: List of output directories to scan
             output_root: Root directory where submission will be created
-            no_tar: If True, output as folder instead of tar.gz
             custom_name: Optional custom name for submission package (auto-generates timestamp if None)
             progress_callback: Optional callback for progress updates (current, total, task_id)
 
         Returns:
             SubmissionResult with comprehensive issue tracking:
                 - output_path: Final output path (with timestamp)
-                - is_tar: True for tar.gz, False for folder
                 - tasks_packaged: List of task IDs successfully packaged
                 - missing_agent_response: Task IDs missing only agent_response.json
                 - missing_network_har: Task IDs missing only network.har
@@ -272,7 +269,6 @@ class WebArenaVerified:
                 - duplicate_task_ids: Task IDs found in multiple directories
                 - unknown_task_ids: Task IDs not in reader's dataset
                 - missing_task_ids: Valid task IDs with no output directory
-                - archive_size: Size in bytes (tar only, None for folder)
                 - summary_file: Path to summary.json with detailed issue info
 
         Raises:
@@ -294,9 +290,7 @@ class WebArenaVerified:
         """
         valid_task_ids = set(self._reader.task_id_map.keys())
         handler = SubmissionHandler(output_dirs, self._config, valid_task_ids)
-        return handler.create_submission(
-            output_root, no_tar=no_tar, custom_name=custom_name, progress_callback=progress_callback
-        )
+        return handler.create_submission(output_root, custom_name=custom_name, progress_callback=progress_callback)
 
     @staticmethod
     def _load_config(config: Path | WebArenaVerifiedConfig | None = None) -> WebArenaVerifiedConfig:
