@@ -10,12 +10,9 @@ from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 
-from webarena_verified.types.leaderboard import (
-    CanonicalSubmissionRecord,
-    LeaderboardManifest,
-    LeaderboardRow,
-    LeaderboardTableFile,
-)
+from webarena_verified.types.leaderboard import CanonicalSubmissionRecord
+
+from .schemas import LeaderboardManifest, LeaderboardRow, LeaderboardTableFile, LeaderboardView
 
 # Leaderboard artifacts are published at branch root.
 LEADERBOARD_DATA_DIR = Path(".")
@@ -125,7 +122,7 @@ def _write_table_file(
         schema_version="1.0",
         generation_id=generation_id,
         generated_at_utc=generated_at_utc,
-        leaderboard=leaderboard,
+        leaderboard=LeaderboardView(leaderboard),
         rows=[LeaderboardRow(**row) for row in ranked_rows],
     )
     file_path = output_dir / filename

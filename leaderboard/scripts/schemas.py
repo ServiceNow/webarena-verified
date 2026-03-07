@@ -1,11 +1,9 @@
-"""Published leaderboard data types."""
-
 from enum import StrEnum
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
-from ._validators import (
+from webarena_verified.types.leaderboard._validators import (
     validate_probability,
     validate_probability_or_missing_sentinel,
     validate_rfc3339_utc_z,
@@ -17,15 +15,11 @@ SiteScore = Annotated[float, AfterValidator(lambda v: validate_probability_or_mi
 
 
 class LeaderboardView(StrEnum):
-    """Published leaderboard table variants."""
-
     FULL = "full"
     HARD = "hard"
 
 
 class LeaderboardRow(BaseModel):
-    """Single leaderboard entry row."""
-
     model_config = ConfigDict(extra="forbid")
 
     rank: int = Field(ge=1)
@@ -51,7 +45,6 @@ class LeaderboardRow(BaseModel):
     @field_validator("checksum")
     @classmethod
     def validate_checksum(cls, value: str) -> str:
-        """Validate checksum hash format."""
         return validate_sha256_hex(value, "checksum")
 
     @field_validator("submission_timestamp")
@@ -63,8 +56,6 @@ class LeaderboardRow(BaseModel):
 
 
 class LeaderboardTableFile(BaseModel):
-    """Published table file for either full or hard board."""
-
     model_config = ConfigDict(extra="allow")
 
     schema_version: str = Field(min_length=1)
@@ -76,5 +67,31 @@ class LeaderboardTableFile(BaseModel):
     @field_validator("generated_at_utc")
     @classmethod
     def validate_generated_at_utc(cls, value: str) -> str:
-        """Validate table timestamp format."""
         return validate_rfc3339_utc_z(value, "generated_at_utc")
+
+
+class LeaderboardManifest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    schema_version: str = Field(min_length=1)
+    generation_id: str = Field(min_length=1)
+    generated_at_utc: str
+    full_file: str = Field(min_length=1)
+    hard_file: str = Field(min_length=1)
+    full_sha256: str
+    hard_sha256: str
+
+    @field_validator("generated_at_utc")
+    @classmethod
+    def validate_generated_at_utc(cls, value: str) -> str:
+        return validate_rfc3339_utc_z(value, "generated_at_utc")
+
+    @field_validator("full_sha256")
+    @classmethod
+    def validate_full_sha256(cls, value: str) -> str:
+        return validate_sha256_hex(value, "full_sha256")
+
+    @field_validator("hard_sha256")
+    @classmethod
+    def validate_hard_sha256(cls, value: str) -> str:
+        return validate_sha256_hex(value, "hard_sha256")

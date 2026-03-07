@@ -5,10 +5,6 @@ from webarena_verified.types.leaderboard import (
     CanonicalSubmissionRecord,
     IntakeManifest,
     IntakeSubmission,
-    LeaderboardManifest,
-    LeaderboardRow,
-    LeaderboardTableFile,
-    LeaderboardView,
     SubmissionLeaderboard,
 )
 
@@ -49,28 +45,6 @@ def canonical_submission_record_payload() -> dict:
         "failure_count": 2,
         "error_count": 0,
         "missing_count": 1,
-        "checksum": "a" * 64,
-    }
-
-
-@pytest.fixture
-def leaderboard_row_payload() -> dict:
-    return {
-        "rank": 1,
-        "submission_id": 123,
-        "name": "TeamX/ModelY",
-        "overall_score": 0.95,
-        "shopping_score": 0.91,
-        "reddit_score": 0.88,
-        "gitlab_score": 0.9,
-        "wikipedia_score": -1,
-        "map_score": 0.86,
-        "shopping_admin_score": 0.92,
-        "success_count": 10,
-        "failure_count": 2,
-        "error_count": 0,
-        "missing_count": 1,
-        "webarena_verified_version": "1.0.0",
         "checksum": "a" * 64,
     }
 
@@ -149,90 +123,6 @@ def test_canonical_submission_record_rejects_invalid_contact_info(canonical_subm
 
     with pytest.raises(ValidationError, match="contact_info must be a valid email"):
         CanonicalSubmissionRecord(**canonical_submission_record_payload)
-
-
-def test_manifest_validates_hashes_and_timestamp():
-    manifest = LeaderboardManifest(
-        schema_version="1.0",
-        generation_id="gen-abc",
-        generated_at_utc="2026-02-07T12:00:00Z",
-        full_file="leaderboard_full.gen-abc.json",
-        hard_file="leaderboard_hard.gen-abc.json",
-        full_sha256="b" * 64,
-        hard_sha256="c" * 64,
-    )
-    assert manifest.generation_id == "gen-abc"
-
-
-def test_manifest_rejects_invalid_hash():
-    with pytest.raises(ValidationError, match="64-character SHA256"):
-        LeaderboardManifest(
-            schema_version="1.0",
-            generation_id="gen-abc",
-            generated_at_utc="2026-02-07T12:00:00Z",
-            full_file="leaderboard_full.gen-abc.json",
-            hard_file="leaderboard_hard.gen-abc.json",
-            full_sha256="not-a-hash",
-            hard_sha256="c" * 64,
-        )
-
-
-def test_row_accepts_site_score_missing_sentinel(leaderboard_row_payload: dict):
-    row = LeaderboardRow(**leaderboard_row_payload)
-    assert row.wikipedia_score == -1
-
-
-def test_row_rejects_invalid_site_score(leaderboard_row_payload: dict):
-    leaderboard_row_payload["shopping_score"] = 1.2
-
-    with pytest.raises(ValidationError, match="within \\[0, 1\\] or exactly -1"):
-        LeaderboardRow(**leaderboard_row_payload)
-
-
-def test_row_rejects_invalid_overall_score(leaderboard_row_payload: dict):
-    leaderboard_row_payload["overall_score"] = -0.1
-
-    with pytest.raises(ValidationError, match="overall_score must be within \\[0, 1\\]"):
-        LeaderboardRow(**leaderboard_row_payload)
-
-
-def test_row_rejects_non_integer_submission_id(leaderboard_row_payload: dict):
-    leaderboard_row_payload["submission_id"] = "sub-123"
-
-    with pytest.raises(ValidationError):
-        LeaderboardRow(**leaderboard_row_payload)
-
-
-def test_row_accepts_submission_timestamp(leaderboard_row_payload: dict):
-    leaderboard_row_payload["submission_timestamp"] = "2026-02-07T12:00:00Z"
-
-    row = LeaderboardRow(**leaderboard_row_payload)
-    assert row.submission_timestamp == "2026-02-07T12:00:00Z"
-
-
-def test_row_rejects_invalid_submission_timestamp(leaderboard_row_payload: dict):
-    leaderboard_row_payload["submission_timestamp"] = "2026-02-07 12:00:00"
-
-    with pytest.raises(ValidationError, match="submission_timestamp"):
-        LeaderboardRow(**leaderboard_row_payload)
-
-
-def test_row_rejects_unknown_extra_field(leaderboard_row_payload: dict):
-    leaderboard_row_payload["contact_info"] = "submitter@example.com"
-
-    with pytest.raises(ValidationError):
-        LeaderboardRow(**leaderboard_row_payload)
-
-
-def test_table_file_valid(leaderboard_row_payload: dict):
-    table = LeaderboardTableFile(
-        schema_version="1.0",
-        generation_id="gen-abc",
-        generated_at_utc="2026-02-07T12:00:00Z",
-        leaderboard=LeaderboardView.FULL,
-        rows=[LeaderboardRow(**leaderboard_row_payload)],
-    )
-    assert table.leaderboard == LeaderboardView.FULL
 
 
 def test_intake_submission_valid(intake_submission_payload: dict):

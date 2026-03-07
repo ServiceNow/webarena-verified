@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from .submission_control_status import SubmissionControlStatus
+from .submission_control import SubmissionControlStatus
 
 
 class HFIngestResult(BaseModel):
