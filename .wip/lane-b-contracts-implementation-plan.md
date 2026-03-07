@@ -72,8 +72,9 @@ class IntakeManifest(BaseModel):
     created_at_utc: str
     files: list[IntakeManifestFile] = Field(min_length=1)
 
-    @model_validator(mode="after")
-    def validate_unique_paths(self) -> "IntakeManifest": ...
+    @field_validator("files")
+    @classmethod
+    def validate_unique_paths(cls, value: list[IntakeManifestFile]) -> list[IntakeManifestFile]: ...
 ```
 
 ### Validation rules
@@ -100,10 +101,10 @@ class IntakeManifest(BaseModel):
 
 ```python
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class SubmissionRecord(BaseModel):
+class CanonicalSubmissionRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     submission_id: int = Field(ge=1)
@@ -115,18 +116,16 @@ class SubmissionRecord(BaseModel):
     github_pr_author_id: int = Field(ge=1)
     github_pr_author_login: str = Field(min_length=1)
 
-    status: Literal["accepted"] = "accepted"
     eval_completed_at_utc: str
-    evaluator_version: str = Field(min_length=1)
+    webarena_verified_version: str = Field(min_length=1)
 
-    hf_repo: str = Field(min_length=1)
-    hf_path: str = Field(min_length=1)
-    hf_revision: str = Field(min_length=1)
+    huggingface_dataset_repo: str = Field(min_length=1)
+    huggingface_dataset_revision: str = Field(min_length=1)
 
     name: str = Field(min_length=1)
     leaderboard: Literal["hard", "full", "both"]
     reference: str = Field(min_length=1)
-    version: str | None = None
+    model_version: str | None = None
     contact_info: str | None = None
 
     overall_score: float
@@ -144,7 +143,7 @@ class SubmissionRecord(BaseModel):
     checksum: str
 
     @model_validator(mode="after")
-    def validate_submission_identity(self) -> "SubmissionRecord": ...
+    def validate_submission_identity(self) -> "CanonicalSubmissionRecord": ...
 ```
 
 ### Validation rules
@@ -152,7 +151,7 @@ class SubmissionRecord(BaseModel):
 - `submission_id` and `github_pr_number` must match exactly.
 - Timestamp fields use RFC3339 UTC `...Z`.
 - `checksum` uses lowercase SHA256 hex.
-- Per-site score validation mirrors existing rules (`[0,1]` or `-1` sentinel where applicable).
+- Score fields are modeled as non-negative floats.
 
 ### Lane interactions
 
@@ -197,7 +196,7 @@ def _select_boards(raw: dict, *, submission_id: int) -> set[str]: ...
 ### Planned refactor touchpoints
 
 - `dev/leaderboard/submission_pr_validator.py`
-  - replace `SubmissionRecord` intake parsing with `IntakeSubmission` + `IntakeManifest` loading.
+  - replace ad-hoc intake parsing with `IntakeSubmission` + `IntakeManifest` loading.
 - `dev/leaderboard/hf_submission_validator.py`
   - keep HF-specific runtime models local or in `dev/leaderboard/models.py`, but remove duplicated canonical submission shapes.
 - `dev/leaderboard/submission_record_repository.py`
@@ -215,7 +214,7 @@ flowchart TD
   D --> E
 
   E --> F[Lane D Finalize]
-  F --> G[SubmissionRecord model]
+  F --> G[CanonicalSubmissionRecord model]
   F --> H[submissions/submission_id.json]
 
   H --> I[Lane E Rebuild loader]
@@ -241,10 +240,10 @@ sequenceDiagram
   C->>T: IntakeManifest.model_validate(manifest_json)
   C->>C: validate_manifest_integrity(files[])
 
-  D->>T: SubmissionRecord.model_validate(canonical_payload)
+  D->>T: CanonicalSubmissionRecord.model_validate(canonical_payload)
   D->>D: write submissions/<submission_id>.json
 
-  E->>T: SubmissionRecord.model_validate(each canonical file)
+  E->>T: CanonicalSubmissionRecord.model_validate(each canonical file)
   E->>E: rank_rows(sort: overall_score desc, submission_id asc)
   E->>T: LeaderboardTableFile.model_validate(full/hard)
   E->>T: LeaderboardManifest.model_validate(manifest)

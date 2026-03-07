@@ -255,9 +255,9 @@ def _record_timestamp(record: CanonicalSubmissionRecord, raw: dict) -> str | Non
 
 
 def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) -> dict:
-    normalized_raw = dict(raw)
-    if "webarena_verified_version" not in normalized_raw and "evaluator_version" in normalized_raw:
-        normalized_raw["webarena_verified_version"] = normalized_raw["evaluator_version"]
+    normalized_raw = {
+        key: value for key, value in dict(raw).items() if key not in {"rank", "submission_id", "submission_timestamp"}
+    }
 
     missing_fields = [field for field in _REQUIRED_ROW_FIELDS if field not in normalized_raw]
     if missing_fields:
@@ -269,13 +269,11 @@ def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) ->
         context=f"accepted submission '{record.submission_id}'",
     )
 
-    validated = LeaderboardRow.model_validate(
-        {
-            **normalized_raw,
-            "rank": 1,
-            "submission_id": submission_id,
-            "submission_timestamp": _record_timestamp(record, raw),
-        }
+    validated = LeaderboardRow(
+        rank=1,
+        submission_id=submission_id,
+        submission_timestamp=_record_timestamp(record, raw),
+        **normalized_raw,
     )
     return validated.model_dump(mode="python")
 

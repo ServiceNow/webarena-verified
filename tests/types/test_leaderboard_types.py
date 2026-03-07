@@ -21,22 +21,20 @@ def canonical_submission_record_payload() -> dict:
         "source_repository_full_name": "fork-owner/repo-fork",
         "github_pr_author_id": 456,
         "github_pr_author_login": "octocat",
-        "status": "accepted",
         "eval_completed_at_utc": "2026-02-07T12:10:00Z",
-        "evaluator_version": "1.2.3",
-        "hf_repo": "owner/dataset",
-        "hf_path": "submissions/123",
-        "hf_revision": "abc123",
+        "webarena_verified_version": "1.2.3",
+        "huggingface_dataset_repo": "owner/dataset/submissions/123",
+        "huggingface_dataset_revision": "abc123",
         "name": "TeamX/ModelY",
         "leaderboard": "both",
         "reference": "https://example.com/paper",
-        "version": "v1",
+        "model_version": "v1",
         "contact_info": "team@example.com",
         "overall_score": 0.95,
         "shopping_score": 0.91,
         "reddit_score": 0.88,
         "gitlab_score": 0.9,
-        "wikipedia_score": -1,
+        "wikipedia_score": 0.87,
         "map_score": 0.86,
         "shopping_admin_score": 0.92,
         "success_count": 10,
@@ -111,7 +109,7 @@ def intake_manifest_payload() -> dict:
 def test_canonical_submission_record_valid(canonical_submission_record_payload: dict):
     record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
     assert record.submission_id == 123
-    assert record.status == "accepted"
+    assert record.huggingface_dataset_revision == "abc123"
 
 
 def test_canonical_submission_record_requires_matching_identity(canonical_submission_record_payload: dict):
@@ -122,9 +120,9 @@ def test_canonical_submission_record_requires_matching_identity(canonical_submis
 
 
 def test_canonical_submission_record_rejects_invalid_overall_score(canonical_submission_record_payload: dict):
-    canonical_submission_record_payload["overall_score"] = 2.0
+    canonical_submission_record_payload["overall_score"] = -0.1
 
-    with pytest.raises(ValidationError, match="overall_score must be within \\[0, 1\\]"):
+    with pytest.raises(ValidationError, match="greater than or equal to 0"):
         CanonicalSubmissionRecord(**canonical_submission_record_payload)
 
 

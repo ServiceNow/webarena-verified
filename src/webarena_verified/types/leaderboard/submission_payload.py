@@ -5,45 +5,20 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
 from ._validators import (
+    validate_created_at_utc,
     validate_email,
-    validate_http_url,
+    validate_manifest_path,
+    validate_manifest_sha256,
     validate_model_name,
-    validate_relative_repo_path,
-    validate_rfc3339_utc_z,
-    validate_sha256_hex,
+    validate_reference_url,
 )
 
-
-def _validate_name(value: str) -> str:
-    return validate_model_name(value)
-
-
-def _validate_reference(value: str) -> str:
-    return validate_http_url(value, "reference")
-
-
-def _validate_created_at_utc(value: str) -> str:
-    return validate_rfc3339_utc_z(value, "created_at_utc")
-
-
-def _validate_contact_info(value: str) -> str:
-    return validate_email(value)
-
-
-def _validate_manifest_path(value: str) -> str:
-    return validate_relative_repo_path(value, "path")
-
-
-def _validate_manifest_sha256(value: str) -> str:
-    return validate_sha256_hex(value, "sha256")
-
-
-Name = Annotated[str, Field(min_length=1), AfterValidator(_validate_name)]
-ReferenceURL = Annotated[str, Field(min_length=1), AfterValidator(_validate_reference)]
-CreatedAtUTC = Annotated[str, AfterValidator(_validate_created_at_utc)]
-ContactEmail = Annotated[str, AfterValidator(_validate_contact_info)]
-ManifestPath = Annotated[str, Field(min_length=1), AfterValidator(_validate_manifest_path)]
-ManifestSha256 = Annotated[str, AfterValidator(_validate_manifest_sha256)]
+Name = Annotated[str, Field(min_length=1), AfterValidator(validate_model_name)]
+ReferenceURL = Annotated[str, Field(min_length=1), AfterValidator(validate_reference_url)]
+CreatedAtUTC = Annotated[str, AfterValidator(validate_created_at_utc)]
+ContactEmail = Annotated[str, AfterValidator(validate_email)]
+ManifestPath = Annotated[str, Field(min_length=1), AfterValidator(validate_manifest_path)]
+ManifestSha256 = Annotated[str, AfterValidator(validate_manifest_sha256)]
 
 
 class IntakePackagingSummary(BaseModel):
