@@ -10,15 +10,11 @@ from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import ValidationError
-
 from webarena_verified.types.leaderboard import (
     CanonicalSubmissionRecord,
     LeaderboardManifest,
     LeaderboardRow,
     LeaderboardTableFile,
-    SubmissionRecord,
-    SubmissionStatus,
 )
 
 LEADERBOARD_DATA_DIR = Path("leaderboard/data")
@@ -246,24 +242,19 @@ def publish_staged_leaderboard(*, staging_dir: Path, gh_pages_root: Path) -> Lea
     return manifest
 
 
-def _load_submission_record(record_path: Path) -> tuple[CanonicalSubmissionRecord | SubmissionRecord, dict]:
+def _load_submission_record(record_path: Path) -> tuple[CanonicalSubmissionRecord, dict]:
     raw = json.loads(record_path.read_text(encoding="utf-8"))
-    try:
-        return CanonicalSubmissionRecord.model_validate(raw), raw
-    except ValidationError:
-        return SubmissionRecord.model_validate(raw), raw
+    return CanonicalSubmissionRecord.model_validate(raw), raw
 
 
-def _record_timestamp(record: CanonicalSubmissionRecord | SubmissionRecord, raw: dict) -> str | None:
+def _record_timestamp(record: CanonicalSubmissionRecord, raw: dict) -> str | None:
     """Resolve timestamp attached to exported leaderboard rows."""
     if raw.get("submission_timestamp"):
         return raw["submission_timestamp"]
-    if isinstance(record, CanonicalSubmissionRecord):
-        return record.eval_completed_at_utc
-    return record.processed_at_utc or record.updated_at_utc
+    return record.eval_completed_at_utc
 
 
-def _row_from_submission_record(record: CanonicalSubmissionRecord | SubmissionRecord, raw: dict) -> dict:
+def _row_from_submission_record(record: CanonicalSubmissionRecord, raw: dict) -> dict:
     normalized_raw = dict(raw)
     if "webarena_verified_version" not in normalized_raw and "evaluator_version" in normalized_raw:
         normalized_raw["webarena_verified_version"] = normalized_raw["evaluator_version"]
@@ -280,22 +271,9 @@ def _row_from_submission_record(record: CanonicalSubmissionRecord | SubmissionRe
 
     validated = LeaderboardRow.model_validate(
         {
+            **normalized_raw,
             "rank": 1,
             "submission_id": submission_id,
-            "name": normalized_raw["name"],
-            "overall_score": normalized_raw["overall_score"],
-            "shopping_score": normalized_raw["shopping_score"],
-            "reddit_score": normalized_raw["reddit_score"],
-            "gitlab_score": normalized_raw["gitlab_score"],
-            "wikipedia_score": normalized_raw["wikipedia_score"],
-            "map_score": normalized_raw["map_score"],
-            "shopping_admin_score": normalized_raw["shopping_admin_score"],
-            "success_count": normalized_raw["success_count"],
-            "failure_count": normalized_raw["failure_count"],
-            "error_count": normalized_raw["error_count"],
-            "missing_count": normalized_raw["missing_count"],
-            "webarena_verified_version": normalized_raw["webarena_verified_version"],
-            "checksum": normalized_raw["checksum"],
             "submission_timestamp": _record_timestamp(record, raw),
         }
     )
@@ -322,9 +300,6 @@ def _rows_from_processed_dir(processed_dir: Path) -> tuple[list[dict], list[dict
 
     for record_path in sorted(processed_dir.glob("*.json")):
         record, raw = _load_submission_record(record_path)
-        if isinstance(record, SubmissionRecord) and record.status != SubmissionStatus.ACCEPTED:
-            continue
-
         row = _row_from_submission_record(record, raw)
         boards = _select_boards(raw, submission_id=row["submission_id"])
         if "full" in boards:

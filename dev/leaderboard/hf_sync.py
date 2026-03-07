@@ -18,7 +18,7 @@ from dev.leaderboard.submission_control_plane import (
     read_processed_submission,
     write_pending_submission,
 )
-from webarena_verified.types.leaderboard import SubmissionRecord, SubmissionStatus
+from dev.leaderboard.models import SubmissionRecord, SubmissionStatus
 
 if TYPE_CHECKING:
     from pathlib import Path

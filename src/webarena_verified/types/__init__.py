@@ -4,11 +4,14 @@ from .agent_response import FinalAgentResponse, MainObjectiveType, Status
 from .container import ContainerStartResult, ContainerStatus, ContainerStatusResult
 from .environment import EnvCtrlResult
 from .leaderboard import (
+    CanonicalSubmissionRecord,
+    IntakeManifest,
+    IntakeManifestFile,
+    IntakePackagingSummary,
+    IntakeSubmission,
     LeaderboardManifest,
     LeaderboardRow,
     LeaderboardTableFile,
-    SubmissionRecord,
-    SubmissionStatus,
 )
 from .task import (
     AgentResponseEvaluatorCfg,
@@ -20,20 +23,23 @@ from .task import (
 
 __all__ = [
     "AgentResponseEvaluatorCfg",
+    "CanonicalSubmissionRecord",
     "ContainerStartResult",
     "ContainerStatus",
     "ContainerStatusResult",
     "EnvCtrlResult",
     "EvaluatorCfg",
     "FinalAgentResponse",
+    "IntakeManifest",
+    "IntakeManifestFile",
+    "IntakePackagingSummary",
+    "IntakeSubmission",
     "LeaderboardManifest",
     "LeaderboardRow",
     "LeaderboardTableFile",
     "MainObjectiveType",
     "NetworkEventEvaluatorCfg",
     "Status",
-    "SubmissionRecord",
-    "SubmissionStatus",
     "WebArenaSite",
     "WebArenaVerifiedTask",
 ]

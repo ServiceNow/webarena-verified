@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 from dev.utils.file_lock import guarded_file_lock, guarded_file_locks
-from webarena_verified.types.leaderboard import SubmissionRecord, SubmissionStatus
+from dev.leaderboard.models import SubmissionRecord, SubmissionStatus
 
 DEFAULT_SUBMISSIONS_ROOT = Path("leaderboard/data/submissions")
 _PENDING_DIR = "pending"
