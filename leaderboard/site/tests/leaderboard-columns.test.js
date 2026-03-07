@@ -1,14 +1,13 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
-describe("leaderboard site score columns", () => {
-  it("includes all six required per-site score columns", () => {
-    const leaderboardScriptPath = fileURLToPath(new URL("../src/scripts/leaderboard.js", import.meta.url));
-    const source = readFileSync(leaderboardScriptPath, "utf8");
+import { createColumns } from "../src/scripts/columns.js";
 
-    const requiredColumns = [
+describe("leaderboard site score columns", () => {
+  const columns = createColumns();
+  const fields = columns.map((col) => col.field).filter(Boolean);
+
+  it("includes all six required per-site score columns", () => {
+    const requiredSiteColumns = [
       "gitlab_score",
       "reddit_score",
       "shopping_admin_score",
@@ -17,8 +16,17 @@ describe("leaderboard site score columns", () => {
       "map_score"
     ];
 
-    requiredColumns.forEach((column) => {
-      expect(source).toContain(column);
+    requiredSiteColumns.forEach((column) => {
+      expect(fields).toContain(column);
     });
+  });
+
+  it("includes the overall_score column", () => {
+    expect(fields).toContain("overall_score");
+  });
+
+  it("includes rank and name columns", () => {
+    expect(fields).toContain("rank");
+    expect(fields).toContain("name");
   });
 });

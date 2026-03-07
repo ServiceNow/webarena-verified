@@ -2,10 +2,10 @@ import { TabulatorFull as Tabulator } from "tabulator-tables";
 import {
   ManifestLoadError,
   TableLoadError,
-  formatScore,
   getManifestUrl,
   loadLeaderboardData
 } from "./data.js";
+import { createColumns } from "./columns.js";
 
 let table;
 let datasets;
@@ -25,97 +25,6 @@ const dom = {
   totalSubmissions: document.getElementById("kpi-total-submissions"),
   lastSubmission: document.getElementById("kpi-last-submission")
 };
-
-const SCORE_COLUMNS = [
-  "gitlab_score",
-  "reddit_score",
-  "shopping_admin_score",
-  "shopping_score",
-  "wikipedia_score",
-  "map_score"
-];
-
-const SITE_COLUMN_LABELS = {
-  gitlab_score: "GitLab",
-  reddit_score: "Reddit",
-  shopping_admin_score: "Shopping Admin",
-  shopping_score: "Shopping",
-  wikipedia_score: "Wikipedia",
-  map_score: "Map"
-};
-
-function createColumns() {
-  const fixedColumns = [
-    {
-      formatter: "responsiveCollapse",
-      headerSort: false,
-      width: 44,
-      minWidth: 44,
-      hozAlign: "center",
-      resizable: false
-    },
-    {
-      title: "Rank",
-      field: "rank",
-      sorter: "number",
-      width: 86,
-      hozAlign: "center"
-    },
-    {
-      title: "Name",
-      field: "name",
-      sorter: "string",
-      minWidth: 220,
-      hozAlign: "left"
-    },
-    { title: "Timestamp", field: "_submission_timestamp", sorter: "string", width: 220, hozAlign: "center" },
-    {
-      title: "Overall",
-      field: "overall_score",
-      sorter: "number",
-      width: 118,
-      hozAlign: "center",
-      formatter: (cell) => formatScore(cell.getValue())
-    }
-  ];
-
-  const siteColumns = SCORE_COLUMNS.map((field) => ({
-    title: SITE_COLUMN_LABELS[field],
-    field,
-    sorter: "number",
-    width: 132,
-    hozAlign: "center",
-    formatter: (cell) => formatScore(cell.getValue()),
-    responsive: 0
-  }));
-  const detailsColumns = [
-    {
-      title: "Submission ID",
-      field: "submission_id",
-      sorter: "string",
-      width: 420,
-      minWidth: 420,
-      responsive: 100
-    },
-    {
-      title: "Evaluator",
-      field: "webarena_verified_version",
-      sorter: "string",
-      width: 320,
-      minWidth: 320,
-      responsive: 99
-    }
-  ];
-
-  return [
-    fixedColumns[0],
-    fixedColumns[1],
-    fixedColumns[2],
-    ...siteColumns,
-    fixedColumns[3],
-    ...detailsColumns
-  ];
-}
 
 function setBlockingError(message) {
   dom.loading.hidden = true;
@@ -186,7 +95,6 @@ function updateKpis() {
 async function loadBoard(boardName) {
   const rows = getBoardRows(boardName);
   await table.replaceData(rows);
-  applyHardTableTheme();
   updateKpis();
   applySearchAndFilter();
 }
@@ -281,48 +189,8 @@ function initTable() {
         { column: "rank", dir: "asc" }
       ]
     });
-    table.on("tableBuilt", () => {
-      applyHardTableTheme();
-      markReady();
-    });
-
-    // Fallback: avoid hanging if tableBuilt is delayed/missed in edge cases.
-    setTimeout(() => {
-      applyHardTableTheme();
-      markReady();
-    }, 200);
+    table.on("tableBuilt", markReady);
   });
-}
-
-function applyHardTableTheme() {
-  const root = document.querySelector("#leaderboard-table.tabulator, #leaderboard-table .tabulator");
-  const header = document.querySelector("#leaderboard-table.tabulator .tabulator-header, #leaderboard-table .tabulator .tabulator-header");
-  const footer = document.querySelector("#leaderboard-table.tabulator .tabulator-footer, #leaderboard-table .tabulator .tabulator-footer");
-  const holder = document.querySelector(
-    "#leaderboard-table.tabulator .tabulator-tableholder, #leaderboard-table .tabulator .tabulator-tableholder"
-  );
-
-  if (root) {
-    root.style.setProperty("background-color", "#ffffff", "important");
-    root.style.setProperty("border-color", "#d4dff0", "important");
-    root.style.setProperty("color", "#1e334a", "important");
-  }
-
-  if (header) {
-    header.style.setProperty("background-color", "#f8fbff", "important");
-    header.style.setProperty("color", "#2c3f55", "important");
-    header.style.setProperty("border-bottom", "1px solid #d4dff0", "important");
-  }
-
-  if (footer) {
-    footer.style.setProperty("background-color", "#f8fbff", "important");
-    footer.style.setProperty("color", "#31506d", "important");
-    footer.style.setProperty("border-top", "1px solid #d4dff0", "important");
-  }
-
-  if (holder) {
-    holder.style.setProperty("background-color", "#ffffff", "important");
-  }
 }
 
 async function start() {
