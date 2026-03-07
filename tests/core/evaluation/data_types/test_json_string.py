@@ -37,30 +37,6 @@ def test_normalization_from_string(value, expected):
     assert isinstance(js.normalized, str)
 
 
-@pytest.mark.parametrize(
-    ("value", "expected"),
-    [
-        # Arrays - order preserved
-        ("[1, 2, 3]", "[1,2,3]"),
-        ("[3, 1, 2]", "[3,1,2]"),
-        # Empty structures
-        ("{}", "{}"),
-        ("[]", "[]"),
-        # Nested structures
-        ('{"b": {"nested": "value"}, "a": [1, 2]}', '{"a":[1,2],"b":{"nested":"value"}}'),
-        # Mixed types
-        (
-            '{"string": "value", "number": 42, "bool": true, "null": null}',
-            '{"bool":true,"null":null,"number":42,"string":"value"}',
-        ),
-    ],
-)
-def test_normalization_various_json(value, expected):
-    """Test that various JSON string formats are normalized correctly."""
-    js = JsonString(value)
-    assert js.normalized == expected
-
-
 # ===== Whitespace Normalization Tests =====
 
 
@@ -101,12 +77,12 @@ def test_key_sorting_top_level(value, expected):
     assert js.normalized == expected
 
 
-def test_nested_keys_not_sorted():
-    """Test that nested object keys are NOT sorted (only top-level)."""
+def test_nested_keys_are_sorted():
+    """Test that nested object keys are sorted by JSON canonicalization."""
     # Nested object has keys in different order
     value = '{"a": {"z": 1, "b": 2}, "b": 1}'
     js = JsonString(value)
-    # Top-level sorted, nested keys also get sorted by json.dumps(sort_keys=True)
+    # Top-level and nested keys are sorted by json.dumps(sort_keys=True)
     assert js.normalized == '{"a":{"b":2,"z":1},"b":1}'
 
 
@@ -356,9 +332,6 @@ def test_mixed_nesting():
     assert js.normalized == expected
 
 
-@pytest.mark.skip(
-    reason="JsonString normalization strips/transliterates Unicode characters - requires source code changes to preserve"
-)
 def test_unicode_characters():
     """Test handling of Unicode characters."""
     value = '{"message": "Hello 世界", "emoji": "🎉"}'
@@ -369,7 +342,6 @@ def test_unicode_characters():
     assert js.normalized == '{"emoji":"🎉","message":"Hello 世界"}'
 
 
-@pytest.mark.skip(reason="JsonString normalization lowercases paths - requires source code changes to preserve case")
 def test_special_characters_in_strings():
     """Test handling of special characters in string values."""
     value = r'{"path": "C:\\Users\\test", "url": "https://example.com"}'

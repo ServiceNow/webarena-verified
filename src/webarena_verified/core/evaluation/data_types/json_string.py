@@ -57,3 +57,11 @@ class JsonString(NormalizedType[str]):
 
         # Dump to compact string with sorted keys (top-level only)
         return json.dumps(parsed, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+    def _normalize_pipeline(self, value: Any) -> str:
+        """Override base pipeline to preserve raw JSON string content.
+
+        Json payloads must not be transliterated, case-folded, or otherwise pre-normalized
+        before parsing. We only apply JSON parsing + canonical dumping in `_type_normalize`.
+        """
+        return self._type_normalize(value)

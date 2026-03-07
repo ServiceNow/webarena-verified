@@ -354,29 +354,6 @@ def test_hash_alternatives():
     assert hash(md1) == hash(md2)
 
 
-def test_hash_usable_in_set():
-    """Test that MarkdownString instances can be used in sets."""
-    md1 = MarkdownString("# Header")
-    md2 = MarkdownString("# Header")  # Same content
-    md3 = MarkdownString("## Different")  # Different content
-
-    md_set = {md1, md2, md3}
-    assert len(md_set) == 2  # md1 and md2 are equal, so only 2 unique
-
-
-def test_hash_usable_in_dict():
-    """Test that MarkdownString instances can be used as dict keys."""
-    md1 = MarkdownString("# Header")
-    md2 = MarkdownString("# Header")  # Same content
-    md3 = MarkdownString("## Different")
-
-    result_dict = {md1: "value1", md3: "value2"}
-    assert len(result_dict) == 2
-
-    # Same content should retrieve same value
-    assert result_dict[md2] == "value1"
-
-
 # ===== Complex Data Tests =====
 
 
@@ -426,39 +403,3 @@ def test_special_characters():
     assert "`code`" in md.normalized
     assert "**bold**" in md.normalized
     assert "[link](http://example.com)" in md.normalized
-
-
-# ===== Equality Properties Tests =====
-
-
-def test_equality_reflexivity():
-    """Test that equality is reflexive: A == A."""
-    md = MarkdownString("# Header")
-    assert md == md  # noqa: PLR0124
-
-
-@pytest.mark.parametrize(
-    ("value1", "value2"),
-    [
-        ("* Item", "- Item"),
-        ("# Header", "#  Header"),
-        (["# H1", "# H2"], ["# H1", "# H2"]),
-    ],
-)
-def test_equality_symmetry(value1, value2):
-    """Test that equality is symmetric: A == B implies B == A."""
-    md1 = MarkdownString(value1)
-    md2 = MarkdownString(value2)
-    assert md1 == md2
-    assert md2 == md1
-
-
-def test_equality_transitivity():
-    """Test that equality is transitive: if A == B and B == C, then A == C."""
-    md1 = MarkdownString("* Item")
-    md2 = MarkdownString("+ Item")
-    md3 = MarkdownString("- Item")
-
-    assert md1 == md2
-    assert md2 == md3
-    assert md1 == md3

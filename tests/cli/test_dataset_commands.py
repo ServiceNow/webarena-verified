@@ -260,6 +260,52 @@ def test_dataset_get_with_fields(mock_task_for_dataset_get, capsys):
     assert "intent_template_id" in call_kwargs["include"]
     assert "sites" in call_kwargs["include"]
     assert "intent" in call_kwargs["include"]
+    output = json.loads(capsys.readouterr().out)
+    assert output == [
+        {
+            "task_id": 1,
+            "intent_template_id": 100,
+            "sites": ["shopping"],
+            "intent": "Test intent for task 1",
+        }
+    ]
+
+
+def test_dataset_get_with_fields_handles_spaces_and_duplicates(mock_task_for_dataset_get, capsys):
+    """Field parsing should normalize whitespace/duplicates while preserving core fields."""
+    mock_task = mock_task_for_dataset_get(7)
+    mock_task.model_dump.side_effect = lambda mode, include=None: {
+        k: v
+        for k, v in {
+            "task_id": 7,
+            "intent_template_id": 100,
+            "sites": ["shopping"],
+            "intent": "Test intent for task 7",
+        }.items()
+        if include is None or k in include
+    }
+
+    mock_wa = MagicMock()
+    mock_wa.get_tasks.return_value = [mock_task]
+
+    args = Mock(
+        task_ids=None,
+        sites=None,
+        task_type=None,
+        template_id=None,
+        fields=" intent , intent , task_id ",
+        output=None,
+    )
+
+    with patch("webarena_verified.__main__.WebArenaVerified", return_value=mock_wa):
+        exit_code = dataset_get(args)
+
+    assert exit_code == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output[0]["task_id"] == 7
+    assert output[0]["intent_template_id"] == 100
+    assert output[0]["sites"] == ["shopping"]
+    assert output[0]["intent"] == "Test intent for task 7"
 
 
 def test_dataset_get_output_to_file(mock_task_for_dataset_get, tmp_path):

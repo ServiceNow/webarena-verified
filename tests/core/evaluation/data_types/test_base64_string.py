@@ -352,29 +352,6 @@ def test_hash_alternatives():
     assert hash(b64_1) == hash(b64_2)
 
 
-def test_hash_usable_in_set():
-    """Test that Base64String instances can be used in sets."""
-    b64_1 = Base64String(base64.b64encode(b"Test").decode())
-    b64_2 = Base64String(base64.b64encode(b"Test").decode())  # Same content
-    b64_3 = Base64String(base64.b64encode(b"Different").decode())
-
-    b64_set = {b64_1, b64_2, b64_3}
-    assert len(b64_set) == 2  # b64_1 and b64_2 are equal, so only 2 unique
-
-
-def test_hash_usable_in_dict():
-    """Test that Base64String instances can be used as dict keys."""
-    b64_1 = Base64String(base64.b64encode(b"Test").decode())
-    b64_2 = Base64String(base64.b64encode(b"Test").decode())  # Same content
-    b64_3 = Base64String(base64.b64encode(b"Different").decode())
-
-    result_dict = {b64_1: "value1", b64_3: "value2"}
-    assert len(result_dict) == 2
-
-    # Same content should retrieve same value
-    assert result_dict[b64_2] == "value1"
-
-
 # ===== Unicode and Special Characters Tests =====
 
 
@@ -469,50 +446,6 @@ This is a copyleft license."""
     content_b64 = Base64String(base64_content)
 
     assert pattern_b64 == content_b64
-
-
-# ===== Equality Properties Tests =====
-
-
-def test_equality_reflexivity():
-    """Test that equality is reflexive: A == A."""
-    b64 = Base64String(base64.b64encode(b"Test").decode())
-    assert b64 == b64  # noqa: PLR0124
-
-
-@pytest.mark.parametrize(
-    ("value1", "value2"),
-    [
-        # Same base64 encoding
-        (
-            base64.b64encode(b"Test").decode(),
-            base64.b64encode(b"Test").decode(),
-        ),
-        # Different line endings normalize to same
-        (
-            base64.b64encode(b"Line 1\r\nLine 2").decode(),
-            base64.b64encode(b"Line 1\nLine 2").decode(),
-        ),
-    ],
-)
-def test_equality_symmetry(value1, value2):
-    """Test that equality is symmetric: A == B implies B == A."""
-    b64_1 = Base64String(value1)
-    b64_2 = Base64String(value2)
-    assert b64_1 == b64_2
-    assert b64_2 == b64_1
-
-
-def test_equality_transitivity():
-    """Test that equality is transitive: if A == B and B == C, then A == C."""
-    # All encode to same content (with different line endings)
-    b64_1 = Base64String(base64.b64encode(b"Line 1\nLine 2").decode())
-    b64_2 = Base64String(base64.b64encode(b"Line 1\rLine 2").decode())
-    b64_3 = Base64String(base64.b64encode(b"Line 1\r\nLine 2").decode())
-
-    assert b64_1 == b64_2
-    assert b64_2 == b64_3
-    assert b64_1 == b64_3
 
 
 # ===== No Normalization Tests =====

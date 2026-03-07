@@ -91,6 +91,29 @@ class NestedListModel(BaseModel):
         return {"items": convert_nested(self.items)}
 
 
+class NestedTupleModel(BaseModel):
+    """Model with NormalizedTypes nested in tuples."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    items: tuple
+
+    @model_serializer
+    def _serialize(self) -> dict[str, Any]:
+        """Custom serializer to handle nested NormalizedTypes."""
+
+        def convert_nested(obj: Any) -> Any:
+            if isinstance(obj, (MappingProxyType, dict)):
+                return {k: convert_nested(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [convert_nested(item) for item in obj]
+            if isinstance(obj, NormalizedType):
+                return obj.normalized
+            return obj
+
+        return {"items": convert_nested(self.items)}
+
+
 class ComplexNestedModel(BaseModel):
     """Model with deeply nested NormalizedTypes.
 
@@ -115,6 +138,15 @@ class ComplexNestedModel(BaseModel):
             return obj
 
         return {"data": convert_nested(self.data)}
+
+
+class TypedNormalizedModel(BaseModel):
+    """Model using typed fields to rely on production serializers directly."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    values: list[Number]
+    labels: dict[str, NormalizedString]
 
 
 # Basic Serialization Tests
@@ -344,12 +376,12 @@ def test_tuple_with_normalized_types_serializes():
     Scenario: Create model with tuple containing NormalizedType instances
     Expected: Tuple items serialize to normalized values (as list in JSON)
     """
-    model = NestedListModel(
-        items=[
+    model = NestedTupleModel(
+        items=(
             Number(1),
             Number(2),
             NormalizedString("Three"),
-        ]
+        )
     )
 
     json_str = model.model_dump_json()
@@ -547,3 +579,20 @@ def test_mixed_types_in_list_serialize():
     assert data["items"][5] is True
     assert data["items"][6] == "50.0"
     assert data["items"][7]["nested"] == "value"
+
+
+def test_typed_normalized_fields_serialize_without_custom_helpers():
+    """Typed fields should serialize via NormalizedType's production serializer."""
+    model = TypedNormalizedModel(
+        values=[Number(1), Number(2.5)],
+        labels={
+            "primary": NormalizedString(" Hello "),
+            "secondary": NormalizedString("WORLD"),
+        },
+    )
+
+    json_str = model.model_dump_json()
+    data = json.loads(json_str)
+
+    assert data["values"] == [1.0, 2.5]
+    assert data["labels"] == {"primary": "hello", "secondary": "world"}

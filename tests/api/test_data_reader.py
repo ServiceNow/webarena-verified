@@ -144,18 +144,20 @@ def test_get_task_by_id_not_found(data_reader: WebArenaVerifiedDataReader):
 # Filter Tests
 # ============================================================================
 @pytest.mark.parametrize(
-    ("site", "expected_min_count"),
+    "site",
     [
-        (WebArenaSite.SHOPPING, 50),  # Shopping has many tasks
-        (WebArenaSite.MAP, 20),  # Map has some tasks
-        (WebArenaSite.GITLAB, 100),  # GitLab has many tasks
+        WebArenaSite.SHOPPING,
+        WebArenaSite.MAP,
+        WebArenaSite.GITLAB,
     ],
 )
-def test_filter_by_sites(data_reader: WebArenaVerifiedDataReader, site: WebArenaSite, expected_min_count: int):
+def test_filter_by_sites(data_reader: WebArenaVerifiedDataReader, site: WebArenaSite):
     """Test filtering tasks by site."""
     filtered = data_reader.get_tasks_by_value_filter(sites=[site])
+    expected = [task for task in data_reader.tasks if sorted(task.sites) == [site]]
 
-    assert len(filtered) >= expected_min_count
+    assert len(filtered) == len(expected)
+    assert {task.task_id for task in filtered} == {task.task_id for task in expected}
     # Verify all filtered tasks have the specified site
     for task in filtered:
         assert site in task.sites
@@ -353,6 +355,21 @@ def test_with_temp_dataset(temp_dataset_file: Path):
     shopping_tasks = reader.get_tasks_by_value_filter(sites=[WebArenaSite.SHOPPING])
     assert len(shopping_tasks) == 1
     assert shopping_tasks[0].task_id == 0
+
+
+def test_filter_by_sites_is_deterministic_with_temp_dataset(temp_dataset_file: Path):
+    """Verify site filtering against a synthetic dataset with exact expected counts."""
+    config = WebArenaVerifiedConfig(test_data_file=temp_dataset_file)
+    reader = WebArenaVerifiedDataReader(config)
+
+    shopping_tasks = reader.get_tasks_by_value_filter(sites=[WebArenaSite.SHOPPING])
+    map_tasks = reader.get_tasks_by_value_filter(sites=[WebArenaSite.MAP])
+    gitlab_tasks = reader.get_tasks_by_value_filter(sites=[WebArenaSite.GITLAB])
+
+    assert [task.task_id for task in shopping_tasks] == [0]
+    assert [task.task_id for task in map_tasks] == [1]
+    assert len(gitlab_tasks) == 810
+    assert {task.task_id for task in gitlab_tasks} == set(range(2, 812))
 
 
 # ============================================================================
