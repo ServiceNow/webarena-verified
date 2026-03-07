@@ -90,7 +90,6 @@ def test_hf_ingest_writes_control_and_canonical_records(tmp_path: Path, monkeypa
     result = hf_ingest.ingest_hf_submission(
         repo_root=tmp_path,
         event_path=event_path,
-        github_repo="org/repo",
         hf_repo_canonical="org/dataset",
         hf_token="hf-token",
         evaluator_version="",
@@ -140,7 +139,6 @@ def test_hf_ingest_is_idempotent_for_same_event_id(tmp_path: Path, monkeypatch) 
     hf_ingest.ingest_hf_submission(
         repo_root=tmp_path,
         event_path=event_path,
-        github_repo="org/repo",
         hf_repo_canonical="org/dataset",
         hf_token="hf-token",
         evaluator_version="",
@@ -150,7 +148,6 @@ def test_hf_ingest_is_idempotent_for_same_event_id(tmp_path: Path, monkeypatch) 
     hf_ingest.ingest_hf_submission(
         repo_root=tmp_path,
         event_path=event_path,
-        github_repo="org/repo",
         hf_repo_canonical="org/dataset",
         hf_token="hf-token",
         evaluator_version="",
@@ -158,3 +155,25 @@ def test_hf_ingest_is_idempotent_for_same_event_id(tmp_path: Path, monkeypatch) 
     control_after = (tmp_path / "submission_control" / "42.json").read_text(encoding="utf-8")
 
     assert control_before == control_after
+
+
+def test_hf_ingest_stale_event_updates_submission_uid_to_latest_sha(tmp_path: Path, monkeypatch) -> None:
+    event_path = tmp_path / "event.json"
+    _write_json(event_path, _dispatch_event(event_id="evt-stale", head_sha="sha-1"))
+
+    monkeypatch.setattr(hf_ingest, "_latest_hf_pr_sha", lambda **_kwargs: "sha-2")
+
+    result = hf_ingest.ingest_hf_submission(
+        repo_root=tmp_path,
+        event_path=event_path,
+        hf_repo_canonical="org/dataset",
+        hf_token="hf-token",
+        evaluator_version="",
+    )
+
+    assert result.status == hf_ingest.SubmissionControlStatus.SUPERSEDED
+    assert result.submission_uid.endswith("@sha-2")
+
+    control_payload = json.loads((tmp_path / "submission_control" / "42.json").read_text(encoding="utf-8"))
+    assert control_payload["hf_head_sha"] == "sha-2"
+    assert control_payload["submission_uid"].endswith("@sha-2")

@@ -26,16 +26,6 @@ from webarena_verified.types.leaderboard.submission_control import SubmissionCon
 
 _CONTROL_DIR = "submission_control"
 _CONTROL_EVENT_CAP = 32
-_SUPPORTED_STATES: set[SubmissionControlStatus] = {
-    SubmissionControlStatus.PENDING,
-    SubmissionControlStatus.VALIDATING,
-    SubmissionControlStatus.EVALUATING,
-    SubmissionControlStatus.ACCEPTED_PENDING_PUBLISH,
-    SubmissionControlStatus.PUBLISHED,
-    SubmissionControlStatus.REJECTED,
-    SubmissionControlStatus.FAILED_RETRYABLE,
-    SubmissionControlStatus.SUPERSEDED,
-}
 _INTAKE_PREFIX = "submissions/inbox/"
 _TASKS_DIR_NAME = "tasks"
 _MISSING_SENTINEL_FILE = ".missing"
@@ -239,9 +229,6 @@ def _append_status(
     run_sha: str | None = None,
     latest_sha: str | None = None,
 ) -> SubmissionControlRecord:
-    if status not in _SUPPORTED_STATES:
-        raise FinalizeError(f"Unsupported control status '{status}'")
-
     record.status = status
     record.status_history.append(
         SubmissionStatusEvent(
@@ -299,7 +286,6 @@ def ingest_hf_submission(
     *,
     repo_root: Path,
     event_path: Path,
-    github_repo: str,
     hf_repo_canonical: str,
     hf_token: str,
     evaluator_version: str,
@@ -318,6 +304,7 @@ def ingest_hf_submission(
             run_sha=context.hf_head_sha,
             latest_sha=latest_sha,
         )
+        control.submission_uid = f"hf:{control.hf_repo}:pr-{control.hf_pr_number}@{latest_sha}"
         control.hf_head_sha = latest_sha
         control_path = _write_control_record(repo_root, control)
         return HFIngestResult(
