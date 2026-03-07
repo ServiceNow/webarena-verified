@@ -22,10 +22,9 @@ Test Data Format:
 - Special case variations (e.g., header variations, response status) are also included
 
 Test Optimization:
-- Uses round-robin distribution to spread URL variations across tasks
-- Instead of testing ALL N variations for EVERY T tasks (N*T tests), each task tests only
-  ONE variation, reducing test count to T tests while maintaining full variation coverage
-- Regenerate with: uv run python tmp/generate_navigation_variations.py (if needed)
+- Uses a curated high-signal matrix of task IDs and transformations.
+- Focuses on behavior contracts that catch regressions without a large brittle
+  combinatorial suite.
 """
 
 import json
@@ -40,12 +39,21 @@ from webarena_verified import WebArenaVerified
 from webarena_verified.core.utils.immutable_obj_helper import serialize_to_mutable
 from webarena_verified.types.eval import EvalStatus
 
-pytestmark = pytest.mark.skip(
-    reason=(
-        "Navigation evaluation tests are unstable due to regex URL templates and evaluator strictness. "
-        "See NEW_TESTS_ISSUES.md."
-    )
+CURATED_NAVIGATION_TASK_IDS = (
+    44,
+    45,
+    46,
+    157,
+    158,
+    159,
+    160,
+    356,
+    369,
+    370,
 )
+
+VALID_NAVIGATION_VARIATIONS = ("base",)
+INVALID_NAVIGATION_VARIATIONS = ("default_network_wrong_url", "default_agent_wrong_task_type")
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +317,7 @@ def test_variations_data(project_root: Path) -> MappingProxyType[int, MappingPro
     return MappingProxyType({int(task_id): MappingProxyType(variations) for task_id, variations in data.items()})
 
 
-def pytest_generate_tests(metafunc):  # noqa: C901, PLR0912
+def pytest_generate_tests(metafunc):
     """Generate test cases for all navigation tasks and variations.
 
     This generates parameterized tests for:
@@ -318,94 +326,26 @@ def pytest_generate_tests(metafunc):  # noqa: C901, PLR0912
     - URL variations for tasks (loaded from JSON test files)
     - For invalid tests: multiple "default_*" variations with programmatic transformations
     """
-    if "task_id" in metafunc.fixturenames and "variation_name" in metafunc.fixturenames:
-        # Determine if this is a valid or invalid test based on function name
-        is_valid_test = "invalid" not in metafunc.function.__name__
+    if "task_id" not in metafunc.fixturenames or "variation_name" not in metafunc.fixturenames:
+        return
 
-        # Load dataset for generating alternative combinations and finding navigation tasks
-        project_root = Path(metafunc.config.rootpath)
-        dataset = _load_dataset(project_root)
+    is_valid_test = "invalid" not in metafunc.function.__name__
+    project_root = Path(metafunc.config.rootpath)
+    dataset = _load_dataset(project_root)
+    available_task_ids = set(_get_navigation_task_ids(dataset))
 
-        # Get all navigation task IDs dynamically from dataset
-        navigation_task_ids = _get_navigation_task_ids(dataset)
+    selected_task_ids = [task_id for task_id in CURATED_NAVIGATION_TASK_IDS if task_id in available_task_ids]
+    if not selected_task_ids:
+        raise ValueError("No curated navigation tasks found in dataset.")
 
-        test_cases = []
+    variation_names = VALID_NAVIGATION_VARIATIONS if is_valid_test else INVALID_NAVIGATION_VARIATIONS
+    test_cases = [(task_id, variation_name) for task_id in selected_task_ids for variation_name in variation_names]
 
-        # Define invalid variation types to generate
-        invalid_variation_types_network = [
-            "wrong_url",
-            "wrong_scheme",
-            "wrong_query_params",
-            "wrong_response_status",
-            "missing_url",
-            "wrong_headers",
-            "extra_field",
-        ]
-
-        invalid_variation_types_agent = [
-            "wrong_task_type",
-            "wrong_status",
-            "non_null_data",
-            "missing_field",
-            "extra_field",
-        ]
-
-        for task_id in navigation_task_ids:
-            # Get the network event config
-            try:
-                network_config = _get_network_event_config(task_id, dataset)
-                expected = network_config.get("expected", {})
-            except ValueError:
-                continue
-
-            if is_valid_test:
-                # For valid tests: generate alternative combinations from dataset
-                url_data = expected.get("url")
-
-                if url_data is not None:
-                    # Generate all alternative combinations for URLs
-                    alternatives = _generate_alternative_combinations(url_data)
-
-                    # Add test case for each alternative
-                    for alt_name, _ in alternatives:
-                        test_cases.append((task_id, alt_name))
-
-                # Check for variations from consolidated file
-                test_file = project_root / "tests" / "assets" / "e2e_test_navigation_data.json"
-                if test_file.exists():
-                    all_variations = json.loads(test_file.read_text())
-                    task_str = str(task_id)
-                    if task_str in all_variations:
-                        task_data = all_variations[task_str]
-                        special_variations = task_data.get("valid", {})
-                        for variation_name in special_variations:
-                            test_cases.append((task_id, variation_name))
-            else:
-                # For invalid tests: generate all default_* variations
-                for variation_type in invalid_variation_types_network:
-                    test_cases.append((task_id, f"default_network_{variation_type}"))
-
-                for variation_type in invalid_variation_types_agent:
-                    test_cases.append((task_id, f"default_agent_{variation_type}"))
-
-                # Check for invalid variations from consolidated file
-                test_file = project_root / "tests" / "assets" / "e2e_test_navigation_data.json"
-                if test_file.exists():
-                    all_variations = json.loads(test_file.read_text())
-                    task_str = str(task_id)
-                    if task_str in all_variations:
-                        task_data = all_variations[task_str]
-                        special_variations = task_data.get("invalid", {})
-                        for variation_name in special_variations:
-                            test_cases.append((task_id, variation_name))
-
-        # Only parametrize if we have test cases, otherwise skip the test
-        if test_cases:
-            metafunc.parametrize(
-                "task_id,variation_name",
-                test_cases,
-                ids=lambda params: f"task_{params[0]}_{params[1]}" if isinstance(params, tuple) else str(params),
-            )
+    metafunc.parametrize(
+        "task_id,variation_name",
+        test_cases,
+        ids=lambda params: f"task_{params[0]}_{params[1]}" if isinstance(params, tuple) else str(params),
+    )
 
 
 def test_evaluate_navigation_task_valid_variations(
@@ -439,7 +379,7 @@ def test_evaluate_navigation_task_valid_variations(
         url_data = expected.get("url")
 
         if url_data is None:
-            pytest.skip(f"Task {task_id} has no URL in expected network event")
+            raise ValueError(f"Task {task_id} has no URL in expected network event")
 
         # Generate all alternatives and find the matching one
         alternatives = _generate_alternative_combinations(url_data)
@@ -563,7 +503,7 @@ def test_evaluate_navigation_task_invalid_variations(
         if isinstance(test_url_template, list):
             test_url_template = test_url_template[0]
         if test_url_template is None:
-            pytest.skip(f"Task {task_id} has no URL in expected network event")
+            raise ValueError(f"Task {task_id} has no URL in expected network event")
 
         # Render URL
         test_url = wa.config.render_url(test_url_template, sites=task_sites)

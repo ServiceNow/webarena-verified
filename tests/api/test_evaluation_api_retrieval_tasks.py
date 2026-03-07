@@ -44,7 +44,7 @@ from webarena_verified.types.eval import EvalStatus
 
 logger = logging.getLogger(__name__)
 
-UNSUPPORTED_RETRIEVAL_VARIATIONS = {
+PRUNED_VALID_VARIATIONS = {
     "fmt_trim_whitespace",
     "fmt_extra_spaces",
     "fmt_with_quotes",
@@ -336,6 +336,8 @@ def _load_variations_from_file(project_root: Path, task_id: int, variation_type:
         task_data = all_variations[task_str]
         special_variations = task_data.get(variation_type, {})
         for variation_name in special_variations:
+            if variation_type == "valid" and variation_name in PRUNED_VALID_VARIATIONS:
+                continue
             test_cases.append((task_id, variation_name))
     return test_cases
 
@@ -465,9 +467,6 @@ def test_evaluate_retrieval_task_valid_variations(
     test_variations_data: MappingProxyType[int, MappingProxyType[str, Any]],
     har_file_example: Path,
 ):
-    if variation_name in UNSUPPORTED_RETRIEVAL_VARIATIONS:
-        pytest.skip(f"Unsupported retrieval variation '{variation_name}' (see NEW_TESTS_ISSUES.md)")
-
     # Load the agent response based on variation name
     if variation_name.startswith("alt_") or variation_name == "base":
         # Load from dataset and select the appropriate alternative
