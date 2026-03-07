@@ -74,33 +74,3 @@ def validate_probability_or_missing_sentinel(value: float, field_name: str) -> f
     if 0 <= value <= 1:
         return value
     raise ValueError(f"{field_name} must be within [0, 1] or exactly -1")
-
-
-def validate_reference_url(value: str) -> str:
-    """Validate a reference URL value."""
-    return validate_http_url(value, "reference")
-
-
-def validate_created_at_utc(value: str) -> str:
-    """Validate a created-at timestamp value."""
-    return validate_rfc3339_utc_z(value, "created_at_utc")
-
-
-def validate_eval_completed_at_utc(value: str) -> str:
-    """Validate an eval completion timestamp value."""
-    return validate_rfc3339_utc_z(value, "eval_completed_at_utc")
-
-
-def validate_manifest_path(value: str) -> str:
-    """Validate a manifest file path value."""
-    return validate_relative_repo_path(value, "path")
-
-
-def validate_manifest_sha256(value: str) -> str:
-    """Validate a manifest SHA256 value."""
-    return validate_sha256_hex(value, "sha256")
-
-
-def validate_checksum(value: str) -> str:
-    """Validate a checksum SHA256 value."""
-    return validate_sha256_hex(value, "checksum")

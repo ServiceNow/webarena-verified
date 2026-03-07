@@ -6,11 +6,11 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ._validators import (
-    validate_checksum,
     validate_email,
-    validate_eval_completed_at_utc,
+    validate_http_url,
     validate_model_name,
-    validate_reference_url,
+    validate_rfc3339_utc_z,
+    validate_sha256_hex,
 )
 from .submission_payload import SubmissionLeaderboard
 
@@ -113,19 +113,19 @@ class CanonicalSubmissionRecord(BaseModel):
     @classmethod
     def validate_eval_completed_timestamp(cls, value: str) -> str:
         """Validate eval completion timestamp format."""
-        return validate_eval_completed_at_utc(value)
+        return validate_rfc3339_utc_z(value, "eval_completed_at_utc")
 
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
         """Validate model/team name format."""
-        return validate_model_name(value)
+        return validate_model_name(value, "name")
 
     @field_validator("reference")
     @classmethod
     def validate_reference(cls, value: str) -> str:
         """Validate reference URL format."""
-        return validate_reference_url(value)
+        return validate_http_url(value, "reference")
 
     @field_validator("contact_info")
     @classmethod
@@ -139,4 +139,4 @@ class CanonicalSubmissionRecord(BaseModel):
     @classmethod
     def validate_checksum_sha(cls, value: str) -> str:
         """Validate checksum hash format."""
-        return validate_checksum(value)
+        return validate_sha256_hex(value, "checksum")

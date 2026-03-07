@@ -6,20 +6,24 @@ from typing import Annotated
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
 from ._validators import (
-    validate_created_at_utc,
     validate_email,
-    validate_manifest_path,
-    validate_manifest_sha256,
+    validate_relative_repo_path,
+    validate_rfc3339_utc_z,
+    validate_sha256_hex,
+    validate_http_url,
     validate_model_name,
-    validate_reference_url,
 )
 
-Name = Annotated[str, Field(min_length=1), AfterValidator(validate_model_name)]
-ReferenceURL = Annotated[str, Field(min_length=1), AfterValidator(validate_reference_url)]
-CreatedAtUTC = Annotated[str, AfterValidator(validate_created_at_utc)]
+Name = Annotated[str, Field(min_length=1), AfterValidator(lambda value: validate_model_name(value, "name"))]
+ReferenceURL = Annotated[str, Field(min_length=1), AfterValidator(lambda value: validate_http_url(value, "reference"))]
+CreatedAtUTC = Annotated[str, AfterValidator(lambda value: validate_rfc3339_utc_z(value, "created_at_utc"))]
 ContactEmail = Annotated[str, AfterValidator(validate_email)]
-ManifestPath = Annotated[str, Field(min_length=1), AfterValidator(validate_manifest_path)]
-ManifestSha256 = Annotated[str, AfterValidator(validate_manifest_sha256)]
+ManifestPath = Annotated[
+    str,
+    Field(min_length=1),
+    AfterValidator(lambda value: validate_relative_repo_path(value, "path")),
+]
+ManifestSha256 = Annotated[str, AfterValidator(lambda value: validate_sha256_hex(value, "sha256"))]
 
 
 class SubmissionLeaderboard(StrEnum):
