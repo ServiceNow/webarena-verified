@@ -1,0 +1,60 @@
+name: Leaderboard HF Handle Single PR
+
+on:
+  workflow_call:
+    inputs:
+      hf_pr_id:
+        description: "HF dataset PR number"
+        required: true
+        type: number
+      hf_head_sha:
+        description: "Head SHA observed during discover"
+        required: false
+        type: string
+      merge_accepted:
+        description: "Merge accepted HF PRs"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  handle:
+    name: Handle HF PR #${{ inputs.hf_pr_id }}
+    runs-on: ubuntu-latest
+    concurrency:
+      # Serialize handler jobs to avoid git push races on main/gh-pages.
+      group: leaderboard-hf-handler-global
+      cancel-in-progress: false
+    env:
+      LEADERBOARD_HF_REPO: ${{ vars.LEADERBOARD_HF_REPO }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+          configure-git-identity: "true"
+
+      - name: Process single HF submission PR
+        run: |
+          uv run inv dev.leaderboard.hf-handle-pr \
+            --hf-pr-id "${{ inputs.hf_pr_id }}" \
+            --expected-head-sha "${{ inputs.hf_head_sha }}" \
+            --merge-accepted "${{ inputs.merge_accepted }}"
+
+      - name: Commit submission control-plane changes (main)
+        run: uv run inv dev.leaderboard.commit-control-plane --hf-pr-id "${{ inputs.hf_pr_id }}"
+
+      - name: Build publish JSON for gh-pages
+        run: uv run inv dev.leaderboard.build-gh-pages-json
+
+      - name: Publish submissions.json to gh-pages (if changed)
+        run: uv run inv dev.leaderboard.publish-from-processed --hf-pr-id "${{ inputs.hf_pr_id }}"

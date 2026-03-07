@@ -2,7 +2,7 @@ import datetime as dt
 
 import pytest
 
-from dev.leaderboard import submission_pr_validator as validator
+import dev.leaderboard.submission_pr_validator as validator
 
 
 def test_validate_changed_files_accepts_single_control_json_change():

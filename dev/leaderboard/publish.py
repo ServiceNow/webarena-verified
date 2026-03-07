@@ -7,6 +7,7 @@ import json
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 from uuid import uuid4
 
 from webarena_verified.types.leaderboard import (
@@ -85,7 +86,7 @@ def _write_table_file(
     filename: str,
     generation_id: str,
     generated_at_utc: str,
-    leaderboard: str,
+    leaderboard: Literal["full", "hard"],
     rows: list[dict],
 ) -> Path:
     ranked_rows = rank_rows(rows, board_name=leaderboard)
@@ -230,30 +231,30 @@ def _row_from_submission_record(record: SubmissionRecord, raw: dict) -> dict:
     missing_fields = [field for field in _REQUIRED_ROW_FIELDS if field not in raw]
     if missing_fields:
         missing_list = ", ".join(missing_fields)
-        raise ValueError(
-            f"accepted submission '{record.submission_id}' is missing leaderboard fields: {missing_list}"
-        )
+        raise ValueError(f"accepted submission '{record.submission_id}' is missing leaderboard fields: {missing_list}")
 
-    row_payload = {
-        "submission_id": record.submission_id,
-        "name": raw["name"],
-        "overall_score": raw["overall_score"],
-        "shopping_score": raw["shopping_score"],
-        "reddit_score": raw["reddit_score"],
-        "gitlab_score": raw["gitlab_score"],
-        "wikipedia_score": raw["wikipedia_score"],
-        "map_score": raw["map_score"],
-        "shopping_admin_score": raw["shopping_admin_score"],
-        "success_count": raw["success_count"],
-        "failure_count": raw["failure_count"],
-        "error_count": raw["error_count"],
-        "missing_count": raw["missing_count"],
-        "webarena_verified_version": raw["webarena_verified_version"],
-        "checksum": raw["checksum"],
-        "submission_timestamp": raw.get("submission_timestamp") or record.processed_at_utc or record.updated_at_utc,
-    }
-
-    return LeaderboardRow(rank=1, **row_payload).model_dump(mode="python")
+    validated = LeaderboardRow.model_validate(
+        {
+            "rank": 1,
+            "submission_id": record.submission_id,
+            "name": raw["name"],
+            "overall_score": raw["overall_score"],
+            "shopping_score": raw["shopping_score"],
+            "reddit_score": raw["reddit_score"],
+            "gitlab_score": raw["gitlab_score"],
+            "wikipedia_score": raw["wikipedia_score"],
+            "map_score": raw["map_score"],
+            "shopping_admin_score": raw["shopping_admin_score"],
+            "success_count": raw["success_count"],
+            "failure_count": raw["failure_count"],
+            "error_count": raw["error_count"],
+            "missing_count": raw["missing_count"],
+            "webarena_verified_version": raw["webarena_verified_version"],
+            "checksum": raw["checksum"],
+            "submission_timestamp": raw.get("submission_timestamp") or record.processed_at_utc or record.updated_at_utc,
+        }
+    )
+    return validated.model_dump(mode="python")
 
 
 def _select_boards(raw: dict, *, submission_id: str) -> set[str]:

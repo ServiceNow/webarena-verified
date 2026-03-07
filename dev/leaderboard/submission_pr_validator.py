@@ -1,21 +1,27 @@
-"""Submission PR validator for leaderboard Track B CI."""
+"""Submission PR validator helpers for leaderboard CI."""
 
 from __future__ import annotations
 
-import argparse
 import datetime as dt
 import json
+import logging
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from urllib import request
 
+from jinja2 import Template
+
+from dev.leaderboard.constants import (
+    SUBMISSION_PENDING_DIR_PREFIX,
+    SUBMISSION_PR_FAILURE_TEMPLATE_FILE,
+    SUBMISSION_PR_TITLE_PREFIX,
+)
 from dev.leaderboard.hf_validator import SubmissionHFValidationError, validate_hf_submission_record
+from dev.leaderboard.utils import http_get_json
 from webarena_verified.types.leaderboard import SubmissionRecord, SubmissionStatus
 
-PR_TITLE_PREFIX = "Leaderboard Submission: "
-PENDING_PREFIX = "leaderboard/data/submissions/pending/"
+LOGGER = logging.getLogger(__name__)
 
 
 class SubmissionPRValidationError(Exception):
@@ -45,28 +51,15 @@ class SubmissionPRContext:
 
 
 def _parse_iso_utc(value: str) -> dt.datetime:
-    """Parse ISO timestamp with optional trailing Z into UTC aware datetime."""
     parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=dt.UTC)
     return parsed.astimezone(dt.UTC)
 
 
-def _http_get_json(url: str, token: str | None = None) -> dict[str, Any]:
-    """Fetch a JSON payload from HTTP endpoint."""
-    req = request.Request(url)
-    req.add_header("Accept", "application/json")
-    if token:
-        req.add_header("Authorization", f"Bearer {token}")
-    with request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode("utf-8"))
-
-
 def _run_git_diff(base_sha: str, head_sha: str, repo_root: Path) -> list[ChangedFile]:
-    """Return list of changed files for PR diff."""
     cmd = ["git", "diff", "--name-status", "--no-renames", f"{base_sha}..{head_sha}"]
     result = subprocess.run(cmd, cwd=repo_root, check=True, capture_output=True, text=True)
-
     changed_files: list[ChangedFile] = []
     for raw_line in result.stdout.splitlines():
         if not raw_line.strip():
@@ -77,15 +70,14 @@ def _run_git_diff(base_sha: str, head_sha: str, repo_root: Path) -> list[Changed
 
 
 def _validate_changed_files(changed_files: list[ChangedFile]) -> str:
-    """Validate file scope and exactly-one-record rule."""
     if not changed_files:
         raise SubmissionPRValidationError("No files changed in PR diff")
 
-    invalid_scope = [cf.path for cf in changed_files if not cf.path.startswith(PENDING_PREFIX)]
+    invalid_scope = [cf.path for cf in changed_files if not cf.path.startswith(SUBMISSION_PENDING_DIR_PREFIX)]
     if invalid_scope:
         joined = ", ".join(sorted(invalid_scope))
         raise SubmissionPRValidationError(
-            "Submission PRs may only change control records under leaderboard/data/submissions/pending/. "
+            f"Submission PRs may only change control records under {SUBMISSION_PENDING_DIR_PREFIX}. "
             f"Invalid paths: {joined}"
         )
 
@@ -100,12 +92,10 @@ def _validate_changed_files(changed_files: list[ChangedFile]) -> str:
         raise SubmissionPRValidationError(
             f"Submission control JSON must be added or modified, got git status '{changed.status}'"
         )
-
     return changed.path
 
 
-def _load_submission_record(repo_root: Path, control_path: str):
-    """Load and validate control record JSON from repository file."""
+def _load_submission_record(repo_root: Path, control_path: str) -> SubmissionRecord:
     control_file = repo_root / control_path
     if not control_file.exists():
         raise SubmissionPRValidationError(f"Submission control file is missing: {control_path}")
@@ -130,16 +120,15 @@ def _load_submission_record(repo_root: Path, control_path: str):
 
 
 def _list_all_repo_pulls(repo: str, token: str) -> list[dict[str, Any]]:
-    """List pull requests from GitHub REST API with pagination."""
     pulls: list[dict[str, Any]] = []
     page = 1
     while True:
         url = f"https://api.github.com/repos/{repo}/pulls?state=all&per_page=100&page={page}"
-        data = _http_get_json(url, token=token)
+        data = http_get_json(url, token=token)
         if not isinstance(data, list):
             raise SubmissionPRValidationError("Unexpected GitHub API response while listing PRs")
-
-        pulls.extend(data)
+        page_items = [item for item in data if isinstance(item, dict)]
+        pulls.extend(page_items)
         if len(data) < 100:
             break
         page += 1
@@ -147,16 +136,15 @@ def _list_all_repo_pulls(repo: str, token: str) -> list[dict[str, Any]]:
 
 
 def _list_pull_files(repo: str, pr_number: int, token: str) -> list[str]:
-    """List changed file paths for a GitHub PR."""
     file_paths: list[str] = []
     page = 1
     while True:
         url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files?per_page=100&page={page}"
-        data = _http_get_json(url, token=token)
+        data = http_get_json(url, token=token)
         if not isinstance(data, list):
             raise SubmissionPRValidationError(f"Unexpected GitHub API response while listing PR #{pr_number} files")
-
-        for item in data:
+        page_items = [item for item in data if isinstance(item, dict)]
+        for item in page_items:
             filename = item.get("filename")
             if isinstance(filename, str):
                 file_paths.append(filename)
@@ -167,9 +155,8 @@ def _list_pull_files(repo: str, pr_number: int, token: str) -> list[str]:
 
 
 def _is_submission_pr(repo: str, pr_number: int, token: str) -> bool:
-    """Classify PR as submission PR based on changed file scope."""
     paths = _list_pull_files(repo, pr_number, token)
-    return any(path.startswith(PENDING_PREFIX) for path in paths)
+    return any(path.startswith(SUBMISSION_PENDING_DIR_PREFIX) for path in paths)
 
 
 def _enforce_github_rate_limits(
@@ -179,7 +166,6 @@ def _enforce_github_rate_limits(
     token: str,
     now_utc: dt.datetime,
 ) -> None:
-    """Enforce author rate limits using GitHub API (fail closed)."""
     try:
         pulls = _list_all_repo_pulls(repo, token)
     except Exception as exc:
@@ -232,9 +218,9 @@ def _enforce_github_rate_limits(
 
 
 def validate_submission_pr(context: SubmissionPRContext, now_utc: dt.datetime | None = None) -> None:
-    """Run full submission PR validation."""
-    if not context.pr_title.startswith(PR_TITLE_PREFIX):
-        raise SubmissionPRValidationError(f"PR title must start with exact prefix '{PR_TITLE_PREFIX}'")
+    """Run full submission PR validation for changed-file, HF, and fairness rules."""
+    if not context.pr_title.startswith(SUBMISSION_PR_TITLE_PREFIX):
+        raise SubmissionPRValidationError(f"PR title must start with exact prefix '{SUBMISSION_PR_TITLE_PREFIX}'")
 
     changed_files = _run_git_diff(base_sha=context.base_sha, head_sha=context.head_sha, repo_root=context.repo_root)
     control_path = _validate_changed_files(changed_files)
@@ -256,56 +242,8 @@ def validate_submission_pr(context: SubmissionPRContext, now_utc: dt.datetime | 
 
 
 def _build_failure_report(error_message: str) -> str:
-    """Build markdown report for workflow summaries/comments."""
-    return (
-        "## Submission PR Validation Failed\n\n"
-        f"- Error: {error_message}\n"
-        "- Required: exactly one submission control JSON change under "
-        "`leaderboard/data/submissions/pending/`, valid path/status invariants, valid linked HF payload PR (open), "
-        "checksum/archive/task/HAR checks, and GitHub actor rate-limit compliance.\n"
-    )
-
-
-def main() -> int:
-    """CLI entrypoint for GitHub Actions workflow."""
-    parser = argparse.ArgumentParser(description="Validate leaderboard submission PR")
-    parser.add_argument("--base-sha", required=True)
-    parser.add_argument("--head-sha", required=True)
-    parser.add_argument("--repo", required=True, help="GitHub repo in owner/name format")
-    parser.add_argument("--actor", required=True, help="GitHub actor login")
-    parser.add_argument("--pr-number", required=True, type=int)
-    parser.add_argument("--pr-title", required=True)
-    parser.add_argument("--github-token", required=True)
-    parser.add_argument("--report-file", required=False)
-    args = parser.parse_args()
-
-    try:
-        validate_submission_pr(
-            SubmissionPRContext(
-                repo_root=Path.cwd(),
-                base_sha=args.base_sha,
-                head_sha=args.head_sha,
-                repo=args.repo,
-                actor=args.actor,
-                pr_number=args.pr_number,
-                pr_title=args.pr_title,
-                github_token=args.github_token,
-            ),
-        )
-    except SubmissionPRValidationError as exc:
-        message = str(exc)
-        report = _build_failure_report(message)
-        print(report)
-        if args.report_file:
-            Path(args.report_file).write_text(report, encoding="utf-8")
-        return 1
-
-    success_report = "## Submission PR Validation Passed\n\nAll submission PR checks passed.\n"
-    print(success_report)
-    if args.report_file:
-        Path(args.report_file).write_text(success_report, encoding="utf-8")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    templates_dir = Path(__file__).resolve().parent / "templates"
+    template_path = templates_dir / SUBMISSION_PR_FAILURE_TEMPLATE_FILE
+    LOGGER.info("Rendering failure report template: %s", template_path)
+    template = Template(template_path.read_text(encoding="utf-8"))
+    return template.render(pending_prefix=SUBMISSION_PENDING_DIR_PREFIX, error_message=error_message)
