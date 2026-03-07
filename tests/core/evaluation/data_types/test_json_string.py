@@ -332,9 +332,6 @@ def test_mixed_nesting():
     assert js.normalized == expected
 
 
-@pytest.mark.skip(
-    reason="JsonString normalization strips/transliterates Unicode characters - requires source code changes to preserve"
-)
 def test_unicode_characters():
     """Test handling of Unicode characters."""
     value = '{"message": "Hello 世界", "emoji": "🎉"}'
@@ -345,7 +342,6 @@ def test_unicode_characters():
     assert js.normalized == '{"emoji":"🎉","message":"Hello 世界"}'
 
 
-@pytest.mark.skip(reason="JsonString normalization lowercases paths - requires source code changes to preserve case")
 def test_special_characters_in_strings():
     """Test handling of special characters in string values."""
     value = r'{"path": "C:\\Users\\test", "url": "https://example.com"}'

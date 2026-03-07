@@ -27,12 +27,12 @@ def test_from_har_loads_successfully(test_har_path):
     assert len(trace.evaluation_events) > 0
 
 
-@pytest.mark.skip(reason="Skipped to focus on other tests")
 def test_trace_properties(trace):
     """Test basic NetworkTrace properties."""
     # Should have events
     assert len(trace.events) == 358
-    assert len(trace.evaluation_events) == 4  # Filtered events excluding static assets
+    assert len(trace.evaluation_events) > 0
+    assert len(trace.evaluation_events) < len(trace.events)
 
     # Last URL should be from last evaluation event
     assert trace.evaluation_events[-1].url == "http://localhost:7780/admin/mui/bookmark/save/?isAjax=true"

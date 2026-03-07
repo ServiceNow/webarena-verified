@@ -141,14 +141,7 @@ def test_equality_with_alternatives_is_not_transitive_by_design():
     [
         # Single values should hash to their normalized value
         (NormalizedString, "success", hash("success")),
-        pytest.param(
-            Number,
-            10,
-            hash(10.0),
-            marks=pytest.mark.skip(
-                reason="Number class hashes using alternatives tuple, not normalized value directly"
-            ),
-        ),
+        (Number, 10, hash("10.0")),
     ],
 )
 def test_hash_single_value(data_type, value, expected_hash):

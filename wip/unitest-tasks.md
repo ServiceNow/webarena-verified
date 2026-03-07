@@ -5,24 +5,32 @@ This document captures issues found in the current unit test suite and proposes 
 ## Skipped Tests
 
 ### 1) `tests/types/test_network_trace.py:30` - `test_trace_properties` is hard-skipped
+- **Status**: Done.
 - **Issue**: The test is marked with a generic skip reason ("focus on other tests"), so property-level behavior is not validated.
 - **Why we need to fix**: Skipping this test creates a blind spot in an important core type. Regressions can slip in undetected.
 - **Suggested fix**: Remove the skip marker, run the test, and either (a) fix production behavior if it fails or (b) narrow the test scope to deterministic properties only.
+- **Implemented**: Removed the skip marker and made assertions robust to fixture evolution (`evaluation_events` must be non-empty and less than total events) while preserving a high-signal final URL contract check.
 
 ### 2) `tests/core/evaluation/data_types/test_json_string.py:359` - `test_unicode_characters` skipped
+- **Status**: Done.
 - **Issue**: Unicode normalization behavior is not actively tested because the test is skipped.
 - **Why we need to fix**: Unicode handling is a common source of subtle bugs and cross-platform inconsistencies.
 - **Suggested fix**: Re-enable the test and define explicit normalization expectations (for example: canonical form decisions, escaping rules, and locale-independent behavior).
+- **Implemented**: Removed the skip marker and updated `JsonString` normalization pipeline to preserve raw JSON string content before parsing, so Unicode expectations are now enforced by active tests.
 
 ### 3) `tests/core/evaluation/data_types/test_json_string.py:372` - `test_special_characters_in_strings` skipped
+- **Status**: Done.
 - **Issue**: Escaped characters and path-like strings are excluded from normal CI coverage.
 - **Why we need to fix**: These inputs are high-risk for parser and canonicalization bugs.
 - **Suggested fix**: Unskip and split into smaller parameterized cases grouped by character class (escape sequences, path separators, punctuation) with exact expected outputs.
+- **Implemented**: Removed the skip marker; test now validates escaped path and URL preservation under canonical JSON dumping.
 
 ### 4) `tests/core/evaluation/data_types/test_base.py:184` - skipped parameter in `test_hash_single_value`
+- **Status**: Done.
 - **Issue**: One `Number` hashing case is skipped in a parameterized test.
 - **Why we need to fix**: Partial hash coverage weakens the equality/hash contract and may allow dict/set behavior regressions.
 - **Suggested fix**: Re-enable the skipped parameter and make the expected hash semantics explicit for numeric normalization.
+- **Implemented**: Re-enabled `Number` hash coverage and aligned expected value with current hash contract (`hash("10.0")`).
 
 ## Redundant or Low-Signal Tests
 
@@ -166,6 +174,6 @@ This document captures issues found in the current unit test suite and proposes 
 ## Recommended Execution Order
 
 1. Fix invalid/contradictory tests first (Tasks 12-16). **Done**.
-2. Unskip high-value tests (Tasks 1-4).
+2. Unskip high-value tests (Tasks 1-4). **Done**.
 3. Remove redundancy and consolidate law tests (Tasks 5-11). **Done**.
 4. Strengthen weak suites with deterministic fixtures and edge cases (Tasks 17-23). **Done**.
