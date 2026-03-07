@@ -1,13 +1,6 @@
 name: Leaderboard Rebuild
 
 on:
-  workflow_run:
-    workflows:
-      - Leaderboard Finalize
-    types:
-      - completed
-    branches:
-      - leaderboard-submissions
   workflow_dispatch:
     inputs:
       max_canonical_records:
@@ -33,7 +26,7 @@ concurrency:
 jobs:
   rebuild:
     name: Rebuild canonical leaderboard artifacts
-    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'workflow_dispatch' && github.ref_name == 'leaderboard-submissions') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref_name == 'leaderboard-submissions' }}
     runs-on: ubuntu-latest
     env:
       TARGET_BRANCH: leaderboard-submissions

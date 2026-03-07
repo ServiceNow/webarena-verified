@@ -2,9 +2,9 @@ import hashlib
 import json
 from pathlib import Path
 
-import dev.leaderboard.pr_gate_intake_validator as pr_gate
-from dev.leaderboard import finalize
-from dev.leaderboard.publish import publish_from_canonical
+import leaderboard.scripts.pr_gate_intake_validator as pr_gate
+from leaderboard.scripts import finalize
+from leaderboard.scripts.publish import publish_from_canonical
 from webarena_verified.types.leaderboard import LeaderboardManifest, LeaderboardTableFile
 
 

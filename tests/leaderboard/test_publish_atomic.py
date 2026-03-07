@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from dev.leaderboard.publish import (
+from leaderboard.scripts.publish import (
     LEADERBOARD_DATA_DIR,
     LEADERBOARD_MANIFEST_FILE,
     generate_leaderboard_staging,
@@ -133,7 +133,7 @@ def test_publish_failure_never_switches_live_manifest(tmp_path: Path, monkeypatc
             raise RuntimeError("injected publish failure")
         return copy2_impl(src, dst, follow_symlinks=follow_symlinks)
 
-    monkeypatch.setattr("dev.leaderboard.publish.shutil.copy2", fail_on_hard_copy)
+    monkeypatch.setattr("leaderboard.scripts.publish.shutil.copy2", fail_on_hard_copy)
 
     with pytest.raises(RuntimeError, match="injected publish failure"):
         publish_staged_leaderboard(staging_dir=staging_dir, gh_pages_root=gh_pages_root)

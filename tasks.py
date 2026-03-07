@@ -6,7 +6,7 @@ from invoke import Collection, Context, task
 
 from dev import ci_tasks, code_tasks, data_tasks, docs_tasks, env_tasks, release_tasks
 from dev.environments import tasks as envs_tasks
-from dev.leaderboard import tasks as leaderboard_tasks
+from leaderboard.scripts import tasks as leaderboard_tasks
 from dev.utils import git_utils
 from examples import tasks as demo_tasks
 

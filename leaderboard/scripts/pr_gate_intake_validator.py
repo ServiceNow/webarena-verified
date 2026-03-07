@@ -11,7 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from dev.leaderboard.constants import TASK_AGENT_RESPONSE_FILE, TASK_MISSING_SENTINEL_FILE, TASK_NETWORK_HAR_FILE
+from leaderboard.scripts.constants import TASK_AGENT_RESPONSE_FILE, TASK_MISSING_SENTINEL_FILE, TASK_NETWORK_HAR_FILE
 from webarena_verified.types.leaderboard import IntakeManifest, IntakeManifestFile, IntakeSubmission
 
 INBOX_PREFIX = "submissions/inbox/"

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from dev.leaderboard import finalize
+from leaderboard.scripts import finalize
 
 
 def _write_json(path: Path, payload: dict) -> None:

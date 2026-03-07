@@ -7,9 +7,9 @@ from pathlib import Path
 
 from invoke import task
 
-from dev.leaderboard.finalize import finalize_submission
-from dev.leaderboard.pr_gate_intake_validator import PRGateValidationError, run_pr_gate_intake_validation
-from dev.leaderboard.publish import publish_from_canonical
+from leaderboard.scripts.finalize import finalize_submission
+from leaderboard.scripts.pr_gate_intake_validator import PRGateValidationError, run_pr_gate_intake_validation
+from leaderboard.scripts.publish import publish_from_canonical
 
 
 @task(name="finalize")

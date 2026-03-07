@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-import dev.leaderboard.pr_gate_intake_validator as validator
+import leaderboard.scripts.pr_gate_intake_validator as validator
 
 
 def _sha256_file(path: Path) -> str:

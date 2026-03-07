@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from dev.leaderboard.publish import publish_from_canonical
+from leaderboard.scripts.publish import publish_from_canonical
 
 
 def _canonical_record(submission_id: int, *, eval_completed_at_utc: str) -> dict:

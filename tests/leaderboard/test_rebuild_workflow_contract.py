@@ -2,6 +2,7 @@ from pathlib import Path
 
 
 REBUILD_WORKFLOW_PATH = Path(".github/workflows/leaderboard-rebuild.yml")
+FINALIZE_WORKFLOW_PATH = Path(".github/workflows/leaderboard-finalize.yml")
 DOCS_WORKFLOW_PATH = Path(".github/workflows/dev-docs-publish.yml")
 
 
@@ -18,14 +19,21 @@ def test_rebuild_workflow_has_single_writer_concurrency_contract() -> None:
     assert 'group: "pages"' not in workflow
 
 
-def test_rebuild_workflow_runs_after_finalize_success() -> None:
+def test_rebuild_workflow_is_manual_only_on_leaderboard_submissions_branch() -> None:
     workflow = _read(REBUILD_WORKFLOW_PATH)
 
-    assert "workflow_run:" in workflow
-    assert "- Leaderboard Finalize" in workflow
-    assert "- completed" in workflow
-    assert "- leaderboard-submissions" in workflow
-    assert "github.event.workflow_run.conclusion == 'success'" in workflow
+    assert "workflow_run:" not in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "github.event_name == 'workflow_dispatch'" in workflow
+    assert "github.ref_name == 'leaderboard-submissions'" in workflow
+
+
+def test_finalize_workflow_runs_inline_rebuild_under_single_writer_group() -> None:
+    workflow = _read(FINALIZE_WORKFLOW_PATH)
+
+    assert "group: leaderboard-data-writer" in workflow
+    assert "Rebuild leaderboard artifacts from canonical records" in workflow
+    assert "inv dev.leaderboard.rebuild-canonical" in workflow
 
 
 def test_docs_publish_trigger_is_independent_from_leaderboard_data() -> None:

@@ -58,15 +58,34 @@ jobs:
             --hf-repo "${{ steps.cfg.outputs.hf_repo }}" \
             --evaluator-version "${{ steps.cfg.outputs.evaluator_version }}"
 
+      - name: Rebuild leaderboard artifacts from canonical records
+        run: |
+          set -euo pipefail
+
+          uv run inv dev.leaderboard.rebuild-canonical \
+            --repo-root "." \
+            --canonical-dir "submissions" \
+            --staging-dir ".tmp/leaderboard-staging" \
+            --max-canonical-records "100"
+
       - name: Commit and push finalized state
         run: |
           set -euo pipefail
-          if git diff --quiet -- submissions; then
-            echo "No submission changes detected after finalize"
+
+          git add -A submissions leaderboard_manifest.json
+          shopt -s nullglob
+          generation_files=(leaderboard_full.*.json leaderboard_hard.*.json)
+          if [ "${#generation_files[@]}" -gt 0 ]; then
+            git add -A "${generation_files[@]}"
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No leaderboard changes detected after finalize + rebuild"
             exit 0
           fi
-          git add submissions
-          git commit -m "Finalize leaderboard submission #${{ github.event.pull_request.number }}"
+
+          GENERATION_ID="$(jq -r '.generation_id // "none"' leaderboard_manifest.json)"
+          git commit -m "Finalize leaderboard submission #${{ github.event.pull_request.number }} and rebuild ${GENERATION_ID}"
 
           for attempt in 1 2 3; do
             if git push origin HEAD:leaderboard-submissions; then
@@ -84,4 +103,4 @@ jobs:
           echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_STEP_SUMMARY"
           echo "submission_id=${{ github.event.pull_request.number }}" >> "$GITHUB_STEP_SUMMARY"
           echo "hf_repo=${{ steps.cfg.outputs.hf_repo }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "handoff=workflow_run trigger on Leaderboard Finalize success" >> "$GITHUB_STEP_SUMMARY"
+          echo "handoff=inline rebuild within finalization workflow" >> "$GITHUB_STEP_SUMMARY"
