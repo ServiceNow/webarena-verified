@@ -47,4 +47,29 @@ class SubmissionControlRecord(BaseModel):
     requires_manual_override: bool = False
 
 
-__all__ = ["SubmissionControlRecord", "SubmissionControlStatus", "SubmissionStatusEvent"]
+class HFDispatchContext(BaseModel):
+    event_id: str = Field(min_length=1)
+    hf_repo: str = Field(min_length=1)
+    hf_pr_number: int = Field(ge=1)
+    hf_head_sha: str = Field(min_length=1)
+    hf_pr_url: str | None = None
+    event_scope: str | None = None
+    event_action: str | None = None
+    event_ts: str | None = None
+
+
+class HFIngestResult(BaseModel):
+    submission_id: int
+    submission_uid: str
+    control_record_path: str
+    canonical_record_path: str | None = None
+    status: SubmissionControlStatus
+
+
+__all__ = [
+    "HFDispatchContext",
+    "HFIngestResult",
+    "SubmissionControlRecord",
+    "SubmissionControlStatus",
+    "SubmissionStatusEvent",
+]
