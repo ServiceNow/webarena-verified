@@ -146,6 +146,13 @@ Rebuild:
 - retains latest 100 canonical records
 - writes generation files first, manifest last
 
+Leaderboard site build:
+
+- trigger: `main` changes under `leaderboard/site/**` or manual dispatch
+- resolves `PUBLIC_LEADERBOARD_MANIFEST_URL` at build time
+- default source points to `leaderboard-submissions` branch-hosted `leaderboard_manifest.json`
+- runs site tests and build to verify env-driven data-source contract
+
 ## Governance and policy
 
 Active governance baseline (Lane A):

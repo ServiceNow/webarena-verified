@@ -1,9 +1,20 @@
 const baseUrl = import.meta.env.BASE_URL || "/";
 const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
 const envManifestUrl = import.meta.env.PUBLIC_LEADERBOARD_MANIFEST_URL;
-const MANIFEST_URL = typeof envManifestUrl === "string" && envManifestUrl.trim().length > 0
-  ? envManifestUrl.trim()
-  : `${normalizedBaseUrl}data/leaderboard_manifest.json`;
+
+export function resolveManifestUrl({ envManifestUrl, baseUrl }) {
+  if (typeof envManifestUrl === "string" && envManifestUrl.trim().length > 0) {
+    return envManifestUrl.trim();
+  }
+
+  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return `${normalizedBaseUrl}data/leaderboard_manifest.json`;
+}
+
+const MANIFEST_URL = resolveManifestUrl({ envManifestUrl, baseUrl: normalizedBaseUrl });
+
+export const MANIFEST_FETCH_OPTIONS = Object.freeze({ cache: "no-store" });
+export const GENERATION_FETCH_OPTIONS = Object.freeze({ cache: "force-cache" });
 
 const REQUIRED_MANIFEST_FIELDS = [
   "schema_version",
@@ -130,8 +141,8 @@ function validateRow(row, index, leaderboardType) {
   return row;
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url);
+async function fetchJson(url, options = undefined) {
+  const response = await fetch(url, options);
 
   if (!response.ok) {
     throw new Error(`Fetch failed for ${url} (${response.status}).`);
@@ -147,7 +158,7 @@ function resolveManifestFilePath(manifestUrl, manifestFile) {
 export async function loadLeaderboardData(manifestUrl = MANIFEST_URL) {
   let manifest;
   try {
-    manifest = validateManifest(await fetchJson(manifestUrl));
+    manifest = validateManifest(await fetchJson(manifestUrl, MANIFEST_FETCH_OPTIONS));
   } catch (error) {
     throw new ManifestLoadError(error.message);
   }
@@ -156,8 +167,8 @@ export async function loadLeaderboardData(manifestUrl = MANIFEST_URL) {
   let hardPayload;
   try {
     [fullPayload, hardPayload] = await Promise.all([
-      fetchJson(resolveManifestFilePath(manifestUrl, manifest.full_file)),
-      fetchJson(resolveManifestFilePath(manifestUrl, manifest.hard_file))
+      fetchJson(resolveManifestFilePath(manifestUrl, manifest.full_file), GENERATION_FETCH_OPTIONS),
+      fetchJson(resolveManifestFilePath(manifestUrl, manifest.hard_file), GENERATION_FETCH_OPTIONS)
     ]);
   } catch (error) {
     throw new TableLoadError(error.message);

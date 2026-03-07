@@ -62,6 +62,13 @@ flowchart LR
 - Then: Lane E
 - Finish: Lane G certification
 
+## Current phase (post-E merge)
+
+- Lane E is merged.
+- Lane F implementation is complete.
+- Active focus: complete Lane G end-to-end certification.
+- Immediate path: `G08`.
+
 ## Critical path
 
 `A -> B -> C -> D -> E -> G`
