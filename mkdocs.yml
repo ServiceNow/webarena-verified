@@ -119,8 +119,6 @@ nav:
       - Removing LLM-Based Evaluation: evaluation/removing_llm_based_evaluation.md
       - Network Event Based Evaluation: evaluation/network_event_based_evaluation.md
       - Evaluation Results: evaluation/evaluation_results.md
-  - Leaderboard Ops:
-      - Publish Runbook: leaderboard/publish_runbook.md
   - API Reference:
       - Overview: api_reference/index.md
       - WebArenaVerified: api_reference/webarena_verified.md
