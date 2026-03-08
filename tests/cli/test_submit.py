@@ -9,19 +9,9 @@ from webarena_verified.types.submit_result import SubmitResult
 def _args(
     *,
     submission_dir: str,
-    name: str = "TeamX/ModelY",
-    leaderboard: str = "both",
-    reference: str = "https://example.com/paper",
-    version: str | None = None,
-    contact_info: str | None = None,
 ) -> argparse.Namespace:
     return argparse.Namespace(
         submission_dir=submission_dir,
-        name=name,
-        leaderboard=leaderboard,
-        reference=reference,
-        version=version,
-        contact_info=contact_info,
     )
 
 
@@ -54,6 +44,7 @@ def test_submit_success_output(monkeypatch, capsys):
         exit_code = submit_cmd(_args(submission_dir="./submissions/sample"))
 
     assert exit_code == 0
+    handler_instance.submit.assert_called_once_with()
     output = capsys.readouterr().out
     assert "https://huggingface.co/datasets/org/repo/discussions/42" in output
 
@@ -67,15 +58,8 @@ def test_submit_parser_registration():
             "submit",
             "--submission-dir",
             "./submissions/sample",
-            "--name",
-            "TeamX/ModelY",
-            "--leaderboard",
-            "both",
-            "--reference",
-            "https://example.com/paper",
         ]
     )
 
     assert args.command == "submit"
     assert args.submission_dir == "./submissions/sample"
-    assert args.reference == "https://example.com/paper"

@@ -400,21 +400,17 @@ def create_parser() -> argparse.ArgumentParser:
         epilog=textwrap.dedent("""
             examples:
               # Create submission from single directory
-              webarena-verified create-submission-pkg --run-output-dir ./output --output ./submissions
+              webarena-verified create-submission-pkg --run-output-dir ./output --output ./my-submission
 
               # Use glob pattern to match multiple directories
-              webarena-verified create-submission-pkg --run-output-dir "./runs/run_*" --output ./submissions
+              webarena-verified create-submission-pkg --run-output-dir "./runs/run_*" --output ./my-submission
 
               # Mix explicit paths and glob patterns
-              webarena-verified create-submission-pkg --run-output-dir ./special "./runs/run_*" --output ./submissions
+              webarena-verified create-submission-pkg --run-output-dir ./special "./runs/run_*" --output ./my-submission
 
-              # Use custom name instead of auto-generated timestamp
+              # Overwrite existing output directory
               webarena-verified create-submission-pkg --run-output-dir ./output \\
-                --output ./submissions --name experiment-001
-
-            Output naming:
-              - Default (auto-generated): webarena-verified-submission-YYYYMMDD_HHMMSS/
-              - Custom name: {custom-name}/
+                --output ./my-submission --force
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -429,13 +425,12 @@ def create_parser() -> argparse.ArgumentParser:
         "--output",
         type=str,
         required=True,
-        help="Output root directory (submission created inside with timestamp)",
+        help="Output submission package directory path",
     )
     submission_parser.add_argument(
-        "--name",
-        type=str,
-        default=None,
-        help="Custom name for submission package (if not provided, auto-generates timestamp-based name)",
+        "--force",
+        action="store_true",
+        help="Overwrite output directory if it already exists",
     )
 
     submit_parser = subparsers.add_parser(
@@ -444,21 +439,9 @@ def create_parser() -> argparse.ArgumentParser:
         description="Upload a submission package to HuggingFace and create a PR for leaderboard evaluation",
         epilog=textwrap.dedent("""
             examples:
-              # Submit with required fields
+              # Submit package after editing submission.json
               webarena-verified submit \\
-                --submission-dir ./submissions/my-submission \\
-                --name "TeamX/ModelY" \\
-                --leaderboard both \\
-                --reference "https://example.com/paper"
-
-              # Submit with optional fields
-              webarena-verified submit \\
-                --submission-dir ./submissions/my-submission \\
-                --name "TeamX/ModelY" \\
-                --leaderboard hard \\
-                --reference "https://example.com/paper" \\
-                --version "v1.0" \\
-                --contact-info "team@example.com"
+                --submission-dir ./my-submission
 
         environment variables:
           HF_TOKEN                                         HuggingFace authentication token (or use: hf auth login)
@@ -472,22 +455,6 @@ def create_parser() -> argparse.ArgumentParser:
         required=True,
         help="Path to submission package directory (output of create-submission-pkg)",
     )
-    submit_parser.add_argument("--name", type=str, required=True, help="Model or team name (e.g., TeamX/ModelY)")
-    submit_parser.add_argument(
-        "--leaderboard",
-        type=str,
-        required=True,
-        choices=["hard", "full", "both"],
-        help="Target leaderboard",
-    )
-    submit_parser.add_argument(
-        "--reference",
-        type=str,
-        required=True,
-        help="HTTP(S) URL to paper or model reference",
-    )
-    submit_parser.add_argument("--version", type=str, default=None, help="Model version identifier")
-    submit_parser.add_argument("--contact-info", type=str, default=None, help="Contact email address")
 
     # trim-network-logs subcommand
     trim_logs_parser = subparsers.add_parser(
@@ -1504,7 +1471,8 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     # Display command info
     command_info = {
         "Command": "create-submission-pkg",
-        "Output Root": args.output,
+        "Output Path": args.output,
+        "Force Overwrite": args.force,
         "Run Output Directories": "\n" + "\n".join(f"  • {path}" for path in args.run_output_dir),
     }
     logging_helper.print_panel("Submission Package Creation", command_info)
@@ -1520,7 +1488,7 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
         else:
             output_dirs.append(Path(pattern))
 
-    output_root = Path(args.output)
+    output_path = Path(args.output)
 
     wa = WebArenaVerified()
 
@@ -1533,8 +1501,8 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     try:
         result = wa.create_submission(
             output_dirs=output_dirs,
-            output_root=output_root,
-            custom_name=args.name,
+            output_dir=output_path,
+            force=args.force,
             progress_callback=show_progress,
         )
     except ValueError as e:
@@ -1581,6 +1549,11 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
         logger.error("No valid tasks were packaged")
         return 1
 
+    submission_file = Path(result.output_path) / "submission.json"
+    print("\nNext steps:")
+    print(f"  1. Edit {submission_file} with your submission details (name, leaderboard, reference)")
+    print(f"  2. Run: webarena-verified submit --submission-dir {result.output_path}")
+
     return 0
 
 
@@ -1592,9 +1565,6 @@ def submit_cmd(args: argparse.Namespace) -> int:
     command_info = {
         "Command": "submit",
         "Submission Directory": args.submission_dir,
-        "Name": args.name,
-        "Leaderboard": args.leaderboard,
-        "Reference": args.reference,
         "HF Repository": hf_repo,
     }
     logging_helper.print_panel("Leaderboard Submission", command_info)
@@ -1605,13 +1575,7 @@ def submit_cmd(args: argparse.Namespace) -> int:
             hf_repo=hf_repo,
             hf_token=hf_token,
         )
-        result = handler.submit(
-            name=args.name,
-            leaderboard=args.leaderboard,
-            reference=args.reference,
-            version=args.version,
-            contact_info=args.contact_info,
-        )
+        result = handler.submit()
     except ValueError as e:
         logger.error(str(e))
         return 1
