@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from leaderboard.scripts.publish import rebuild_leaderboard_artifacts
+from leaderboard.scripts.tasks import rebuild_leaderboard_artifacts
 from webarena_verified.submission.leaderboard_builder import LeaderboardBuilder
 from webarena_verified.submission.models import EvaluationSummaryPayload, SubmissionMode
 

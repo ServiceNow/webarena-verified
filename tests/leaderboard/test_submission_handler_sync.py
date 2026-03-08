@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from leaderboard.scripts import hf_reconcile
+from leaderboard.scripts import submission_handler
 
 
 def test_sync_submissions_processes_recent_hf_refs(tmp_path: Path, monkeypatch) -> None:
@@ -29,10 +29,10 @@ def test_sync_submissions_processes_recent_hf_refs(tmp_path: Path, monkeypatch) 
         ingest_calls.append(payload["client_payload"])
         return SimpleNamespace()
 
-    monkeypatch.setattr(hf_reconcile, "HfApi", FakeHfApi)
-    monkeypatch.setattr(hf_reconcile, "ingest_hf_submission", fake_ingest)
+    monkeypatch.setattr(submission_handler, "HfApi", FakeHfApi)
+    monkeypatch.setattr(submission_handler, "ingest_hf_submission", fake_ingest)
 
-    synced = hf_reconcile.sync_submissions(
+    synced = submission_handler.sync_submissions(
         repo_root=tmp_path,
         hf_repo="org/dataset",
         hf_token="hf-token",
@@ -47,7 +47,7 @@ def test_sync_submissions_processes_recent_hf_refs(tmp_path: Path, monkeypatch) 
 
 def test_sync_submissions_requires_hf_repo_and_hf_token(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="hf_repo and hf_token are required"):
-        hf_reconcile.sync_submissions(
+        submission_handler.sync_submissions(
             repo_root=tmp_path,
             hf_repo="",
             hf_token="",
@@ -57,7 +57,7 @@ def test_sync_submissions_requires_hf_repo_and_hf_token(tmp_path: Path) -> None:
 
 def test_sync_submissions_rejects_invalid_max_recent_refs(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="max_recent_refs must be >= 1"):
-        hf_reconcile.sync_submissions(
+        submission_handler.sync_submissions(
             repo_root=tmp_path,
             hf_repo="org/dataset",
             hf_token="hf-token",

@@ -1,4 +1,4 @@
-from leaderboard.scripts.site_build_flow import _resolve_manifest_url
+from leaderboard.scripts.tasks import _resolve_manifest_url
 
 
 def test_resolve_manifest_url_prefers_override() -> None:

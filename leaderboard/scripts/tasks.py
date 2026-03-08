@@ -1,16 +1,49 @@
-"""Invoke entry points for leaderboard submission workflows."""
-
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
 from invoke.tasks import task
 
-from leaderboard.scripts.hf_ingest import ingest_hf_submission
-from leaderboard.scripts.hf_reconcile import sync_submissions
-from leaderboard.scripts.publish import rebuild_leaderboard_artifacts
-from leaderboard.scripts.site_build_flow import _resolve_manifest_url
+from leaderboard.scripts.submission_handler import ingest_hf_submission, sync_submissions
+from webarena_verified.submission.config import SubmissionFlowConfig
+from webarena_verified.submission.leaderboard_builder import LeaderboardBuilder
+
+_DEFAULT_MANIFEST_URL = (
+    "https://raw.githubusercontent.com/ServiceNow/webarena-verified/leaderboard-submissions/leaderboard/latest.json"
+)
+
+
+def rebuild_leaderboard_artifacts(
+    *,
+    branch_root: Path,
+    dry_run: bool = False,
+) -> dict[str, str]:
+    if dry_run:
+        return {"mode": "dry_run"}
+
+    builder = LeaderboardBuilder(SubmissionFlowConfig())
+    latest_path, full_path, hard_path = builder.rebuild_leaderboard(repo_root=branch_root)
+    latest_payload = json.loads(latest_path.read_text(encoding="utf-8"))
+    return {
+        "generation_id": latest_payload["generation_id"],
+        "latest": str(latest_path),
+        "full": str(full_path),
+        "hard": str(hard_path),
+    }
+
+
+def _resolve_manifest_url(*, manifest_url_override: str, configured_manifest_url: str) -> str:
+    override = manifest_url_override.strip()
+    if override:
+        return override
+
+    configured = configured_manifest_url.strip()
+    if configured:
+        return configured
+
+    return _DEFAULT_MANIFEST_URL
 
 
 @task(name="rebuild-leaderboard")

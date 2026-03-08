@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from leaderboard.scripts import hf_ingest
+from leaderboard.scripts import submission_handler
 from webarena_verified.submission.models import EvaluationSummaryPayload, SubmissionMode
 
 
@@ -113,7 +113,7 @@ def _write_submission_tree(root: Path, *, submission_uid: str) -> None:
     _write_json(submission_dir / "_internal.json", internal)
 
 
-def test_hf_ingest_updates_leaderboard_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_submission_handler_updates_leaderboard_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     submission_uid = "018f6f54-7e58-7f23-9d16-f4f8072b4f61"
     snapshot_root = tmp_path / "snapshot"
     _write_submission_tree(snapshot_root, submission_uid=submission_uid)
@@ -121,7 +121,7 @@ def test_hf_ingest_updates_leaderboard_artifacts(tmp_path: Path, monkeypatch: py
     event_path = tmp_path / "event.json"
     _write_json(event_path, _dispatch_event())
 
-    monkeypatch.setattr(hf_ingest, "snapshot_download", lambda **_kwargs: str(snapshot_root))
+    monkeypatch.setattr(submission_handler, "snapshot_download", lambda **_kwargs: str(snapshot_root))
 
     class FakeEvaluator:
         def __init__(self, *_args, **_kwargs) -> None:
@@ -133,9 +133,9 @@ def test_hf_ingest_updates_leaderboard_artifacts(tmp_path: Path, monkeypatch: py
                 SubmissionMode.HARD: _summary(),
             }
 
-    monkeypatch.setattr(hf_ingest, "SubmissionEvaluator", FakeEvaluator)
+    monkeypatch.setattr(submission_handler, "SubmissionEvaluator", FakeEvaluator)
 
-    result = hf_ingest.ingest_hf_submission(
+    result = submission_handler.ingest_hf_submission(
         repo_root=tmp_path,
         event_path=event_path,
         hf_repo_expected="org/dataset",
@@ -149,12 +149,12 @@ def test_hf_ingest_updates_leaderboard_artifacts(tmp_path: Path, monkeypatch: py
     assert Path(result.hard_artifact_path).name == "hard.json"
 
 
-def test_hf_ingest_rejects_repo_mismatch(tmp_path: Path) -> None:
+def test_submission_handler_rejects_repo_mismatch(tmp_path: Path) -> None:
     event_path = tmp_path / "event.json"
     _write_json(event_path, _dispatch_event())
 
     with pytest.raises(ValueError, match="does not match"):
-        hf_ingest.ingest_hf_submission(
+        submission_handler.ingest_hf_submission(
             repo_root=tmp_path,
             event_path=event_path,
             hf_repo_expected="different/repo",
@@ -163,7 +163,7 @@ def test_hf_ingest_rejects_repo_mismatch(tmp_path: Path) -> None:
         )
 
 
-def test_hf_ingest_resolves_submission_uid_from_pr_diff_when_snapshot_has_multiple(
+def test_submission_handler_resolves_submission_uid_from_pr_diff_when_snapshot_has_multiple(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     selected_uid = "018f6f54-7e58-7f23-9d16-f4f8072b4f61"
@@ -175,7 +175,7 @@ def test_hf_ingest_resolves_submission_uid_from_pr_diff_when_snapshot_has_multip
     event_path = tmp_path / "event.json"
     _write_json(event_path, _dispatch_event())
 
-    monkeypatch.setattr(hf_ingest, "snapshot_download", lambda **_kwargs: str(snapshot_root))
+    monkeypatch.setattr(submission_handler, "snapshot_download", lambda **_kwargs: str(snapshot_root))
 
     class FakeDetails:
         diff = "\n".join(
@@ -202,10 +202,10 @@ def test_hf_ingest_resolves_submission_uid_from_pr_diff_when_snapshot_has_multip
                 SubmissionMode.HARD: _summary(),
             }
 
-    monkeypatch.setattr(hf_ingest, "HfApi", FakeHfApi)
-    monkeypatch.setattr(hf_ingest, "SubmissionEvaluator", FakeEvaluator)
+    monkeypatch.setattr(submission_handler, "HfApi", FakeHfApi)
+    monkeypatch.setattr(submission_handler, "SubmissionEvaluator", FakeEvaluator)
 
-    result = hf_ingest.ingest_hf_submission(
+    result = submission_handler.ingest_hf_submission(
         repo_root=tmp_path,
         event_path=event_path,
         hf_repo_expected="org/dataset",
