@@ -25,98 +25,18 @@ jobs:
           sync-args: --group dev
           configure-git-identity: "true"
 
-      - name: Resolve HF settings
-        id: cfg
-        run: |
-          set -euo pipefail
-          HF_REPO="${{ vars.LEADERBOARD_HF_REPO }}"
-          if [ -z "$HF_REPO" ]; then
-            echo "Missing repository variable LEADERBOARD_HF_REPO"
-            exit 1
-          fi
-          EVALUATOR_VERSION="${{ vars.LEADERBOARD_EVALUATOR_VERSION }}"
-          echo "hf_repo=$HF_REPO" >> "$GITHUB_OUTPUT"
-          echo "evaluator_version=$EVALUATOR_VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Reconcile pending control records
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_REPO: ${{ steps.cfg.outputs.hf_repo }}
-          EVALUATOR_VERSION: ${{ steps.cfg.outputs.evaluator_version }}
+          HF_REPO: ${{ vars.LEADERBOARD_HF_REPO }}
+          EVALUATOR_VERSION: ${{ vars.LEADERBOARD_EVALUATOR_VERSION }}
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import json
-          import os
-          import subprocess
-          from pathlib import Path
-          from huggingface_hub import HfApi
-
-          hf_repo = os.environ["HF_REPO"]
-          evaluator_version = os.environ.get("EVALUATOR_VERSION", "")
-          hf_token = os.environ.get("HF_TOKEN", "")
-
-          api = HfApi(token=hf_token or None)
-          refs = api.list_repo_refs(repo_id=hf_repo, repo_type="dataset")
-          ref_by_num = {}
-          for ref in refs.pull_requests or []:
-              suffix = ref.ref.replace("refs/pr/", "")
-              if suffix.isdigit():
-                  ref_by_num[int(suffix)] = ref.target_commit
-
-          root = Path("submission_control")
-          existing_records = {}
-          if root.exists():
-              for record_path in sorted(root.glob("*.json")):
-                  record = json.loads(record_path.read_text(encoding="utf-8"))
-                  existing_records[int(record["submission_id"])] = record
-
-          candidate_numbers = sorted(ref_by_num.keys(), reverse=True)[:50]
-          for submission_id, record in existing_records.items():
-              status = record.get("status")
-              if status in {"accepted_pending_publish", "failed_retryable"} and submission_id not in candidate_numbers:
-                  candidate_numbers.append(submission_id)
-
-          for pr_number in candidate_numbers:
-              head_sha = ref_by_num.get(pr_number)
-              record = existing_records.get(pr_number)
-              if not head_sha and record:
-                  head_sha = record.get("hf_head_sha")
-              if not head_sha:
-                  continue
-
-              event_payload = {
-                  "client_payload": {
-                      "event_id": f"reconcile-{pr_number}-{head_sha}",
-                      "event_scope": "schedule",
-                      "event_action": "reconcile",
-                      "hf_repo": hf_repo,
-                      "hf_pr_number": pr_number,
-                      "hf_head_sha": head_sha,
-                      "hf_pr_url": (record or {}).get("hf_pr_url", f"https://huggingface.co/datasets/{hf_repo}/discussions/{pr_number}"),
-                  }
-              }
-              event_path = Path(".tmp") / f"reconcile-{pr_number}.json"
-              event_path.parent.mkdir(parents=True, exist_ok=True)
-              event_path.write_text(json.dumps(event_payload), encoding="utf-8")
-              subprocess.run(
-                  [
-                      "uv",
-                      "run",
-                      "inv",
-                      "dev.leaderboard.hf-ingest",
-                      "--event-path",
-                      str(event_path),
-                      "--hf-repo",
-                      hf_repo,
-                      "--hf-token",
-                      hf_token,
-                      "--evaluator-version",
-                      evaluator_version,
-                  ],
-                  check=True,
-              )
-          PY
+          uv run inv dev.leaderboard.hf-reconcile \
+            --repo-root "." \
+            --hf-repo "$HF_REPO" \
+            --hf-token "$HF_TOKEN" \
+            --evaluator-version "$EVALUATOR_VERSION"
 
       - name: Commit and open reconcile publish PR
         env:

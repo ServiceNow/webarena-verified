@@ -44,62 +44,29 @@ jobs:
           sync-args: --group dev
           configure-git-identity: "true"
 
-      - name: Rebuild leaderboard artifacts from canonical records
-        id: rebuild
+      - name: Rebuild and push branch updates
+        id: rebuild_push
         run: |
           set -euo pipefail
 
-          MAX_RECORDS="${{ github.event.inputs.max_canonical_records || '100' }}"
-          GENERATION_ID="${{ github.event.inputs.generation_id }}"
-          GENERATED_AT_UTC="${{ github.event.inputs.generated_at_utc }}"
-
-          uv run inv dev.leaderboard.rebuild-canonical \
+          RESULT="$(uv run inv dev.leaderboard.rebuild-and-push \
+            --target-branch "${TARGET_BRANCH}" \
             --repo-root "." \
             --canonical-dir "submissions" \
             --staging-dir ".tmp/leaderboard-staging" \
-            --max-canonical-records "$MAX_RECORDS" \
-            --generation-id "$GENERATION_ID" \
-            --generated-at-utc "$GENERATED_AT_UTC"
-
-      - name: Commit and push branch updates
-        id: commit
-        run: |
-          set -euo pipefail
-
-          git add -A submissions leaderboard_manifest.json
-
-          shopt -s nullglob
-          generation_files=(leaderboard_full.*.json leaderboard_hard.*.json)
-          if [ "${#generation_files[@]}" -gt 0 ]; then
-            git add -A "${generation_files[@]}"
-          fi
-
-          if git diff --cached --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No leaderboard changes to commit"
-            exit 0
-          fi
-
-          GENERATION_ID="$(jq -r '.generation_id' leaderboard_manifest.json)"
-          git commit -m "Rebuild leaderboard generation ${GENERATION_ID}"
-
-          for attempt in 1 2 3; do
-            if git push origin HEAD:"${TARGET_BRANCH}"; then
-              echo "changed=true" >> "$GITHUB_OUTPUT"
-              echo "generation_id=$GENERATION_ID" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            echo "Push attempt ${attempt} failed; rebasing and retrying"
-            git pull --rebase origin "${TARGET_BRANCH}"
-          done
-
-          echo "Failed to push rebuild updates after retries"
-          exit 1
+            --max-canonical-records "${{ github.event.inputs.max_canonical_records || '100' }}" \
+            --generation-id "${{ github.event.inputs.generation_id }}" \
+            --generated-at-utc "${{ github.event.inputs.generated_at_utc }}")"
+          echo "$RESULT"
+          CHANGED="$(printf '%s\n' "$RESULT" | grep '^changed=' | cut -d= -f2-)"
+          GENERATION_ID="$(printf '%s\n' "$RESULT" | grep '^generation_id=' | cut -d= -f2-)"
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "generation_id=$GENERATION_ID" >> "$GITHUB_OUTPUT"
 
       - name: Rebuild summary
         run: |
           {
             echo "target_branch=${TARGET_BRANCH}"
-            echo "changed=${{ steps.commit.outputs.changed || 'false' }}"
-            echo "generation_id=${{ steps.commit.outputs.generation_id || 'n/a' }}"
+            echo "changed=${{ steps.rebuild_push.outputs.changed || 'false' }}"
+            echo "generation_id=${{ steps.rebuild_push.outputs.generation_id || 'n/a' }}"
           } >> "$GITHUB_STEP_SUMMARY"

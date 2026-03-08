@@ -18,40 +18,26 @@ jobs:
     name: Validate live manifest and generation assets
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve base URL
-        id: cfg
-        run: |
-          URL="${{ github.event.inputs.leaderboard_base_url }}"
-          if [ -z "$URL" ]; then
-            URL="https://servicenow.github.io/webarena-verified/leaderboard/data"
-          fi
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Fetch manifest
-        run: |
-          set -euo pipefail
-          curl -fsSL "${{ steps.cfg.outputs.url }}/leaderboard_manifest.json" -o manifest.json
-          jq -e '.generation_id and .full_file and .hard_file and .full_sha256 and .hard_sha256' manifest.json > /dev/null
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
 
-      - name: Fetch and verify referenced assets
+      - name: Run smoke check
+        env:
+          LEADERBOARD_BASE_URL: ${{ github.event.inputs.leaderboard_base_url }}
         run: |
           set -euo pipefail
-          FULL_FILE="$(jq -r '.full_file' manifest.json)"
-          HARD_FILE="$(jq -r '.hard_file' manifest.json)"
-          FULL_SHA="$(jq -r '.full_sha256' manifest.json)"
-          HARD_SHA="$(jq -r '.hard_sha256' manifest.json)"
-
-          curl -fsSL "${{ steps.cfg.outputs.url }}/${FULL_FILE}" -o full.json
-          curl -fsSL "${{ steps.cfg.outputs.url }}/${HARD_FILE}" -o hard.json
-
-          test "$(sha256sum full.json | awk '{print $1}')" = "$FULL_SHA"
-          test "$(sha256sum hard.json | awk '{print $1}')" = "$HARD_SHA"
-
-          jq -e '.leaderboard == "full" and (.rows | type == "array")' full.json > /dev/null
-          jq -e '.leaderboard == "hard" and (.rows | type == "array")' hard.json > /dev/null
-
-      - name: Summary
-        run: |
-          echo "generation_id=$(jq -r '.generation_id' manifest.json)" >> "$GITHUB_STEP_SUMMARY"
-          echo "full_file=$(jq -r '.full_file' manifest.json)" >> "$GITHUB_STEP_SUMMARY"
-          echo "hard_file=$(jq -r '.hard_file' manifest.json)" >> "$GITHUB_STEP_SUMMARY"
+          RESULT="$(uv run inv dev.leaderboard.smoke-check --leaderboard-base-url "$LEADERBOARD_BASE_URL")"
+          echo "$RESULT"
+          GENERATION_ID="$(printf '%s\n' "$RESULT" | grep '^generation_id=' | cut -d= -f2-)"
+          FULL_FILE="$(printf '%s\n' "$RESULT" | grep '^full_file=' | cut -d= -f2-)"
+          HARD_FILE="$(printf '%s\n' "$RESULT" | grep '^hard_file=' | cut -d= -f2-)"
+          {
+            echo "generation_id=$GENERATION_ID"
+            echo "full_file=$FULL_FILE"
+            echo "hard_file=$HARD_FILE"
+          } >> "$GITHUB_STEP_SUMMARY"

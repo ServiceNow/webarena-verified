@@ -34,15 +34,24 @@ def test_hf_ingest_workflow_is_schedule_only() -> None:
     assert "repository_dispatch:" not in workflow
     assert "hf_submission_event" not in workflow
     assert "schedule:" in workflow
-    assert "dev.leaderboard.hf-ingest" in workflow
+    assert "Resolve HF settings" not in workflow
+    assert "dev.leaderboard.hf-reconcile" in workflow
+    assert "python - <<'PY'" not in workflow
 
 
 def test_hf_publish_pr_workflow_validates_rebuild_contract() -> None:
     workflow = _read(HF_PUBLISH_WORKFLOW_PATH)
 
     assert "group: leaderboard-data-writer" in workflow
-    assert "inv dev.leaderboard.rebuild-canonical" in workflow
-    assert "--dry-run" in workflow
+    assert "dev.leaderboard.hf-publish-pr-gate" in workflow
+    assert "python - <<'PY'" not in workflow
+
+
+def test_rebuild_workflow_uses_scripted_rebuild_and_push_task() -> None:
+    workflow = _read(REBUILD_WORKFLOW_PATH)
+
+    assert "dev.leaderboard.rebuild-and-push" in workflow
+    assert "Commit and push branch updates" not in workflow
 
 
 def test_docs_publish_trigger_is_independent_from_leaderboard_data() -> None:

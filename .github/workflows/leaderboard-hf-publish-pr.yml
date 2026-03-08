@@ -35,81 +35,28 @@ jobs:
           ref: leaderboard-submissions
           fetch-depth: 0
 
-      - name: Overlay PR head data
-        id: prhead
-        run: |
-          set -euo pipefail
-          git fetch --no-tags --depth=1 origin "pull/${{ github.event.pull_request.number }}/head"
-          PR_HEAD_SHA="$(git rev-parse FETCH_HEAD)"
-          echo "pr_head_sha=$PR_HEAD_SHA" >> "$GITHUB_OUTPUT"
-          git checkout "$PR_HEAD_SHA" -- submission_control submissions || true
-          shopt -s nullglob
-          for f in leaderboard_manifest.json leaderboard_full.*.json leaderboard_hard.*.json; do
-            git checkout "$PR_HEAD_SHA" -- "$f" || true
-          done
-
       - name: Setup environment
         uses: ./.github/actions/setup
         with:
           sync-args: --group dev
 
-      - name: Rebuild from canonical records
+      - name: Run publish PR gate checks
+        id: gate
         run: |
           set -euo pipefail
-          uv run inv dev.leaderboard.rebuild-canonical \
+          RESULT="$(uv run inv dev.leaderboard.hf-publish-pr-gate \
             --repo-root "." \
-            --canonical-dir "submissions" \
-            --staging-dir ".tmp/leaderboard-staging" \
-            --max-canonical-records "100" \
-            --dry-run
-
-      - name: Enforce allowlisted changed paths
-        run: |
-          set -euo pipefail
-          CHANGED_FILES="$(git diff --name-only origin/leaderboard-submissions...${{ steps.prhead.outputs.pr_head_sha }})"
-          while IFS= read -r file; do
-            [ -z "$file" ] && continue
-            case "$file" in
-              submission_control/*|submissions/*|leaderboard_manifest.json|leaderboard_full.*.json|leaderboard_hard.*.json)
-                ;;
-              *)
-                echo "Non-allowlisted file changed: $file"
-                exit 1
-                ;;
-            esac
-          done <<< "$CHANGED_FILES"
-
-      - name: Verify latest accepted head SHA linkage
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          control_root = Path("submission_control")
-          canonical_root = Path("submissions")
-          if not control_root.exists() or not canonical_root.exists():
-              raise SystemExit(0)
-
-          for canonical_path in canonical_root.glob("*.json"):
-              canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
-              submission_id = canonical.get("submission_id")
-              control_path = control_root / f"{submission_id}.json"
-              if not control_path.exists():
-                  continue
-              control = json.loads(control_path.read_text(encoding="utf-8"))
-              if canonical.get("hf_head_sha") != control.get("hf_head_sha"):
-                  raise SystemExit(
-                      f"Canonical/control head SHA mismatch for submission {submission_id}: "
-                      f"{canonical.get('hf_head_sha')} != {control.get('hf_head_sha')}"
-                  )
-          PY
-
-      - name: Publish PR summary
-        run: |
-          echo "publish_pr=${{ github.event.pull_request.number }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "head_sha=${{ steps.prhead.outputs.pr_head_sha }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "gate=passed" >> "$GITHUB_STEP_SUMMARY"
+            --base-branch "leaderboard-submissions" \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --max-canonical-records "100")"
+          echo "$RESULT"
+          HEAD_SHA="$(printf '%s\n' "$RESULT" | grep '^pr_head_sha=' | cut -d= -f2-)"
+          echo "pr_head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "publish_pr=${{ github.event.pull_request.number }}"
+            echo "head_sha=$HEAD_SHA"
+            echo "gate=passed"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Enable auto-merge
         if: ${{ github.event.pull_request.user.login == 'github-actions[bot]' }}

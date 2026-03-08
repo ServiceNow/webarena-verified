@@ -43,15 +43,15 @@ jobs:
 
       - name: Resolve manifest URL
         id: cfg
+        env:
+          MANIFEST_URL_OVERRIDE: ${{ github.event.inputs.manifest_url_override }}
+          CONFIGURED_MANIFEST_URL: ${{ vars.PUBLIC_LEADERBOARD_MANIFEST_URL }}
         run: |
           set -euo pipefail
-          MANIFEST_URL="${{ github.event.inputs.manifest_url_override }}"
-          if [ -z "$MANIFEST_URL" ]; then
-            MANIFEST_URL="${{ vars.PUBLIC_LEADERBOARD_MANIFEST_URL }}"
-          fi
-          if [ -z "$MANIFEST_URL" ]; then
-            MANIFEST_URL="https://raw.githubusercontent.com/ServiceNow/webarena-verified/leaderboard-submissions/leaderboard_manifest.json"
-          fi
+          MANIFEST_URL="$(uv run inv dev.leaderboard.site-resolve-manifest-url \
+            --manifest-url-override "$MANIFEST_URL_OVERRIDE" \
+            --configured-manifest-url "$CONFIGURED_MANIFEST_URL")"
+          echo "$MANIFEST_URL"
           echo "manifest_url=$MANIFEST_URL" >> "$GITHUB_OUTPUT"
 
       - name: Run site tests
