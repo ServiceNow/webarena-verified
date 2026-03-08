@@ -2,19 +2,6 @@ name: Leaderboard Rebuild
 
 on:
   workflow_dispatch:
-    inputs:
-      max_canonical_records:
-        description: "Retention size for canonical records"
-        required: false
-        default: "100"
-      generation_id:
-        description: "Optional generation id override"
-        required: false
-        default: ""
-      generated_at_utc:
-        description: "Optional RFC3339 UTC timestamp override"
-        required: false
-        default: ""
 
 permissions:
   contents: write
@@ -25,7 +12,7 @@ concurrency:
 
 jobs:
   rebuild:
-    name: Rebuild canonical leaderboard artifacts
+    name: Rebuild leaderboard artifacts
     if: ${{ github.event_name == 'workflow_dispatch' && github.ref_name == 'leaderboard-submissions' }}
     runs-on: ubuntu-latest
     env:
@@ -51,12 +38,7 @@ jobs:
 
           RESULT="$(uv run inv dev.leaderboard.rebuild-and-push \
             --target-branch "${TARGET_BRANCH}" \
-            --repo-root "." \
-            --canonical-dir "submissions" \
-            --staging-dir ".tmp/leaderboard-staging" \
-            --max-canonical-records "${{ github.event.inputs.max_canonical_records || '100' }}" \
-            --generation-id "${{ github.event.inputs.generation_id }}" \
-            --generated-at-utc "${{ github.event.inputs.generated_at_utc }}")"
+            --repo-root ".")"
           echo "$RESULT"
           CHANGED="$(printf '%s\n' "$RESULT" | grep '^changed=' | cut -d= -f2-)"
           GENERATION_ID="$(printf '%s\n' "$RESULT" | grep '^generation_id=' | cut -d= -f2-)"

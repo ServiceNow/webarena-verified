@@ -1,159 +1,78 @@
 import json
 from pathlib import Path
 
-import pytest
-
-from leaderboard.scripts.publish import (
-    LEADERBOARD_DATA_DIR,
-    LEADERBOARD_MANIFEST_FILE,
-    generate_leaderboard_staging,
-    publish_staged_leaderboard,
-)
+from leaderboard.scripts.publish import rebuild_leaderboard_artifacts
+from webarena_verified.submission.leaderboard_builder import LeaderboardBuilder
+from webarena_verified.submission.models import EvaluationSummaryPayload, SubmissionMode
 
 
-def _row(submission_id: int, overall_score: float) -> dict:
-    return {
-        "submission_id": submission_id,
-        "name": f"Team-{submission_id}",
-        "overall_score": overall_score,
-        "shopping_score": 0.8,
-        "reddit_score": 0.8,
-        "gitlab_score": 0.8,
-        "wikipedia_score": 0.8,
-        "map_score": 0.8,
-        "shopping_admin_score": 0.8,
-        "success_count": 10,
-        "failure_count": 0,
-        "error_count": 0,
-        "missing_count": 0,
-        "webarena_verified_version": "1.0.0",
-        "checksum": "a" * 64,
-    }
-
-
-def test_generate_is_deterministic_and_tie_breaks_by_submission_id(tmp_path: Path):
-    staging_dir = tmp_path / "staging"
-    full_rows = [
-        _row(10, 0.9),
-        _row(2, 0.9),
-        _row(7, 0.95),
-    ]
-    hard_rows = [_row(99, 0.5)]
-
-    manifest = generate_leaderboard_staging(
-        staging_dir=staging_dir,
-        generation_id="gen-001",
-        generated_at_utc="2026-02-07T18:00:00Z",
-        full_rows=full_rows,
-        hard_rows=hard_rows,
-    )
-
-    assert manifest.generation_id == "gen-001"
-
-    full_table = json.loads((staging_dir / manifest.full_file).read_text(encoding="utf-8"))
-    ranked_ids = [row["submission_id"] for row in full_table["rows"]]
-    ranked_positions = [row["rank"] for row in full_table["rows"]]
-
-    assert ranked_ids == [7, 2, 10]
-    assert ranked_positions == [1, 2, 3]
-
-
-def test_publish_is_atomic_and_replaces_old_generation_files(tmp_path: Path):
-    gh_pages_root = tmp_path / "gh-pages"
-    live_data = gh_pages_root / LEADERBOARD_DATA_DIR
-    old_generation = live_data / "leaderboard_full.old.json"
-    live_data.mkdir(parents=True)
-    old_generation.write_text("{}", encoding="utf-8")
-    (live_data / "leaderboard_hard.old.json").write_text("{}", encoding="utf-8")
-    (live_data / LEADERBOARD_MANIFEST_FILE).write_text(
-        json.dumps(
-            {
-                "schema_version": "1.0",
-                "generation_id": "old",
-                "generated_at_utc": "2026-02-07T10:00:00Z",
-                "full_file": "leaderboard_full.old.json",
-                "hard_file": "leaderboard_hard.old.json",
-                "full_sha256": "b" * 64,
-                "hard_sha256": "c" * 64,
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    staging_dir = tmp_path / "staging"
-    manifest = generate_leaderboard_staging(
-        staging_dir=staging_dir,
-        generation_id="gen-atomic",
-        generated_at_utc="2026-02-07T18:00:00Z",
-        full_rows=[_row(1, 0.7)],
-        hard_rows=[_row(2, 0.6)],
-    )
-
-    publish_staged_leaderboard(staging_dir=staging_dir, gh_pages_root=gh_pages_root)
-
-    live_files = {path.name for path in live_data.iterdir() if path.is_file()}
-    assert live_files == {LEADERBOARD_MANIFEST_FILE, manifest.full_file, manifest.hard_file}
-    assert old_generation.exists() is False
-
-
-def test_publish_failure_never_switches_live_manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    gh_pages_root = tmp_path / "gh-pages"
-    live_data = gh_pages_root / LEADERBOARD_DATA_DIR
-    live_data.mkdir(parents=True)
-
-    old_manifest_path = live_data / LEADERBOARD_MANIFEST_FILE
-    old_manifest_content = json.dumps(
+def _summary(score: float) -> EvaluationSummaryPayload:
+    return EvaluationSummaryPayload.model_validate(
         {
-            "schema_version": "1.0",
-            "generation_id": "old-gen",
-            "generated_at_utc": "2026-02-07T10:00:00Z",
-            "full_file": "leaderboard_full.old-gen.json",
-            "hard_file": "leaderboard_hard.old-gen.json",
-            "full_sha256": "b" * 64,
-            "hard_sha256": "c" * 64,
+            "timestamp": "2026-03-08T10:00:00Z",
+            "webarena_verified_version": "1.0.0",
+            "webarena_verified_evaluator_checksum": "x",
+            "webarena_verified_data_checksum": "y",
+            "summary": {
+                "overall": {
+                    "total": 1,
+                    "success_count": 1,
+                    "failure_count": 0,
+                    "error_count": 0,
+                    "failed_or_error_count": 0,
+                },
+                "per_site": {},
+            },
+            "scores": {
+                "overall": score,
+                "shopping": score,
+                "shopping_admin": score,
+                "gitlab": score,
+                "map": score,
+                "reddit": score,
+                "multisite": score,
+                "gitlab_reddit": score,
+            },
         }
     )
-    old_manifest_path.write_text(old_manifest_content, encoding="utf-8")
-    (live_data / "leaderboard_full.old-gen.json").write_text("{}", encoding="utf-8")
-    (live_data / "leaderboard_hard.old-gen.json").write_text("{}", encoding="utf-8")
 
-    staging_dir = tmp_path / "staging"
-    generate_leaderboard_staging(
-        staging_dir=staging_dir,
-        generation_id="new-gen",
-        generated_at_utc="2026-02-07T18:00:00Z",
-        full_rows=[_row(1, 0.8)],
-        hard_rows=[_row(2, 0.7)],
+
+def _seed_submission(repo_root: Path) -> None:
+    builder = LeaderboardBuilder()
+    builder.apply_submission_result(
+        repo_root=repo_root,
+        submission_uid="018f6f54-7e58-7f23-9d16-f4f8072b4f61",
+        submission_mode=SubmissionMode.BOTH,
+        source_url="https://huggingface.co/datasets/org/dataset/tree/sha/submissions/018f6f54-7e58-7f23-9d16-f4f8072b4f61",
+        submission_name="TeamA",
+        submission_model="model-a",
+        evaluation_summaries={SubmissionMode.FULL: _summary(0.9), SubmissionMode.HARD: _summary(0.8)},
     )
 
-    copy2_impl = __import__("shutil").copy2
 
-    def fail_on_hard_copy(src: Path, dst: Path, *, follow_symlinks: bool = True):
-        if str(src).endswith("leaderboard_hard.new-gen.json"):
-            raise RuntimeError("injected publish failure")
-        return copy2_impl(src, dst, follow_symlinks=follow_symlinks)
+def test_rebuild_dry_run_does_not_modify_tree(tmp_path: Path) -> None:
+    _seed_submission(tmp_path)
+    latest_path = tmp_path / "leaderboard" / "latest.json"
+    before = latest_path.read_text(encoding="utf-8")
 
-    monkeypatch.setattr("leaderboard.scripts.publish.shutil.copy2", fail_on_hard_copy)
+    result = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=True)
 
-    with pytest.raises(RuntimeError, match="injected publish failure"):
-        publish_staged_leaderboard(staging_dir=staging_dir, gh_pages_root=gh_pages_root)
-
-    assert old_manifest_path.read_text(encoding="utf-8") == old_manifest_content
-    assert json.loads(old_manifest_path.read_text(encoding="utf-8"))["generation_id"] == "old-gen"
+    assert result == {"mode": "dry_run"}
+    assert latest_path.read_text(encoding="utf-8") == before
 
 
-def test_generate_rejects_duplicate_submission_ids(tmp_path: Path):
-    staging_dir = tmp_path / "staging"
-    duplicate_full_rows = [
-        _row(42, 0.9),
-        _row(42, 0.8),
-    ]
+def test_rebuild_is_deterministic_for_existing_rows(tmp_path: Path) -> None:
+    _seed_submission(tmp_path)
 
-    with pytest.raises(ValueError, match="duplicate submission_id"):
-        generate_leaderboard_staging(
-            staging_dir=staging_dir,
-            generation_id="gen-dup",
-            generated_at_utc="2026-02-07T18:00:00Z",
-            full_rows=duplicate_full_rows,
-            hard_rows=[],
-        )
+    result_one = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=False)
+    latest_one = json.loads((tmp_path / "leaderboard" / "latest.json").read_text(encoding="utf-8"))
+    full_one = Path(result_one["full"]).read_text(encoding="utf-8")
+    hard_one = Path(result_one["hard"]).read_text(encoding="utf-8")
+
+    result_two = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=False)
+    latest_two = json.loads((tmp_path / "leaderboard" / "latest.json").read_text(encoding="utf-8"))
+
+    assert result_one["generation_id"] == result_two["generation_id"]
+    assert latest_one["generation_id"] == latest_two["generation_id"]
+    assert Path(result_two["full"]).read_text(encoding="utf-8") == full_one
+    assert Path(result_two["hard"]).read_text(encoding="utf-8") == hard_one

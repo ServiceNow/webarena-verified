@@ -93,6 +93,7 @@ nav:
   - Leaderboard:
       - Overview: leaderboard/index.md
       - Submitting Results: leaderboard/submission.md
+      - Submission Flow: leaderboard/submission_flow.md
   - Getting Started:
       - Quick Start: index.md
       - Usage:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 _DEFAULT_MANIFEST_URL = (
-    "https://raw.githubusercontent.com/ServiceNow/webarena-verified/leaderboard-submissions/leaderboard_manifest.json"
+    "https://raw.githubusercontent.com/ServiceNow/webarena-verified/leaderboard-submissions/leaderboard/latest.json"
 )
 
 

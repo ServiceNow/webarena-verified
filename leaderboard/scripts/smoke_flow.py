@@ -34,7 +34,7 @@ def _run_leaderboard_smoke_check(*, leaderboard_base_url: str) -> dict[str, str]
     base_url = leaderboard_base_url.strip() or _DEFAULT_BASE_URL
     base_url = base_url.rstrip("/")
 
-    manifest_url = f"{base_url}/leaderboard_manifest.json"
+    manifest_url = f"{base_url}/leaderboard/latest.json"
     manifest = _fetch_json_object(manifest_url)
 
     generation_id = _require_string(manifest, "generation_id")

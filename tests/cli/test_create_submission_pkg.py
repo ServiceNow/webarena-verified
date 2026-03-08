@@ -99,9 +99,8 @@ def test_create_submission_single_directory_full_success(tmp_path, create_task_o
     assert (submission_dir / "manifest.json").exists()
 
     payload = json.loads((submission_dir / "submission.json").read_text(encoding="utf-8"))
-    assert payload["leaderboard"] == "full"
-    assert payload["packaged_tasks"]["full"]["valid"] == 3
-    assert payload["packaged_tasks"]["full"]["incomplete"] == 0
+    assert payload["submitted_tasks"] == 3
+    assert payload["task_network_filename"] == "network.har"
 
 
 def test_create_submission_direct_output_path(tmp_path, create_task_output, mock_args, leaderboard_task_ids):
@@ -118,11 +117,8 @@ def test_create_submission_direct_output_path(tmp_path, create_task_output, mock
     payload = json.loads((submission_path / "submission.json").read_text(encoding="utf-8"))
     assert payload["name"].startswith("<EDIT:")
     assert payload["model"].startswith("<EDIT:")
-    assert payload["reference"].startswith("<EDIT:")
-    assert payload["code_repository"] is None
-    assert payload["contact_email"].startswith("<EDIT:")
-    assert payload["leaderboard"] == "full"
-    assert set(payload["packaged_tasks"].keys()) == {"full"}
+    assert payload["reference"] == "https://example.com/replace-me"
+    assert payload["contact_email"] == "replace-me@example.com"
 
 
 def test_create_submission_multiple_directories(tmp_path, create_task_output, mock_args, leaderboard_task_ids):
@@ -160,8 +156,9 @@ def test_create_submission_missing_agent_response_counts_incomplete(
     assert exit_code == 0
 
     payload = json.loads((submission_dir / "submission.json").read_text(encoding="utf-8"))
-    assert payload["packaged_tasks"]["full"]["valid"] == 1
-    assert payload["packaged_tasks"]["full"]["incomplete"] == 1
+    assert payload["submitted_tasks"] == 1
+    assert (submission_dir / str(leaderboard_task_ids["full_a"]) / "agent_response.json").exists()
+    assert not (submission_dir / str(leaderboard_task_ids["full_b"]) / "agent_response.json").exists()
 
 
 def test_create_submission_missing_har_counts_incomplete(tmp_path, create_task_output, mock_args, leaderboard_task_ids):
@@ -178,8 +175,9 @@ def test_create_submission_missing_har_counts_incomplete(tmp_path, create_task_o
     assert exit_code == 0
 
     payload = json.loads((submission_dir / "submission.json").read_text(encoding="utf-8"))
-    assert payload["packaged_tasks"]["full"]["valid"] == 1
-    assert payload["packaged_tasks"]["full"]["incomplete"] == 1
+    assert payload["submitted_tasks"] == 1
+    assert (submission_dir / str(leaderboard_task_ids["full_a"]) / "network.har").exists()
+    assert not (submission_dir / str(leaderboard_task_ids["full_b"]) / "network.har").exists()
 
 
 def test_create_submission_invalid_har_is_copied_without_trimming(
@@ -258,9 +256,7 @@ def test_create_submission_hard_only_packages_hard_tasks(tmp_path, create_task_o
     assert not (submission_dir / str(leaderboard_task_ids["non_hard"]) / "agent_response.json").exists()
 
     payload = json.loads((submission_dir / "submission.json").read_text(encoding="utf-8"))
-    assert payload["leaderboard"] == "hard"
-    assert set(payload["packaged_tasks"].keys()) == {"hard"}
-    assert payload["packaged_tasks"]["hard"]["valid"] == 1
+    assert payload["submitted_tasks"] == 1
 
 
 def test_create_submission_both_fails_when_hard_has_zero_valid(

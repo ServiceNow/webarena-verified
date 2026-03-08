@@ -22,4 +22,4 @@ def test_resolve_manifest_url_uses_repo_default_when_unset() -> None:
         manifest_url_override="",
         configured_manifest_url="",
     )
-    assert resolved.endswith("leaderboard-submissions/leaderboard_manifest.json")
+    assert resolved.endswith("leaderboard-submissions/leaderboard/latest.json")

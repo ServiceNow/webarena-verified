@@ -9,9 +9,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  reconcile:
-    name: Reconcile schedule trigger
+  sync_submissions:
+    name: Sync submissions from HF schedule trigger
     runs-on: ubuntu-latest
+    concurrency:
+      group: leaderboard-data-writer
+      cancel-in-progress: false
     steps:
       - name: Checkout leaderboard-submissions
         uses: actions/checkout@v4
@@ -25,42 +28,42 @@ jobs:
           sync-args: --group dev
           configure-git-identity: "true"
 
-      - name: Reconcile pending control records
+      - name: Sync pending submissions from HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO: ${{ vars.WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO || vars.LEADERBOARD_HF_REPO || 'AmineHA/WebArena-Verified-Submissions-dev' }}
           EVALUATOR_VERSION: ${{ vars.LEADERBOARD_EVALUATOR_VERSION }}
         run: |
           set -euo pipefail
-          uv run inv dev.leaderboard.hf-reconcile \
+          uv run inv dev.leaderboard.hf-sync-submissions \
             --repo-root "." \
             --hf-repo "$WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO" \
             --hf-token "$HF_TOKEN" \
             --evaluator-version "$EVALUATOR_VERSION"
 
-      - name: Commit and open reconcile publish PR
+      - name: Commit and open publish PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          git add -A submission_control submissions
+          git add -A leaderboard
           if git diff --cached --quiet; then
-            echo "No reconcile changes" >> "$GITHUB_STEP_SUMMARY"
+            echo "No submission sync changes" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          BRANCH_NAME="hf-publish-reconcile"
+          BRANCH_NAME="hf-publish-sync-submissions"
           git checkout -b "$BRANCH_NAME"
-          git commit -m "Reconcile HF submissions"
+          git commit -m "Sync HF submissions and rebuild leaderboard"
           git push -u origin "$BRANCH_NAME"
 
           if gh pr view "$BRANCH_NAME" >/dev/null 2>&1; then
-            echo "Reconcile publish PR already exists" >> "$GITHUB_STEP_SUMMARY"
+            echo "Publish PR already exists" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
           gh pr create \
             --base "leaderboard-submissions" \
             --head "$BRANCH_NAME" \
-            --title "Reconcile HF submissions" \
-            --body "Automated schedule reconciliation for pending HF submissions."
+            --title "Sync HF submissions and rebuild leaderboard" \
+            --body "Automated schedule sync for pending HF submissions and leaderboard artifacts."

@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any
 
 from huggingface_hub.errors import HFValidationError, HfHubHTTPError
-from webarena_verified.api.internal.submit_handler import SubmitHandler
 from webarena_verified.api.internal.subsets_manager import SubsetsManager
 from webarena_verified.api.webarena_verified import WebArenaVerified
 from webarena_verified.core.utils import logger
@@ -244,6 +243,11 @@ def create_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help="Path to executable script that transforms agent response (receives file path, outputs JSON to stdout)",
+    )
+    eval_tasks_parser.add_argument(
+        "--write-evaluation-summary",
+        action="store_true",
+        help="Write evaluation_summary.json for full-folder runs (disallowed with --task-ids)",
     )
 
     # subset-export subcommand
@@ -926,6 +930,10 @@ def eval_tasks(args: argparse.Namespace) -> int:
     """Execute eval-tasks command (batch evaluation)"""
     output_dir = Path(args.output_dir)
 
+    if args.write_evaluation_summary and args.task_ids:
+        logger.error("--write-evaluation-summary is only supported for full-folder evaluation (without --task-ids)")
+        return 1
+
     # Resolve initial config for task discovery (without task_id)
     task_config = _resolve_config(args.config, output_dir)
     wa = _create_evaluator(task_config)
@@ -1012,6 +1020,54 @@ def eval_tasks(args: argparse.Namespace) -> int:
                 tasks_eval_results.model_dump(mode="json", exclude_none=True, exclude={"task_results"}), indent=2
             )
         )
+
+    if args.write_evaluation_summary:
+        summary_file = output_dir / "evaluation_summary.json"
+        summary_payload = tasks_eval_results.model_dump(mode="json", exclude_none=True, exclude={"task_results"})
+        overall = tasks_eval_results.summary.overall
+
+        def score(numerator: int, denominator: int) -> float:
+            return 0.0 if denominator == 0 else numerator / denominator
+
+        by_site = tasks_eval_results.summary.per_site
+        single_site_totals = {
+            "shopping": 0,
+            "shopping_admin": 0,
+            "gitlab": 0,
+            "map": 0,
+            "reddit": 0,
+        }
+        single_site_successes = dict.fromkeys(single_site_totals, 0)
+        multisite_total = 0
+        multisite_success = 0
+        gitlab_reddit_total = 0
+        gitlab_reddit_success = 0
+
+        for site_key, site_summary in by_site.items():
+            split_sites = sorted(site_key.split("-"))
+            if len(split_sites) > 1:
+                multisite_total += site_summary.total
+                multisite_success += site_summary.success_count
+            if split_sites == ["gitlab", "reddit"]:
+                gitlab_reddit_total += site_summary.total
+                gitlab_reddit_success += site_summary.success_count
+            if len(split_sites) == 1 and split_sites[0] in single_site_totals:
+                site_name = split_sites[0]
+                single_site_totals[site_name] += site_summary.total
+                single_site_successes[site_name] += site_summary.success_count
+
+        summary_payload["scores"] = {
+            "overall": score(overall.success_count, overall.total),
+            "shopping": score(single_site_successes["shopping"], single_site_totals["shopping"]),
+            "shopping_admin": score(single_site_successes["shopping_admin"], single_site_totals["shopping_admin"]),
+            "gitlab": score(single_site_successes["gitlab"], single_site_totals["gitlab"]),
+            "map": score(single_site_successes["map"], single_site_totals["map"]),
+            "reddit": score(single_site_successes["reddit"], single_site_totals["reddit"]),
+            "multisite": score(multisite_success, multisite_total),
+            "gitlab_reddit": score(gitlab_reddit_success, gitlab_reddit_total),
+        }
+        summary_file.write_text(serialize_to_json(summary_payload, indent=2))
+        logger.info(f"Wrote evaluation summary to {summary_file}")
 
     # Print summary banner and output JSON to stdout (exclude detailed task_results)
     print("\n" + "=" * 60)
@@ -1570,12 +1626,12 @@ def submit_cmd(args: argparse.Namespace) -> int:
     logging_helper.print_panel("Leaderboard Submission", command_info)
 
     try:
-        handler = SubmitHandler(
+        wa = WebArenaVerified()
+        result = wa.submit(
             submission_dir=Path(args.submission_dir),
             hf_repo=hf_repo,
             hf_token=hf_token,
         )
-        result = handler.submit()
     except ValueError as e:
         logger.error(str(e))
         return 1

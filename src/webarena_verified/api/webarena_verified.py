@@ -2,26 +2,24 @@
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from webarena_verified.core.utils import logger
 from webarena_verified.environments import MAGENTO_ADMIN_AUTO_LOGIN_HEADER
+from webarena_verified.submission import SubmissionPackager, SubmissionUploader
+from webarena_verified.submission.models import SubmissionMode
 from webarena_verified.types.agent_response import MainObjectiveType
 from webarena_verified.types.config import WebArenaVerifiedConfig
 from webarena_verified.types.data import TaskSubset
 from webarena_verified.types.eval import TaskEvalResult
+from webarena_verified.types.submission import PackagedTaskStats, SubmissionResult
+from webarena_verified.types.submit_result import SubmitResult
 from webarena_verified.types.task import WebArenaSite, WebArenaVerifiedTask
 from webarena_verified.types.tracing import NetworkTrace
 from webarena_verified.utils import get_package_assets_path
 
 from .internal.data_reader import WebArenaVerifiedDataReader
 from .internal.evaluator import WebArenaVerifiedEvaluator
-from .internal.submit_handler import SubmitHandler
-from .internal.submission_handler import SubmissionHandler
-
-if TYPE_CHECKING:
-    from webarena_verified.types.submit_result import SubmitResult
-    from webarena_verified.types.submission import SubmissionResult
 
 
 class WebArenaVerified:
@@ -284,26 +282,26 @@ class WebArenaVerified:
             print(result.packaged_tasks)
             ```
         """
-        valid_leaderboards = {"hard", "full", "both"}
-        if leaderboard not in valid_leaderboards:
-            valid = ", ".join(sorted(valid_leaderboards))
-            raise ValueError(f"Invalid leaderboard '{leaderboard}'. Must be one of: {valid}")
+        mode = SubmissionMode(leaderboard)
+        packager = SubmissionPackager(run_output_dirs=output_dirs, evaluator_config=self._config)
+        result = packager.create_package(output_dir=output_dir, mode=mode, force=force)
 
-        full_task_ids = set(self._reader.task_id_map.keys())
         hard_subset_path = get_package_assets_path() / "dataset" / "subsets" / "webarena-verified-hard.json"
         hard_task_ids = set(TaskSubset.from_file(hard_subset_path).task_ids)
+        packaged_task_ids = set(result.tasks_packaged)
 
-        invalid_hard_ids = hard_task_ids - full_task_ids
-        if invalid_hard_ids:
-            sample = sorted(invalid_hard_ids)[:10]
-            raise ValueError(f"Hard subset contains task IDs missing from the full dataset: {sample}")
+        packaged_tasks: dict[str, PackagedTaskStats] = {}
+        if mode in {SubmissionMode.FULL, SubmissionMode.BOTH}:
+            full_valid = len(packaged_task_ids)
+            packaged_tasks["full"] = PackagedTaskStats(valid=full_valid, incomplete=0, missing=0, expected=full_valid)
+        if mode in {SubmissionMode.HARD, SubmissionMode.BOTH}:
+            hard_valid = len(packaged_task_ids & hard_task_ids)
+            packaged_tasks["hard"] = PackagedTaskStats(valid=hard_valid, incomplete=0, missing=0, expected=hard_valid)
 
-        handler = SubmissionHandler(output_dirs, self._config, full_task_ids, hard_task_ids)
-        return handler.create_submission(
-            output_dir,
-            leaderboard=leaderboard,
-            force=force,
-            progress_callback=progress_callback,
+        return SubmissionResult(
+            output_path=result.output_path,
+            tasks_packaged=result.tasks_packaged,
+            packaged_tasks=packaged_tasks,
         )
 
     def submit(
@@ -319,8 +317,16 @@ class WebArenaVerified:
             "WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO",
             "AmineHA/WebArena-Verified-Submissions-dev",
         )
-        handler = SubmitHandler(submission_dir=submission_dir, hf_repo=resolved_repo, hf_token=hf_token)
-        return handler.submit()
+        uploader = SubmissionUploader(submission_dir=submission_dir, hf_repo=resolved_repo, hf_token=hf_token)
+        uploaded = uploader.upload()
+        return SubmitResult(
+            pr_url=uploaded.pr_url,
+            pr_number=uploaded.pr_number,
+            submission_uid=uploaded.submission_uid,
+            hf_repo=uploaded.hf_repo,
+            submission_dir=uploaded.submission_dir,
+            tasks_submitted=uploaded.tasks_submitted,
+        )
 
     @staticmethod
     def _load_config(config: Path | WebArenaVerifiedConfig | None = None) -> WebArenaVerifiedConfig:

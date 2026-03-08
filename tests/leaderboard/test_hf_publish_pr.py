@@ -1,46 +1,50 @@
-import json
 from pathlib import Path
-
-import pytest
 
 from leaderboard.scripts import hf_publish_pr
 
 
-def _write_json(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload), encoding="utf-8")
+def test_path_allowlist_is_leaderboard_only() -> None:
+    assert hf_publish_pr._path_is_allowlisted("leaderboard/latest.json")
+    assert hf_publish_pr._path_is_allowlisted("leaderboard/generations/gen-1/full.json")
+    assert hf_publish_pr._path_is_allowlisted("leaderboard/generations/gen-1/hard.json")
+    assert not hf_publish_pr._path_is_allowlisted("submissions/uid/submission.json")
+    assert not hf_publish_pr._path_is_allowlisted("submission_records/uid.json")
 
 
-def test_path_allowlist_includes_expected_patterns() -> None:
-    assert hf_publish_pr._path_is_allowlisted("submission_control/42.json")
-    assert hf_publish_pr._path_is_allowlisted("submissions/42.json")
-    assert hf_publish_pr._path_is_allowlisted("leaderboard_manifest.json")
-    assert hf_publish_pr._path_is_allowlisted("leaderboard_full.gen-1.json")
-    assert not hf_publish_pr._path_is_allowlisted("docs/index.md")
+def test_publish_gate_runs_rebuild_and_path_checks(monkeypatch, tmp_path: Path) -> None:
+    called: dict[str, object] = {}
 
+    def fake_overlay(**kwargs):
+        called["overlay"] = kwargs
+        return "sha-head"
 
-def test_verify_head_sha_linkage_passes_when_matching(tmp_path: Path) -> None:
-    _write_json(
-        tmp_path / "submissions/7.json",
-        {"submission_id": 7, "hf_head_sha": "sha-1"},
+    def fake_rebuild(**kwargs):
+        called["rebuild"] = kwargs
+        return {"generation_id": "gen-1"}
+
+    def fake_allowlist(**kwargs):
+        called["allowlist"] = kwargs
+
+    def fake_idempotent(**kwargs):
+        called["idempotent"] = kwargs
+
+    monkeypatch.setattr(hf_publish_pr, "_overlay_pr_head_data", fake_overlay)
+    monkeypatch.setattr(hf_publish_pr, "rebuild_leaderboard_artifacts", fake_rebuild)
+    monkeypatch.setattr(hf_publish_pr, "_ensure_rebuild_is_idempotent", fake_idempotent)
+    monkeypatch.setattr(hf_publish_pr, "_enforce_allowlisted_changed_paths", fake_allowlist)
+
+    result = hf_publish_pr._run_hf_publish_pr_gate(
+        repo_root=tmp_path,
+        pr_number=42,
+        base_branch="leaderboard-submissions",
     )
-    _write_json(
-        tmp_path / "submission_control/7.json",
-        {"submission_id": 7, "hf_head_sha": "sha-1"},
-    )
 
-    hf_publish_pr._verify_latest_accepted_head_sha_linkage(repo_root=tmp_path)
-
-
-def test_verify_head_sha_linkage_fails_when_mismatched(tmp_path: Path) -> None:
-    _write_json(
-        tmp_path / "submissions/7.json",
-        {"submission_id": 7, "hf_head_sha": "sha-1"},
-    )
-    _write_json(
-        tmp_path / "submission_control/7.json",
-        {"submission_id": 7, "hf_head_sha": "sha-2"},
-    )
-
-    with pytest.raises(ValueError, match="mismatch"):
-        hf_publish_pr._verify_latest_accepted_head_sha_linkage(repo_root=tmp_path)
+    assert result == "sha-head"
+    assert called["overlay"] == {"repo_root": tmp_path, "pr_number": 42}
+    assert called["rebuild"] == {"branch_root": tmp_path, "dry_run": False}
+    assert called["idempotent"] == {"repo_root": tmp_path}
+    assert called["allowlist"] == {
+        "repo_root": tmp_path,
+        "base_branch": "leaderboard-submissions",
+        "pr_head_sha": "sha-head",
+    }

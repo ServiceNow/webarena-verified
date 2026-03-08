@@ -10,11 +10,7 @@ on:
       - synchronize
       - ready_for_review
     paths:
-      - "submission_control/**"
-      - "submissions/**"
-      - "leaderboard_manifest.json"
-      - "leaderboard_full.*.json"
-      - "leaderboard_hard.*.json"
+      - "leaderboard/**"
 
 permissions:
   contents: write
@@ -22,7 +18,7 @@ permissions:
 
 jobs:
   publish-pr-gate:
-    name: Validate publish PR scope and rebuild
+    name: Validate publish PR scope and leaderboard rebuild
     runs-on: ubuntu-latest
     concurrency:
       group: leaderboard-data-writer
@@ -47,8 +43,7 @@ jobs:
           RESULT="$(uv run inv dev.leaderboard.hf-publish-pr-gate \
             --repo-root "." \
             --base-branch "leaderboard-submissions" \
-            --pr-number "${{ github.event.pull_request.number }}" \
-            --max-canonical-records "100")"
+            --pr-number "${{ github.event.pull_request.number }}")"
           echo "$RESULT"
           HEAD_SHA="$(printf '%s\n' "$RESULT" | grep '^pr_head_sha=' | cut -d= -f2-)"
           echo "pr_head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
