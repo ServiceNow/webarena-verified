@@ -13,7 +13,6 @@ from leaderboard.scripts.hf_reconcile import sync_submissions
 from leaderboard.scripts.publish import rebuild_leaderboard_artifacts
 from leaderboard.scripts.rebuild_flow import _commit_and_push_rebuild
 from leaderboard.scripts.site_build_flow import _resolve_manifest_url
-from leaderboard.scripts.smoke_flow import _run_leaderboard_smoke_check
 
 
 @task(name="rebuild-leaderboard")
@@ -121,15 +120,3 @@ def site_resolve_manifest_url(
         configured_manifest_url=configured_manifest_url,
     )
     print(manifest_url)
-
-
-@task(name="smoke-check")
-def smoke_check(
-    _ctx,
-    leaderboard_base_url: str = "",
-) -> None:
-    result = _run_leaderboard_smoke_check(leaderboard_base_url=leaderboard_base_url)
-    print(f"base_url={result['base_url']}")
-    print(f"generation_id={result['generation_id']}")
-    print(f"full_file={result['full_file']}")
-    print(f"hard_file={result['hard_file']}")
