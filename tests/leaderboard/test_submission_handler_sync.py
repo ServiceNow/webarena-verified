@@ -28,7 +28,7 @@ def test_sync_submissions_processes_recent_hf_refs(tmp_path: Path, monkeypatch) 
         return SimpleNamespace()
 
     monkeypatch.setattr(submission_data_backend, "HfApi", FakeHfApi)
-    monkeypatch.setattr(submission_handler, "ingest_hf_submission", fake_ingest)
+    monkeypatch.setattr(submission_handler, "sync_submission", fake_ingest)
 
     synced = submission_handler.sync_submissions(
         repo_root=tmp_path,

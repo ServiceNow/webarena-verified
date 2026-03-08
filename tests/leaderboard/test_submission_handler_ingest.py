@@ -119,7 +119,7 @@ def test_submission_handler_updates_leaderboard_artifacts(tmp_path: Path, monkey
 
     monkeypatch.setattr(submission_handler, "SubmissionEvaluator", FakeEvaluator)
 
-    result = submission_handler.ingest_hf_submission(
+    result = submission_handler.sync_submission(
         repo_root=tmp_path,
         hf_repo="org/dataset",
         hf_pr_number=42,
@@ -172,7 +172,7 @@ def test_submission_handler_resolves_submission_uid_from_pr_diff_when_snapshot_h
     monkeypatch.setattr(submission_data_backend, "HfApi", FakeHfApi)
     monkeypatch.setattr(submission_handler, "SubmissionEvaluator", FakeEvaluator)
 
-    result = submission_handler.ingest_hf_submission(
+    result = submission_handler.sync_submission(
         repo_root=tmp_path,
         hf_repo="org/dataset",
         hf_pr_number=42,

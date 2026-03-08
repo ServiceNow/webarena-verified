@@ -62,18 +62,20 @@ def _locate_submission_directory(
     )
 
 
-def ingest_hf_submission(
+def sync_submission(
     *,
     repo_root: Path,
     hf_repo: str,
     hf_pr_number: int,
     hf_head_sha: str,
-    hf_token: str,
+    hf_token: str = "",
+    backend: SubmissionDataBackend | None = None,
     submission_uid: str | None = None,
 ) -> IngestResult:
     """Download, validate, evaluate, and apply a single HF PR submission."""
     flow_config = SubmissionFlowConfig()
-    backend = SubmissionDataBackend(hf_token)
+    if backend is None:
+        backend = SubmissionDataBackend(hf_token)
 
     logger.info("Downloading HF snapshot for repo=%s pr=%d sha=%s", hf_repo, hf_pr_number, hf_head_sha)
     submissions_root = backend.download_submission_snapshot(repo_id=hf_repo, revision=hf_head_sha)
@@ -151,12 +153,12 @@ def sync_submissions(
 
     processed: list[int] = []
     for pr_number in selected_numbers:
-        ingest_hf_submission(
+        sync_submission(
             repo_root=repo_root,
             hf_repo=hf_repo,
             hf_pr_number=pr_number,
             hf_head_sha=head_by_pr_number[pr_number],
-            hf_token=hf_token,
+            backend=backend,
         )
         processed.append(pr_number)
     return processed
