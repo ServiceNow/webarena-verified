@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   sync_submissions:
@@ -41,9 +40,7 @@ jobs:
             --hf-token "$HF_TOKEN" \
             --evaluator-version "$EVALUATOR_VERSION"
 
-      - name: Commit and open publish PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit and push leaderboard updates
         run: |
           set -euo pipefail
           git add -A leaderboard
@@ -52,18 +49,5 @@ jobs:
             exit 0
           fi
 
-          BRANCH_NAME="hf-publish-sync-submissions"
-          git checkout -b "$BRANCH_NAME"
           git commit -m "Sync HF submissions and rebuild leaderboard"
-          git push -u origin "$BRANCH_NAME"
-
-          if gh pr view "$BRANCH_NAME" >/dev/null 2>&1; then
-            echo "Publish PR already exists" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          gh pr create \
-            --base "leaderboard-submissions" \
-            --head "$BRANCH_NAME" \
-            --title "Sync HF submissions and rebuild leaderboard" \
-            --body "Automated schedule sync for pending HF submissions and leaderboard artifacts."
+          git push origin HEAD:leaderboard-submissions

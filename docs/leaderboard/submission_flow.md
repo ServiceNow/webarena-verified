@@ -23,7 +23,7 @@ Legend:
 - `E`: Hugging Face dataset PR inbox
 - `F`: Scheduled ingest workflow
 - `G`: Ingest + deterministic evaluation
-- `H`: Publish PR on `leaderboard-submissions`
+- `H`: Direct commit to `leaderboard-submissions`
 - `I`: Rebuild leaderboard artifacts
 - `J`: Full leaderboard generation file
 - `K`: Hard leaderboard generation file
@@ -40,7 +40,6 @@ sequenceDiagram
     participant ING as leaderboard-hf-ingest.yml
     participant EVAL as hf_ingest.py
     participant BR as leaderboard-submissions Branch
-    participant GATE as leaderboard-hf-publish-pr.yml
     participant SITE as Leaderboard Site
 
     U->>CLI: create-submission-pkg --run-output-dir ... --output ...
@@ -51,11 +50,8 @@ sequenceDiagram
 
     ING->>HF: Poll recent PR refs (schedule)
     ING->>EVAL: Run reconcile + ingest
-    EVAL->>BR: Write control record and canonical record
-    EVAL->>BR: Open publish PR (leaderboard-submissions)
-
-    GATE->>BR: Validate changed paths + rebuild contract
-    GATE->>BR: Auto-merge publish PR when checks pass
+    EVAL->>BR: Write submission and leaderboard artifacts
+    EVAL->>BR: Commit + push to leaderboard-submissions
     BR-->>SITE: Publish new manifest + generation files
     SITE->>BR: Read leaderboard_manifest.json and generation files
 ```

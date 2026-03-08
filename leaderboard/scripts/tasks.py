@@ -8,7 +8,6 @@ from pathlib import Path
 from invoke.tasks import task
 
 from leaderboard.scripts.hf_ingest import ingest_hf_submission
-from leaderboard.scripts.hf_publish_pr import _run_hf_publish_pr_gate
 from leaderboard.scripts.hf_reconcile import sync_submissions
 from leaderboard.scripts.publish import rebuild_leaderboard_artifacts
 from leaderboard.scripts.site_build_flow import _resolve_manifest_url
@@ -73,22 +72,6 @@ def hf_sync_submissions(
     )
     print(f"synced_count={len(submission_ids)}")
     print(f"synced_submission_ids={submission_ids}")
-
-
-@task(name="hf-publish-pr-gate")
-def hf_publish_pr_gate(
-    _ctx,
-    pr_number: int,
-    base_branch: str = "leaderboard-submissions",
-    repo_root: str = ".",
-) -> None:
-    pr_head_sha = _run_hf_publish_pr_gate(
-        repo_root=Path(repo_root),
-        pr_number=pr_number,
-        base_branch=base_branch,
-    )
-    print(f"pr_number={pr_number}")
-    print(f"pr_head_sha={pr_head_sha}")
 
 
 @task(name="site-resolve-manifest-url")
