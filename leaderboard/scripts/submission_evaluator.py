@@ -14,15 +14,15 @@ from webarena_verified.types.eval import (
 from webarena_verified.types.task import WebArenaVerifiedTask
 from webarena_verified.utils import get_package_assets_path
 
-from .config import SubmissionFlowConfig
+from webarena_verified.submission.config import SubmissionFlowConfig
+from webarena_verified.submission.models import SubmissionMetadata, SubmissionMode
+
 from .models import (
     EvaluationScores,
     EvaluationSummaryCounts,
     EvaluationSummaryPayload,
     OverallCounts,
     SiteCounts,
-    SubmissionMetadata,
-    SubmissionMode,
 )
 
 

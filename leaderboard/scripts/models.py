@@ -1,97 +1,147 @@
+from __future__ import annotations
+
 from enum import StrEnum
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
-from webarena_verified.types.leaderboard._validators import (
-    validate_probability,
-    validate_probability_or_missing_sentinel,
-    validate_rfc3339_utc_z,
-    validate_sha256_hex,
+from webarena_verified.submission.models import (
+    RelativePath,
+    Sha256Hex,
+    SubmissionMode,
+    SubmissionUid,
+    UtcZ,
 )
-
-OverallScore = Annotated[float, AfterValidator(lambda v: validate_probability(v, "overall_score"))]
-SiteScore = Annotated[float, AfterValidator(lambda v: validate_probability_or_missing_sentinel(v, "site_score"))]
+from webarena_verified.types.leaderboard._validators import validate_http_url
 
 
-class LeaderboardView(StrEnum):
-    FULL = "full"
-    HARD = "hard"
+class ScoreField(StrEnum):
+    OVERALL = "overall"
+    SHOPPING = "shopping"
+    SHOPPING_ADMIN = "shopping_admin"
+    GITLAB = "gitlab"
+    MAP = "map"
+    REDDIT = "reddit"
+    MULTISITE = "multisite"
+    GITLAB_REDDIT = "gitlab_reddit"
+
+
+class OverallCounts(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    total: int = Field(ge=0)
+    success_count: int = Field(ge=0)
+    failure_count: int = Field(ge=0)
+    error_count: int = Field(ge=0)
+    failed_or_error_count: int = Field(ge=0)
+    expected_total: int = Field(ge=0, default=0)
+    missing_count: int = Field(ge=0, default=0)
+
+
+class SiteCounts(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    total: int = Field(ge=0)
+    success_count: int = Field(ge=0)
+    failure_count: int = Field(ge=0)
+    error_count: int = Field(ge=0)
+    failed_or_error_count: int = Field(ge=0)
+    expected_total: int = Field(ge=0, default=0)
+    missing_count: int = Field(ge=0, default=0)
+
+
+class EvaluationSummaryCounts(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    overall: OverallCounts
+    per_site: dict[str, SiteCounts]
+
+
+class EvaluationScores(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    overall: float = Field(ge=0.0, le=1.0)
+    shopping: float = Field(ge=0.0, le=1.0)
+    shopping_admin: float = Field(ge=0.0, le=1.0)
+    gitlab: float = Field(ge=0.0, le=1.0)
+    map: float = Field(ge=0.0, le=1.0)
+    reddit: float = Field(ge=0.0, le=1.0)
+    multisite: float = Field(ge=0.0, le=1.0)
+    gitlab_reddit: float = Field(ge=0.0, le=1.0)
+
+
+class EvaluationSummaryPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    timestamp: UtcZ
+    webarena_verified_version: str = Field(min_length=1)
+    webarena_verified_evaluator_checksum: str = Field(min_length=1)
+    webarena_verified_data_checksum: str = Field(min_length=1)
+    summary: EvaluationSummaryCounts
+    scores: EvaluationScores
+
+
+class SubmissionEvaluationRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    submission_uid: SubmissionUid
+    submission_mode: SubmissionMode
+    generated_at_utc: UtcZ
+    source_sha: str = Field(min_length=1)
+    source: Annotated[str, AfterValidator(lambda value: validate_http_url(value, "source"))]
+    name: str = Field(min_length=1)
+    model: str = Field(min_length=1)
+    scores: EvaluationScores
 
 
 class LeaderboardRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     rank: int = Field(ge=1)
-    submission_id: int = Field(ge=1)
-    submission_timestamp: str | None = None
+    submission_uid: SubmissionUid
     name: str = Field(min_length=1)
-    overall_score: OverallScore
-
-    shopping_score: SiteScore
-    reddit_score: SiteScore
-    gitlab_score: SiteScore
-    wikipedia_score: SiteScore
-    map_score: SiteScore
-    shopping_admin_score: SiteScore
-
-    success_count: int = Field(ge=0)
-    failure_count: int = Field(ge=0)
-    error_count: int = Field(ge=0)
-    missing_count: int = Field(ge=0)
-    webarena_verified_version: str = Field(min_length=1)
-    checksum: str
-
-    @field_validator("checksum")
-    @classmethod
-    def validate_checksum(cls, value: str) -> str:
-        return validate_sha256_hex(value, "checksum")
-
-    @field_validator("submission_timestamp")
-    @classmethod
-    def validate_submission_timestamp(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return validate_rfc3339_utc_z(value, "submission_timestamp")
+    model: str = Field(min_length=1)
+    overall: float = Field(ge=0.0, le=1.0)
+    shopping: float = Field(ge=0.0, le=1.0)
+    shopping_admin: float = Field(ge=0.0, le=1.0)
+    gitlab: float = Field(ge=0.0, le=1.0)
+    map: float = Field(ge=0.0, le=1.0)
+    reddit: float = Field(ge=0.0, le=1.0)
+    multisite: float = Field(ge=0.0, le=1.0)
+    gitlab_reddit: float = Field(ge=0.0, le=1.0)
+    source: Annotated[str, AfterValidator(lambda value: validate_http_url(value, "source"))]
 
 
-class LeaderboardTableFile(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class LeaderboardGenerationArtifact(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
-    schema_version: str = Field(min_length=1)
     generation_id: str = Field(min_length=1)
-    generated_at_utc: str
-    leaderboard: LeaderboardView
+    leaderboard: SubmissionMode
+    generated_at_utc: UtcZ
+    rows_count: int = Field(ge=0)
     rows: list[LeaderboardRow]
-
-    @field_validator("generated_at_utc")
-    @classmethod
-    def validate_generated_at_utc(cls, value: str) -> str:
-        return validate_rfc3339_utc_z(value, "generated_at_utc")
+    checksum: Sha256Hex
+    checksum_algo: str = Field(min_length=1)
 
 
-class LeaderboardManifest(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class LeaderboardLatestArtifact(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
     schema_version: str = Field(min_length=1)
     generation_id: str = Field(min_length=1)
-    generated_at_utc: str
-    full_file: str = Field(min_length=1)
-    hard_file: str = Field(min_length=1)
-    full_sha256: str
-    hard_sha256: str
+    generated_at_utc: UtcZ
+    full_file: RelativePath
+    hard_file: RelativePath
+    full_sha256: Sha256Hex
+    hard_sha256: Sha256Hex
+    checksum: Sha256Hex
+    checksum_algo: str = Field(min_length=1)
 
-    @field_validator("generated_at_utc")
-    @classmethod
-    def validate_generated_at_utc(cls, value: str) -> str:
-        return validate_rfc3339_utc_z(value, "generated_at_utc")
 
-    @field_validator("full_sha256")
-    @classmethod
-    def validate_full_sha256(cls, value: str) -> str:
-        return validate_sha256_hex(value, "full_sha256")
+class IngestResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
-    @field_validator("hard_sha256")
-    @classmethod
-    def validate_hard_sha256(cls, value: str) -> str:
-        return validate_sha256_hex(value, "hard_sha256")
+    submission_uid: SubmissionUid
+    leaderboard_latest_path: str = Field(min_length=1)
+    full_artifact_path: str = Field(min_length=1)
+    hard_artifact_path: str = Field(min_length=1)

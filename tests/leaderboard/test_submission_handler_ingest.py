@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 
 from leaderboard.scripts import submission_handler
-from webarena_verified.submission.models import EvaluationSummaryPayload, SubmissionMode
+from leaderboard.scripts.models import EvaluationSummaryPayload
+from webarena_verified.submission.models import SubmissionMode
 
 
 def _write_json(path: Path, payload: dict) -> None:

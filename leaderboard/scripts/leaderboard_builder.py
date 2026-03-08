@@ -5,13 +5,14 @@ import hashlib
 import json
 from pathlib import Path
 
-from .config import SubmissionFlowConfig
+from webarena_verified.submission.config import SubmissionFlowConfig
+from webarena_verified.submission.models import SubmissionMode
+
 from .models import (
     EvaluationSummaryPayload,
     LeaderboardGenerationArtifact,
     LeaderboardLatestArtifact,
     LeaderboardRow,
-    SubmissionMode,
 )
 
 

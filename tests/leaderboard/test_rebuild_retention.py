@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
 
+from leaderboard.scripts.leaderboard_builder import LeaderboardBuilder
+from leaderboard.scripts.models import EvaluationSummaryPayload
 from leaderboard.scripts.tasks import rebuild_leaderboard_artifacts
-from webarena_verified.submission.leaderboard_builder import LeaderboardBuilder
-from webarena_verified.submission.models import EvaluationSummaryPayload, SubmissionMode
+from webarena_verified.submission.models import SubmissionMode
 
 
 def _summary(score: float) -> EvaluationSummaryPayload:

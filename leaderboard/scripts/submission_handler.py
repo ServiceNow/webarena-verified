@@ -8,10 +8,11 @@ from typing import Any
 from huggingface_hub import HfApi, snapshot_download
 
 from webarena_verified.submission.config import SubmissionFlowConfig
-from webarena_verified.submission.leaderboard_builder import LeaderboardBuilder
-from webarena_verified.submission.models import IngestResult
-from webarena_verified.submission.submission_evaluator import SubmissionEvaluator
 from webarena_verified.submission.submission_validator import SubmissionValidator
+
+from .leaderboard_builder import LeaderboardBuilder
+from .models import IngestResult
+from .submission_evaluator import SubmissionEvaluator
 
 
 class IngestError(ValueError):

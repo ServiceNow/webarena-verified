@@ -6,9 +6,9 @@ from pathlib import Path
 
 from invoke.tasks import task
 
+from leaderboard.scripts.leaderboard_builder import LeaderboardBuilder
 from leaderboard.scripts.submission_handler import ingest_hf_submission, sync_submissions
 from webarena_verified.submission.config import SubmissionFlowConfig
-from webarena_verified.submission.leaderboard_builder import LeaderboardBuilder
 
 _DEFAULT_MANIFEST_URL = (
     "https://raw.githubusercontent.com/ServiceNow/webarena-verified/leaderboard-submissions/leaderboard/latest.json"

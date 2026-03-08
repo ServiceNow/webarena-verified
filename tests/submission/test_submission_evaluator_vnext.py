@@ -1,7 +1,7 @@
 from pathlib import Path
 
+from leaderboard.scripts.submission_evaluator import SubmissionEvaluator
 from webarena_verified.submission.models import SubmissionMetadata, SubmissionMode
-from webarena_verified.submission.submission_evaluator import SubmissionEvaluator
 from webarena_verified.types.agent_response import FinalAgentResponse, MainObjectiveType
 from webarena_verified.types.eval import EvalStatus, TaskEvalResult
 from webarena_verified.types.task import AgentResponseEvaluatorCfg, WebArenaSite, WebArenaVerifiedTask
