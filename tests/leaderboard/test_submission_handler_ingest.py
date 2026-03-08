@@ -5,6 +5,7 @@ import pytest
 
 from leaderboard.scripts import submission_data_backend, submission_handler
 from leaderboard.scripts.models import EvaluationSummaryPayload
+from leaderboard.scripts.submission_data_backend import SubmissionDataBackend
 from webarena_verified.submission.models import SubmissionMode
 
 
@@ -124,7 +125,7 @@ def test_submission_handler_updates_leaderboard_artifacts(tmp_path: Path, monkey
         hf_repo="org/dataset",
         hf_pr_number=42,
         hf_head_sha="sha-1",
-        hf_token="hf-token",
+        backend=SubmissionDataBackend("hf-token"),
     )
 
     assert result.submission_uid == submission_uid
@@ -177,7 +178,7 @@ def test_submission_handler_resolves_submission_uid_from_pr_diff_when_snapshot_h
         hf_repo="org/dataset",
         hf_pr_number=42,
         hf_head_sha="sha-1",
-        hf_token="hf-token",
+        backend=SubmissionDataBackend("hf-token"),
     )
 
     assert result.submission_uid == selected_uid
