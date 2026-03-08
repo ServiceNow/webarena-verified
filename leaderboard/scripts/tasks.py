@@ -11,7 +11,6 @@ from leaderboard.scripts.hf_ingest import ingest_hf_submission
 from leaderboard.scripts.hf_publish_pr import _run_hf_publish_pr_gate
 from leaderboard.scripts.hf_reconcile import sync_submissions
 from leaderboard.scripts.publish import rebuild_leaderboard_artifacts
-from leaderboard.scripts.rebuild_flow import _commit_and_push_rebuild
 from leaderboard.scripts.site_build_flow import _resolve_manifest_url
 
 
@@ -90,23 +89,6 @@ def hf_publish_pr_gate(
     )
     print(f"pr_number={pr_number}")
     print(f"pr_head_sha={pr_head_sha}")
-
-
-@task(name="rebuild-and-push")
-def rebuild_and_push(
-    _ctx,
-    target_branch: str,
-    repo_root: str = ".",
-) -> None:
-    root = Path(repo_root)
-    result = rebuild_leaderboard_artifacts(
-        branch_root=root,
-        dry_run=False,
-    )
-
-    changed, pushed_generation_id = _commit_and_push_rebuild(repo_root=root, target_branch=target_branch)
-    print(f"changed={str(changed).lower()}")
-    print(f"generation_id={pushed_generation_id or result.get('generation_id', '')}")
 
 
 @task(name="site-resolve-manifest-url")

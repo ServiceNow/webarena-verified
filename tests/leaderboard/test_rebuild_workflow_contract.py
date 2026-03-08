@@ -1,6 +1,5 @@
 from pathlib import Path
 
-REBUILD_WORKFLOW_PATH = Path(".github/workflows/leaderboard-rebuild.yml")
 HF_INGEST_WORKFLOW_PATH = Path(".github/workflows/leaderboard-hf-ingest.yml")
 HF_PUBLISH_WORKFLOW_PATH = Path(".github/workflows/leaderboard-hf-publish-pr.yml")
 DOCS_WORKFLOW_PATH = Path(".github/workflows/dev-docs-publish.yml")
@@ -8,24 +7,6 @@ DOCS_WORKFLOW_PATH = Path(".github/workflows/dev-docs-publish.yml")
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
-
-
-def test_rebuild_workflow_has_single_writer_concurrency_contract() -> None:
-    workflow = _read(REBUILD_WORKFLOW_PATH)
-
-    assert "concurrency:" in workflow
-    assert "group: leaderboard-data-writer" in workflow
-    assert "cancel-in-progress: false" in workflow
-    assert 'group: "pages"' not in workflow
-
-
-def test_rebuild_workflow_is_manual_only_on_leaderboard_submissions_branch() -> None:
-    workflow = _read(REBUILD_WORKFLOW_PATH)
-
-    assert "workflow_run:" not in workflow
-    assert "workflow_dispatch:" in workflow
-    assert "github.event_name == 'workflow_dispatch'" in workflow
-    assert "github.ref_name == 'leaderboard-submissions'" in workflow
 
 
 def test_hf_ingest_workflow_is_schedule_only() -> None:
@@ -47,13 +28,6 @@ def test_hf_publish_pr_workflow_validates_rebuild_contract() -> None:
     assert "group: leaderboard-data-writer" in workflow
     assert "dev.leaderboard.hf-publish-pr-gate" in workflow
     assert "python - <<'PY'" not in workflow
-
-
-def test_rebuild_workflow_uses_scripted_rebuild_and_push_task() -> None:
-    workflow = _read(REBUILD_WORKFLOW_PATH)
-
-    assert "dev.leaderboard.rebuild-and-push" in workflow
-    assert "Commit and push branch updates" not in workflow
 
 
 def test_docs_publish_trigger_is_independent_from_leaderboard_data() -> None:
