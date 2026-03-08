@@ -210,24 +210,24 @@ class LeaderboardBuilder:
         full_path: Path,
         hard_path: Path,
     ) -> Path:
-        latest_payload = {
-            "schema_version": self._flow_config.schema_version,
-            "generation_id": generation_id,
-            "generated_at_utc": generated_at_utc,
-            "full_file": full_path.relative_to(repo_root).as_posix(),
-            "hard_file": hard_path.relative_to(repo_root).as_posix(),
-            "full_sha256": self._sha256_file(full_path),
-            "hard_sha256": self._sha256_file(hard_path),
-            "checksum": _CHECKSUM_PLACEHOLDER,
-            "checksum_algo": self._flow_config.checksum_algo,
-        }
-        latest_payload["checksum"] = self._checksum_for_payload(latest_payload)
+        latest = LeaderboardLatestArtifact(
+            schema_version=self._flow_config.schema_version,
+            generation_id=generation_id,
+            generated_at_utc=generated_at_utc,
+            full_file=full_path.relative_to(repo_root).as_posix(),
+            hard_file=hard_path.relative_to(repo_root).as_posix(),
+            full_sha256=self._sha256_file(full_path),
+            hard_sha256=self._sha256_file(hard_path),
+            checksum=_CHECKSUM_PLACEHOLDER,
+            checksum_algo=self._flow_config.checksum_algo,
+        )
+        latest = latest.model_copy(update={"checksum": self._checksum_for_payload(latest.model_dump(mode="json"))})
 
         latest_path = (
             repo_root / self._flow_config.leaderboard_root_dir / self._flow_config.leaderboard_latest_file_name
         )
         latest_path.parent.mkdir(parents=True, exist_ok=True)
-        self._write_if_changed(path=latest_path, content=json.dumps(latest_payload, indent=2) + "\n")
+        self._write_if_changed(path=latest_path, content=latest.model_dump_json(indent=2) + "\n")
         return latest_path
 
     @staticmethod
@@ -243,17 +243,16 @@ class LeaderboardBuilder:
         rows: list[LeaderboardRow],
         generated_at_utc: str,
     ) -> LeaderboardGenerationArtifact:
-        payload = {
-            "generation_id": generation_id,
-            "leaderboard": leaderboard,
-            "generated_at_utc": generated_at_utc,
-            "rows_count": len(rows),
-            "rows": [row.model_dump(mode="json") for row in rows],
-            "checksum": _CHECKSUM_PLACEHOLDER,
-            "checksum_algo": self._flow_config.checksum_algo,
-        }
-        payload["checksum"] = self._checksum_for_payload(payload)
-        return LeaderboardGenerationArtifact.model_validate(payload)
+        artifact = LeaderboardGenerationArtifact(
+            generation_id=generation_id,
+            leaderboard=leaderboard,
+            generated_at_utc=generated_at_utc,
+            rows_count=len(rows),
+            rows=rows,
+            checksum=_CHECKSUM_PLACEHOLDER,
+            checksum_algo=self._flow_config.checksum_algo,
+        )
+        return artifact.model_copy(update={"checksum": self._checksum_for_payload(artifact.model_dump(mode="json"))})
 
     def _build_generation_id(self, *, full_rows: list[LeaderboardRow], hard_rows: list[LeaderboardRow]) -> str:
         digest = hashlib.sha256()
