@@ -228,6 +228,7 @@ def test_eval_tasks_explicit_ids(
         template_id=None,
         dry_run=False,
         agent_response_transform=None,
+        write_evaluation_summary=False,
     )
 
     with (
@@ -318,6 +319,7 @@ def test_eval_tasks_dry_run(tmp_output_dir: Path, mock_settings: WebArenaVerifie
         task_type=None,
         template_id=None,
         dry_run=True,  # Dry run mode
+        write_evaluation_summary=False,
     )
 
     with (

@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from webarena_verified.__main__ import submit_cmd
 from webarena_verified.types.submit_result import SubmitResult
@@ -37,14 +37,11 @@ def test_submit_success_output(monkeypatch, capsys):
         tasks_submitted=12,
     )
 
-    handler_instance = Mock()
-    handler_instance.submit.return_value = result
-
-    with patch("webarena_verified.__main__.SubmitHandler", return_value=handler_instance):
+    with patch("webarena_verified.__main__.WebArenaVerified.submit", return_value=result) as mock_submit:
         exit_code = submit_cmd(_args(submission_dir="./submissions/sample"))
 
     assert exit_code == 0
-    handler_instance.submit.assert_called_once_with()
+    mock_submit.assert_called_once()
     output = capsys.readouterr().out
     assert "https://huggingface.co/datasets/org/repo/discussions/42" in output
 

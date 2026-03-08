@@ -68,11 +68,18 @@ def test_rebuild_is_deterministic_for_existing_rows(tmp_path: Path) -> None:
     latest_one = json.loads((tmp_path / "leaderboard" / "latest.json").read_text(encoding="utf-8"))
     full_one = Path(result_one["full"]).read_text(encoding="utf-8")
     hard_one = Path(result_one["hard"]).read_text(encoding="utf-8")
+    full_one_payload = json.loads(full_one)
+    hard_one_payload = json.loads(hard_one)
 
     result_two = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=False)
     latest_two = json.loads((tmp_path / "leaderboard" / "latest.json").read_text(encoding="utf-8"))
+    full_two_payload = json.loads(Path(result_two["full"]).read_text(encoding="utf-8"))
+    hard_two_payload = json.loads(Path(result_two["hard"]).read_text(encoding="utf-8"))
 
     assert result_one["generation_id"] == result_two["generation_id"]
     assert latest_one["generation_id"] == latest_two["generation_id"]
+    assert latest_one["generated_at_utc"] == latest_two["generated_at_utc"]
+    assert full_one_payload["generated_at_utc"] == full_two_payload["generated_at_utc"]
+    assert hard_one_payload["generated_at_utc"] == hard_two_payload["generated_at_utc"]
     assert Path(result_two["full"]).read_text(encoding="utf-8") == full_one
     assert Path(result_two["hard"]).read_text(encoding="utf-8") == hard_one

@@ -112,6 +112,8 @@ class OverallCounts(BaseModel):
     failure_count: int = Field(ge=0)
     error_count: int = Field(ge=0)
     failed_or_error_count: int = Field(ge=0)
+    expected_total: int = Field(ge=0, default=0)
+    missing_count: int = Field(ge=0, default=0)
 
 
 class SiteCounts(BaseModel):
@@ -122,6 +124,8 @@ class SiteCounts(BaseModel):
     failure_count: int = Field(ge=0)
     error_count: int = Field(ge=0)
     failed_or_error_count: int = Field(ge=0)
+    expected_total: int = Field(ge=0, default=0)
+    missing_count: int = Field(ge=0, default=0)
 
 
 class EvaluationSummaryCounts(BaseModel):

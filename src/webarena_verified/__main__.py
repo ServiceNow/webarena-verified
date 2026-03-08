@@ -13,7 +13,8 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
-from huggingface_hub.errors import HFValidationError, HfHubHTTPError
+from huggingface_hub.errors import HfHubHTTPError, HFValidationError
+
 from webarena_verified.api.internal.subsets_manager import SubsetsManager
 from webarena_verified.api.webarena_verified import WebArenaVerified
 from webarena_verified.core.utils import logger
@@ -460,7 +461,8 @@ def create_parser() -> argparse.ArgumentParser:
 
         environment variables:
           HF_TOKEN                                         HuggingFace authentication token (or use: hf auth login)
-              WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO Target dataset repository (default: AmineHA/WebArena-Verified-Submissions-dev)
+          WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO Target dataset repository
+                                                           (default: AmineHA/WebArena-Verified-Submissions-dev)
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -1021,7 +1023,7 @@ def eval_tasks(args: argparse.Namespace) -> int:
             )
         )
 
-    if args.write_evaluation_summary:
+    if getattr(args, "write_evaluation_summary", False):
         summary_file = output_dir / "evaluation_summary.json"
         summary_payload = tasks_eval_results.model_dump(mode="json", exclude_none=True, exclude={"task_results"})
         overall = tasks_eval_results.summary.overall
@@ -1056,8 +1058,15 @@ def eval_tasks(args: argparse.Namespace) -> int:
                 single_site_totals[site_name] += site_summary.total
                 single_site_successes[site_name] += site_summary.success_count
 
+        summary_payload["summary"]["overall"]["expected_total"] = overall.total
+        summary_payload["summary"]["overall"]["missing_count"] = 0
+        overall_expected_total = summary_payload["summary"]["overall"]["expected_total"]
+        for site_key, site_summary in by_site.items():
+            summary_payload["summary"]["per_site"][site_key]["expected_total"] = site_summary.total
+            summary_payload["summary"]["per_site"][site_key]["missing_count"] = 0
+
         summary_payload["scores"] = {
-            "overall": score(overall.success_count, overall.total),
+            "overall": score(overall.success_count, overall_expected_total),
             "shopping": score(single_site_successes["shopping"], single_site_totals["shopping"]),
             "shopping_admin": score(single_site_successes["shopping_admin"], single_site_totals["shopping_admin"]),
             "gitlab": score(single_site_successes["gitlab"], single_site_totals["gitlab"]),
@@ -1606,7 +1615,8 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     submission_file = Path(result.output_path) / "submission.json"
     print("\nNext steps:")
     print(
-        f"  1. Edit {submission_file} with your submission details (name, model, reference, contact_email, optional code_repository)"
+        f"  1. Edit {submission_file} with your submission details "
+        "(name, model, reference, contact_email, optional code_repository)"
     )
     print(f"  2. Run: webarena-verified submit --submission-dir {result.output_path}")
 

@@ -106,6 +106,7 @@ class LeaderboardBuilder:
         ranked_hard = self._rank_rows(hard_rows)
 
         generation_id = self._build_generation_id(full_rows=ranked_full, hard_rows=ranked_hard)
+        generated_at_utc = self._resolve_generated_at_utc(repo_root=repo_root, generation_id=generation_id)
         generation_dir = repo_root / self._flow_config.leaderboard_generation_dir(generation_id)
         generation_dir.mkdir(parents=True, exist_ok=True)
 
@@ -113,22 +114,26 @@ class LeaderboardBuilder:
             generation_id=generation_id,
             leaderboard=SubmissionMode.FULL,
             rows=ranked_full,
+            generated_at_utc=generated_at_utc,
         )
         hard_artifact = self._build_generation_artifact(
             generation_id=generation_id,
             leaderboard=SubmissionMode.HARD,
             rows=ranked_hard,
+            generated_at_utc=generated_at_utc,
         )
 
         full_path = generation_dir / self._flow_config.generation_full_file_name
         hard_path = generation_dir / self._flow_config.generation_hard_file_name
-        full_path.write_text(full_artifact.model_dump_json(indent=2) + "\n", encoding="utf-8")
-        hard_path.write_text(hard_artifact.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        full_content = full_artifact.model_dump_json(indent=2) + "\n"
+        hard_content = hard_artifact.model_dump_json(indent=2) + "\n"
+        self._write_if_changed(path=full_path, content=full_content)
+        self._write_if_changed(path=hard_path, content=hard_content)
 
         latest = LeaderboardLatestArtifact(
             schema_version=self._flow_config.schema_version,
             generation_id=generation_id,
-            generated_at_utc=self._now_utc_z(),
+            generated_at_utc=generated_at_utc,
             full_file=full_path.relative_to(repo_root).as_posix(),
             hard_file=hard_path.relative_to(repo_root).as_posix(),
             full_sha256=self._sha256_file(full_path),
@@ -143,7 +148,8 @@ class LeaderboardBuilder:
             repo_root / self._flow_config.leaderboard_root_dir / self._flow_config.leaderboard_latest_file_name
         )
         latest_path.parent.mkdir(parents=True, exist_ok=True)
-        latest_path.write_text(json.dumps(latest_payload, indent=2) + "\n", encoding="utf-8")
+        latest_content = json.dumps(latest_payload, indent=2) + "\n"
+        self._write_if_changed(path=latest_path, content=latest_content)
         return latest_path, full_path, hard_path
 
     @staticmethod
@@ -187,11 +193,12 @@ class LeaderboardBuilder:
         generation_id: str,
         leaderboard: SubmissionMode,
         rows: list[LeaderboardRow],
+        generated_at_utc: str,
     ) -> LeaderboardGenerationArtifact:
         payload = {
             "generation_id": generation_id,
             "leaderboard": leaderboard,
-            "generated_at_utc": self._now_utc_z(),
+            "generated_at_utc": generated_at_utc,
             "rows_count": len(rows),
             "rows": [row.model_dump(mode="json") for row in rows],
             "checksum": "0" * 64,
@@ -224,3 +231,22 @@ class LeaderboardBuilder:
     @staticmethod
     def _now_utc_z() -> str:
         return dt.datetime.now(tz=dt.UTC).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def _resolve_generated_at_utc(self, *, repo_root: Path, generation_id: str) -> str:
+        latest_path = (
+            repo_root / self._flow_config.leaderboard_root_dir / self._flow_config.leaderboard_latest_file_name
+        )
+        if not latest_path.exists():
+            return self._now_utc_z()
+
+        latest_payload = json.loads(latest_path.read_text(encoding="utf-8"))
+        latest = LeaderboardLatestArtifact.model_validate(latest_payload)
+        if latest.generation_id != generation_id:
+            return self._now_utc_z()
+        return latest.generated_at_utc
+
+    @staticmethod
+    def _write_if_changed(*, path: Path, content: str) -> None:
+        if path.exists() and path.read_text(encoding="utf-8") == content:
+            return
+        path.write_text(content, encoding="utf-8")

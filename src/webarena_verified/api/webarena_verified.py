@@ -288,15 +288,28 @@ class WebArenaVerified:
 
         hard_subset_path = get_package_assets_path() / "dataset" / "subsets" / "webarena-verified-hard.json"
         hard_task_ids = set(TaskSubset.from_file(hard_subset_path).task_ids)
+        all_task_ids = {task.task_id for task in self.get_tasks()}
         packaged_task_ids = set(result.tasks_packaged)
 
         packaged_tasks: dict[str, PackagedTaskStats] = {}
         if mode in {SubmissionMode.FULL, SubmissionMode.BOTH}:
-            full_valid = len(packaged_task_ids)
-            packaged_tasks["full"] = PackagedTaskStats(valid=full_valid, incomplete=0, missing=0, expected=full_valid)
+            full_expected = len(all_task_ids)
+            full_valid = len(packaged_task_ids & all_task_ids)
+            packaged_tasks["full"] = PackagedTaskStats(
+                valid=full_valid,
+                incomplete=0,
+                missing=max(full_expected - full_valid, 0),
+                expected=full_expected,
+            )
         if mode in {SubmissionMode.HARD, SubmissionMode.BOTH}:
+            hard_expected = len(all_task_ids & hard_task_ids)
             hard_valid = len(packaged_task_ids & hard_task_ids)
-            packaged_tasks["hard"] = PackagedTaskStats(valid=hard_valid, incomplete=0, missing=0, expected=hard_valid)
+            packaged_tasks["hard"] = PackagedTaskStats(
+                valid=hard_valid,
+                incomplete=0,
+                missing=max(hard_expected - hard_valid, 0),
+                expected=hard_expected,
+            )
 
         return SubmissionResult(
             output_path=result.output_path,
