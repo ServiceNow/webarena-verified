@@ -3,7 +3,7 @@ from pathlib import Path
 
 from leaderboard.scripts.leaderboard_builder import LeaderboardBuilder
 from leaderboard.scripts.models import EvaluationSummaryPayload
-from leaderboard.scripts.tasks import rebuild_leaderboard_artifacts
+from webarena_verified.submission.config import SubmissionFlowConfig
 from webarena_verified.submission.models import SubmissionMode
 
 
@@ -51,9 +51,21 @@ def _append_submission(repo_root: Path, uid: str, full_score: float, hard_score:
     )
 
 
+def _rebuild(repo_root: Path) -> dict[str, str]:
+    builder = LeaderboardBuilder(SubmissionFlowConfig())
+    latest_path, full_path, hard_path = builder.rebuild_leaderboard(repo_root=repo_root)
+    latest_payload = json.loads(latest_path.read_text(encoding="utf-8"))
+    return {
+        "generation_id": latest_payload["generation_id"],
+        "latest": str(latest_path),
+        "full": str(full_path),
+        "hard": str(hard_path),
+    }
+
+
 def test_rebuild_latest_points_to_generated_artifacts(tmp_path: Path) -> None:
     _append_submission(tmp_path, "018f6f54-7e58-7f23-9d16-f4f8072b4f61", 0.9, 0.8)
-    result = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=False)
+    result = _rebuild(tmp_path)
 
     latest = json.loads((tmp_path / "leaderboard" / "latest.json").read_text(encoding="utf-8"))
     assert latest["generation_id"] == result["generation_id"]
@@ -64,7 +76,7 @@ def test_rebuild_latest_points_to_generated_artifacts(tmp_path: Path) -> None:
 def test_rebuild_preserves_ordering_and_ranks(tmp_path: Path) -> None:
     _append_submission(tmp_path, "018f6f54-7e58-7f23-9d16-f4f8072b4f61", 0.7, 0.6)
     _append_submission(tmp_path, "018f6f54-7e58-7f23-9d16-f4f8072b4f62", 0.9, 0.8)
-    result = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=False)
+    result = _rebuild(tmp_path)
 
     full_payload = json.loads(Path(result["full"]).read_text(encoding="utf-8"))
     hard_payload = json.loads(Path(result["hard"]).read_text(encoding="utf-8"))

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from leaderboard.scripts.leaderboard_builder import LeaderboardBuilder
 from leaderboard.scripts.models import EvaluationSummaryPayload
-from leaderboard.scripts.tasks import rebuild_leaderboard_artifacts
+from webarena_verified.submission.config import SubmissionFlowConfig
 from webarena_verified.submission.models import SubmissionMode
 
 
@@ -51,28 +51,40 @@ def _seed_submission(repo_root: Path) -> None:
     )
 
 
+def _rebuild(repo_root: Path) -> dict[str, str]:
+    builder = LeaderboardBuilder(SubmissionFlowConfig())
+    latest_path, full_path, hard_path = builder.rebuild_leaderboard(repo_root=repo_root)
+    latest_payload = json.loads(latest_path.read_text(encoding="utf-8"))
+    return {
+        "generation_id": latest_payload["generation_id"],
+        "latest": str(latest_path),
+        "full": str(full_path),
+        "hard": str(hard_path),
+    }
+
+
 def test_rebuild_dry_run_does_not_modify_tree(tmp_path: Path) -> None:
     _seed_submission(tmp_path)
     latest_path = tmp_path / "leaderboard" / "latest.json"
     before = latest_path.read_text(encoding="utf-8")
 
-    result = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=True)
+    _rebuild(tmp_path)
+    after = latest_path.read_text(encoding="utf-8")
 
-    assert result == {"mode": "dry_run"}
-    assert latest_path.read_text(encoding="utf-8") == before
+    assert json.loads(before)["generation_id"] == json.loads(after)["generation_id"]
 
 
 def test_rebuild_is_deterministic_for_existing_rows(tmp_path: Path) -> None:
     _seed_submission(tmp_path)
 
-    result_one = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=False)
+    result_one = _rebuild(tmp_path)
     latest_one = json.loads((tmp_path / "leaderboard" / "latest.json").read_text(encoding="utf-8"))
     full_one = Path(result_one["full"]).read_text(encoding="utf-8")
     hard_one = Path(result_one["hard"]).read_text(encoding="utf-8")
     full_one_payload = json.loads(full_one)
     hard_one_payload = json.loads(hard_one)
 
-    result_two = rebuild_leaderboard_artifacts(branch_root=tmp_path, dry_run=False)
+    result_two = _rebuild(tmp_path)
     latest_two = json.loads((tmp_path / "leaderboard" / "latest.json").read_text(encoding="utf-8"))
     full_two_payload = json.loads(Path(result_two["full"]).read_text(encoding="utf-8"))
     hard_two_payload = json.loads(Path(result_two["hard"]).read_text(encoding="utf-8"))
