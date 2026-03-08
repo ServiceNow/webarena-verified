@@ -19,7 +19,8 @@ def _canonical_record(submission_id: int, *, eval_completed_at_utc: str) -> dict
         "hf_repo": "owner/dataset",
         "hf_path": f"submissions/{submission_id}",
         "hf_revision": f"rev-{submission_id}",
-        "name": f"Team/{submission_id}",
+        "name": f"Team-{submission_id}",
+        "model": f"model-{submission_id}",
         "leaderboard": "both",
         "reference": "https://example.com/paper",
         "overall_score": 0.8,
@@ -128,7 +129,7 @@ def test_publish_from_canonical_does_not_leak_private_canonical_fields(tmp_path:
     canonical_dir = tmp_path / "submissions"
     canonical_dir.mkdir(parents=True)
     payload = _canonical_record(101, eval_completed_at_utc="2026-02-07T13:00:00Z")
-    payload["contact_info"] = "submitter@example.com"
+    payload["contact_email"] = "submitter@example.com"
     payload["source_repository_full_name"] = "fork-owner/private-repo"
     (canonical_dir / "101.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
@@ -140,6 +141,6 @@ def test_publish_from_canonical_does_not_leak_private_canonical_fields(tmp_path:
     full_payload = json.loads((tmp_path / manifest.full_file).read_text(encoding="utf-8"))
     row = full_payload["rows"][0]
 
-    assert "contact_info" not in row
+    assert "contact_email" not in row
     assert "source_repository_full_name" not in row
-    assert row["name"] == "Team/101"
+    assert row["name"] == "Team-101"

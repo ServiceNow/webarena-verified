@@ -24,7 +24,9 @@ class SubmissionHandler:
     _LEADERBOARD_CHOICES = {"hard", "full", "both"}
 
     _NAME_PLACEHOLDER = "<EDIT: your submission name, e.g. MySystem-v1>"
+    _MODEL_PLACEHOLDER = "<EDIT: your model identifier, e.g. gpt-4.1-mini>"
     _REFERENCE_PLACEHOLDER = "<EDIT: https://link-to-paper-or-model>"
+    _CONTACT_EMAIL_PLACEHOLDER = "<EDIT: your contact email, e.g. you@example.com>"
 
     def __init__(
         self,
@@ -250,10 +252,11 @@ class SubmissionHandler:
     ) -> dict[str, Any]:
         return {
             "name": self._NAME_PLACEHOLDER,
+            "model": self._MODEL_PLACEHOLDER,
             "leaderboard": leaderboard,
             "reference": self._REFERENCE_PLACEHOLDER,
-            "version": None,
-            "contact_info": None,
+            "code_repository": None,
+            "contact_email": self._CONTACT_EMAIL_PLACEHOLDER,
             "packaged_tasks": {
                 key: stats.model_dump(mode="json") for key, stats in sorted(packaged_tasks_stats.items())
             },

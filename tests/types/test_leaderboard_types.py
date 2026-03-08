@@ -30,10 +30,12 @@ def canonical_submission_record_payload() -> dict:
         "hf_head_sha": "abc123",
         "hf_pr_url": "https://huggingface.co/datasets/owner/dataset/discussions/123",
         "name": "TeamX-ModelY",
+        "model": "gpt-4.1-mini",
         "leaderboard": "both",
         "reference": "https://example.com/paper",
+        "code_repository": "https://github.com/org/repo",
         "model_version": "v1",
-        "contact_info": "team@example.com",
+        "contact_email": "team@example.com",
         "overall_score": 0.95,
         "shopping_score": 0.91,
         "reddit_score": 0.88,
@@ -53,8 +55,10 @@ def canonical_submission_record_payload() -> dict:
 def intake_submission_payload() -> dict:
     return {
         "name": "TeamX-ModelY",
+        "model": "gpt-4.1-mini",
         "leaderboard": "both",
         "reference": "https://example.com/paper",
+        "code_repository": "https://github.com/org/repo",
         "created_at_utc": "2026-02-07T12:00:00Z",
         "packaging_summary": {
             "tasks_packaged": 100,
@@ -63,8 +67,7 @@ def intake_submission_payload() -> dict:
             "unknown_tasks": 1,
             "missing_from_output": 1,
         },
-        "version": "v1",
-        "contact_info": "team@example.com",
+        "contact_email": "team@example.com",
     }
 
 
@@ -111,6 +114,13 @@ def test_canonical_submission_record_allows_missing_legacy_source_fields(canonic
     assert record.source_repository_id is None
 
 
+def test_canonical_submission_record_backfills_missing_model_from_name(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload.pop("model")
+
+    record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    assert record.model == record.name
+
+
 def test_canonical_submission_record_rejects_invalid_overall_score(canonical_submission_record_payload: dict):
     canonical_submission_record_payload["overall_score"] = -0.1
 
@@ -118,10 +128,10 @@ def test_canonical_submission_record_rejects_invalid_overall_score(canonical_sub
         CanonicalSubmissionRecord(**canonical_submission_record_payload)
 
 
-def test_canonical_submission_record_rejects_invalid_contact_info(canonical_submission_record_payload: dict):
-    canonical_submission_record_payload["contact_info"] = "not-an-email"
+def test_canonical_submission_record_rejects_invalid_contact_email(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload["contact_email"] = "not-an-email"
 
-    with pytest.raises(ValidationError, match="contact_info must be a valid email"):
+    with pytest.raises(ValidationError, match="contact_email must be a valid email"):
         CanonicalSubmissionRecord(**canonical_submission_record_payload)
 
 
@@ -131,6 +141,13 @@ def test_intake_submission_valid(intake_submission_payload: dict):
     assert intake.leaderboard == SubmissionLeaderboard.BOTH
 
 
+def test_intake_submission_allows_slash_in_name(intake_submission_payload: dict):
+    intake_submission_payload["name"] = "Group/Name"
+
+    intake = IntakeSubmission(**intake_submission_payload)
+    assert intake.name == "Group/Name"
+
+
 def test_intake_submission_rejects_unknown_field(intake_submission_payload: dict):
     intake_submission_payload["submission_id"] = 123
 
@@ -138,11 +155,32 @@ def test_intake_submission_rejects_unknown_field(intake_submission_payload: dict
         IntakeSubmission(**intake_submission_payload)
 
 
-def test_intake_submission_rejects_slash_in_name(intake_submission_payload: dict):
-    intake_submission_payload["name"] = "Group/Name"
+def test_intake_submission_rejects_name_too_long(intake_submission_payload: dict):
+    intake_submission_payload["name"] = "x" * 65
 
-    with pytest.raises(ValidationError, match="must match"):
+    with pytest.raises(ValidationError, match="at most"):
         IntakeSubmission(**intake_submission_payload)
+
+
+def test_intake_submission_rejects_missing_model(intake_submission_payload: dict):
+    intake_submission_payload.pop("model")
+
+    with pytest.raises(ValidationError, match="model"):
+        IntakeSubmission(**intake_submission_payload)
+
+
+def test_intake_submission_rejects_missing_contact_email(intake_submission_payload: dict):
+    intake_submission_payload.pop("contact_email")
+
+    with pytest.raises(ValidationError, match="contact_email"):
+        IntakeSubmission(**intake_submission_payload)
+
+
+def test_intake_submission_allows_missing_code_repository(intake_submission_payload: dict):
+    intake_submission_payload.pop("code_repository")
+
+    intake = IntakeSubmission(**intake_submission_payload)
+    assert intake.code_repository is None
 
 
 def test_intake_manifest_valid(intake_manifest_payload: dict):

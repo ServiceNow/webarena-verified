@@ -40,10 +40,11 @@ def _submission_payload(*, leaderboard: str = "full", valid: int = 2, incomplete
 
     return {
         "name": "TeamX-ModelY",
+        "model": "gpt-4.1-mini",
         "leaderboard": leaderboard,
         "reference": "https://example.com/paper",
-        "version": "v1.0",
-        "contact_info": "team@example.com",
+        "code_repository": "https://github.com/org/repo",
+        "contact_email": "team@example.com",
         "packaged_tasks": packaged_tasks,
     }
 
@@ -137,11 +138,31 @@ def test_submit_validates_no_tasks(tmp_path: Path):
 
 def test_submit_validates_name_format(submission_dir_fixture: Path):
     payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
-    payload["name"] = "Invalid Name!"
+    payload["name"] = "x" * 65
     (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
 
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
-    with pytest.raises(ValueError, match="name"):
+    with pytest.raises(ValueError, match="at most"):
+        handler.submit()
+
+
+def test_submit_validates_missing_model_field(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload.pop("model")
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="model"):
+        handler.submit()
+
+
+def test_submit_validates_missing_contact_email_field(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload.pop("contact_email")
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="contact_email"):
         handler.submit()
 
 
@@ -165,19 +186,39 @@ def test_submit_validates_reference_url(submission_dir_fixture: Path):
         handler.submit()
 
 
-def test_submit_validates_contact_email(submission_dir_fixture: Path):
+def test_submit_validates_code_repository_url(submission_dir_fixture: Path):
     payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
-    payload["contact_info"] = "invalid-email"
+    payload["code_repository"] = "ftp://example.com/repo"
     (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
 
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
-    with pytest.raises(ValueError, match="contact_info"):
+    with pytest.raises(ValueError, match="code_repository"):
+        handler.submit()
+
+
+def test_submit_validates_contact_email(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["contact_email"] = "invalid-email"
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="contact_email"):
         handler.submit()
 
 
 def test_submit_validates_placeholder_values(submission_dir_fixture: Path):
     payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
     payload["reference"] = "<EDIT: https://link-to-paper-or-model>"
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="placeholder value"):
+        handler.submit()
+
+
+def test_submit_validates_placeholder_values_in_any_nested_field(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["extra"] = {"note": "please replace <EDIT: this>"}
     (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
 
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
@@ -232,10 +273,11 @@ def test_submit_generates_valid_submission_json(submission_dir_fixture: Path, mo
     submission = IntakeSubmission.model_validate(submission_payload)
 
     assert submission.name == "TeamX-ModelY"
+    assert submission.model == "gpt-4.1-mini"
     assert submission.leaderboard == "full"
     assert submission.reference == "https://example.com/paper"
-    assert submission.version == "v1.0"
-    assert submission.contact_info == "team@example.com"
+    assert submission.code_repository == "https://github.com/org/repo"
+    assert submission.contact_email == "team@example.com"
     assert submission.packaging_summary.tasks_packaged == 2
     assert submission.packaging_summary.tasks_with_issues == 1
     assert submission.packaging_summary.missing_from_output == 3

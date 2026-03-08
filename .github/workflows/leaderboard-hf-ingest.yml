@@ -28,13 +28,13 @@ jobs:
       - name: Reconcile pending control records
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_REPO: ${{ vars.LEADERBOARD_HF_REPO }}
+          WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO: ${{ vars.WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO || vars.LEADERBOARD_HF_REPO || 'AmineHA/WebArena-Verified-Submissions-dev' }}
           EVALUATOR_VERSION: ${{ vars.LEADERBOARD_EVALUATOR_VERSION }}
         run: |
           set -euo pipefail
           uv run inv dev.leaderboard.hf-reconcile \
             --repo-root "." \
-            --hf-repo "$HF_REPO" \
+            --hf-repo "$WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO" \
             --hf-token "$HF_TOKEN" \
             --evaluator-version "$EVALUATOR_VERSION"
 

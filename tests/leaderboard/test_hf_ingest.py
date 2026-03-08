@@ -32,8 +32,11 @@ def _write_intake(repo_root: Path) -> None:
         submission_path,
         {
             "name": "TeamX-ModelY",
+            "model": "gpt-4.1-mini",
             "leaderboard": "both",
             "reference": "https://example.com/paper",
+            "code_repository": "https://github.com/org/repo",
+            "contact_email": "team@example.com",
             "created_at_utc": "2026-03-07T10:00:00Z",
             "packaging_summary": {
                 "tasks_packaged": 2,
@@ -107,6 +110,8 @@ def test_hf_ingest_writes_control_and_canonical_records(tmp_path: Path, monkeypa
     assert canonical_payload["submission_uid"].endswith("@sha-1")
     assert canonical_payload["hf_pr_number"] == 42
     assert canonical_payload["status"] == "accepted"
+    assert canonical_payload["model"] == "gpt-4.1-mini"
+    assert canonical_payload["code_repository"] == "https://github.com/org/repo"
 
 
 def test_hf_ingest_is_idempotent_for_same_event_id(tmp_path: Path, monkeypatch) -> None:

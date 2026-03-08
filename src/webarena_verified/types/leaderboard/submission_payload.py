@@ -12,10 +12,17 @@ from ._validators import (
     validate_sha256_hex,
     validate_http_url,
     validate_model_name,
+    validate_submission_name,
 )
 
-Name = Annotated[str, Field(min_length=1), AfterValidator(lambda value: validate_model_name(value, "name"))]
+Name = Annotated[str, Field(min_length=1), AfterValidator(lambda value: validate_submission_name(value, "name"))]
+Model = Annotated[str, Field(min_length=1), AfterValidator(lambda value: validate_model_name(value, "model"))]
 ReferenceURL = Annotated[str, Field(min_length=1), AfterValidator(lambda value: validate_http_url(value, "reference"))]
+CodeRepositoryURL = Annotated[
+    str,
+    Field(min_length=1),
+    AfterValidator(lambda value: validate_http_url(value, "code_repository")),
+]
 CreatedAtUTC = Annotated[str, AfterValidator(lambda value: validate_rfc3339_utc_z(value, "created_at_utc"))]
 ContactEmail = Annotated[str, AfterValidator(validate_email)]
 ManifestPath = Annotated[
@@ -52,12 +59,13 @@ class IntakeSubmission(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Name
+    model: Model
     leaderboard: SubmissionLeaderboard
     reference: ReferenceURL
+    code_repository: CodeRepositoryURL | None = None
     created_at_utc: CreatedAtUTC
     packaging_summary: IntakePackagingSummary
-    version: str | None = None
-    contact_info: ContactEmail | None = None
+    contact_email: ContactEmail
 
 
 class IntakeManifestFile(BaseModel):

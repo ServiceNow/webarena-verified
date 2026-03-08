@@ -117,7 +117,10 @@ def test_create_submission_direct_output_path(tmp_path, create_task_output, mock
 
     payload = json.loads((submission_path / "submission.json").read_text(encoding="utf-8"))
     assert payload["name"].startswith("<EDIT:")
+    assert payload["model"].startswith("<EDIT:")
     assert payload["reference"].startswith("<EDIT:")
+    assert payload["code_repository"] is None
+    assert payload["contact_email"].startswith("<EDIT:")
     assert payload["leaderboard"] == "full"
     assert set(payload["packaged_tasks"].keys()) == {"full"}
 

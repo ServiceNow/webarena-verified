@@ -39,15 +39,16 @@ Expected result: a `./my-submission/` folder containing task folders, `submissio
 
 ## Step 2 - Edit `submission.json`
 
-Open `submission.json` and replace the placeholder values for `name` and `reference`:
+Open `submission.json` and replace the placeholder values for `name`, `model`, `reference`, and `contact_email`:
 
 ```json
 {
   "name": "MySystem-v1",
+  "model": "gpt-4.1-mini",
   "leaderboard": "both",
   "reference": "https://example.com/paper",
-  "version": null,
-  "contact_info": null,
+  "code_repository": "https://github.com/org/repo",
+  "contact_email": "team@example.com",
   "packaged_tasks": {
     "full": {
       "valid": 750,
@@ -68,11 +69,17 @@ Open `submission.json` and replace the placeholder values for `name` and `refere
 | Field | Required | Description |
 |---|---|---|
 | `name` | Yes | Submission name (e.g. `MySystem-v1`) |
+| `model` | Yes | Model identifier used for this submission (e.g. `gpt-4.1-mini`) |
 | `leaderboard` | Yes | Auto-filled from `create-submission-pkg --leaderboard`; do not change unless you recreate the package |
 | `reference` | Yes | HTTP(S) URL to paper or model reference |
-| `version` | No | Model version identifier |
-| `contact_info` | No | Contact email address |
+| `code_repository` | No | HTTP(S) URL to the agent code repository |
+| `contact_email` | Yes | Contact email used only for submission-maintenance communication |
 | `packaged_tasks` | Yes | Auto-filled coverage summary; do not edit |
+
+!!! info "How `contact_email` is used"
+    `contact_email` is used only to contact the submission author when a modification to the submission is required.
+    Maintainers may use it to verify that modification requests come from the original author.
+    If you prefer not to share a real address, you can use a dummy value.
 
 ## Step 3 - Submit To Leaderboard
 

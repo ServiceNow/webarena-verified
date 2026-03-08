@@ -1549,7 +1549,9 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
 
     submission_file = Path(result.output_path) / "submission.json"
     print("\nNext steps:")
-    print(f"  1. Edit {submission_file} with your submission details (name, reference, optional version/contact)")
+    print(
+        f"  1. Edit {submission_file} with your submission details (name, model, reference, contact_email, optional code_repository)"
+    )
     print(f"  2. Run: webarena-verified submit --submission-dir {result.output_path}")
 
     return 0

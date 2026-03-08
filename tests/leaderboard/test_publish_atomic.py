@@ -14,7 +14,7 @@ from leaderboard.scripts.publish import (
 def _row(submission_id: int, overall_score: float) -> dict:
     return {
         "submission_id": submission_id,
-        "name": f"Team/{submission_id}",
+        "name": f"Team-{submission_id}",
         "overall_score": overall_score,
         "shopping_score": 0.8,
         "reddit_score": 0.8,

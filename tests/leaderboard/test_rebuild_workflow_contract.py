@@ -36,6 +36,8 @@ def test_hf_ingest_workflow_is_schedule_only() -> None:
     assert "schedule:" in workflow
     assert "Resolve HF settings" not in workflow
     assert "dev.leaderboard.hf-reconcile" in workflow
+    assert "WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO" in workflow
+    assert '--hf-repo "$WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO"' in workflow
     assert "python - <<'PY'" not in workflow
 
 

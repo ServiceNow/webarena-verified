@@ -11,6 +11,7 @@ from ._validators import (
     validate_model_name,
     validate_rfc3339_utc_z,
     validate_sha256_hex,
+    validate_submission_name,
 )
 from .submission_payload import SubmissionLeaderboard
 
@@ -61,10 +62,12 @@ class CanonicalSubmissionRecord(BaseModel):
     hf_pr_url: str | None = None
 
     name: str = Field(min_length=1)
+    model: str = Field(min_length=1)
     leaderboard: SubmissionLeaderboard
     reference: str = Field(min_length=1)
+    code_repository: str | None = None
     model_version: str | None = None
-    contact_info: str | None = None
+    contact_email: str | None = None
 
     overall_score: float = Field(ge=0)
     shopping_score: float = Field(ge=0)
@@ -106,6 +109,12 @@ class CanonicalSubmissionRecord(BaseModel):
                 else:
                     payload["hf_repo"] = legacy_repo
 
+        if "model" not in payload and "name" in payload and isinstance(payload["name"], str):
+            payload["model"] = payload["name"]
+
+        if "contact_email" not in payload and "contact_info" in payload:
+            payload["contact_email"] = payload["contact_info"]
+
         payload.setdefault("status", CanonicalSubmissionStatus.ACCEPTED)
         return payload
 
@@ -119,7 +128,12 @@ class CanonicalSubmissionRecord(BaseModel):
     @classmethod
     def validate_name(cls, value: str) -> str:
         """Validate submission name format."""
-        return validate_model_name(value, "name")
+        return validate_submission_name(value, "name")
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, value: str) -> str:
+        return validate_model_name(value, "model")
 
     @field_validator("reference")
     @classmethod
@@ -127,13 +141,20 @@ class CanonicalSubmissionRecord(BaseModel):
         """Validate reference URL format."""
         return validate_http_url(value, "reference")
 
-    @field_validator("contact_info")
+    @field_validator("code_repository")
     @classmethod
-    def validate_contact_info(cls, value: str | None) -> str | None:
+    def validate_code_repository(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return validate_http_url(value, "code_repository")
+
+    @field_validator("contact_email")
+    @classmethod
+    def validate_contact_email(cls, value: str | None) -> str | None:
         """Validate optional contact email format."""
         if value is None:
             return None
-        return validate_email(value)
+        return validate_email(value, "contact_email")
 
     @field_validator("checksum")
     @classmethod

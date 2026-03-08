@@ -129,25 +129,25 @@ class SubmitHandler:
         if not isinstance(payload, dict):
             raise ValueError(f"{_SUBMISSION_FILE_NAME} must contain a JSON object")
 
-        required_fields = ("name", "leaderboard", "reference", "packaged_tasks")
+        required_fields = ("name", "model", "leaderboard", "reference", "contact_email", "packaged_tasks")
         missing_fields = [field for field in required_fields if field not in payload]
         if missing_fields:
             raise ValueError(f"Missing required {_SUBMISSION_FILE_NAME} field(s): {', '.join(missing_fields)}")
 
-        for key in ("name", "leaderboard", "reference", "version", "contact_info"):
-            value = payload.get(key)
-            if isinstance(value, str) and value.strip().startswith("<EDIT:"):
-                raise ValueError(
-                    f"{_SUBMISSION_FILE_NAME} contains placeholder value for '{key}'. "
-                    "Please edit submission.json before submitting."
-                )
+        placeholder_field = self._find_placeholder_field(payload)
+        if placeholder_field is not None:
+            raise ValueError(
+                f"{_SUBMISSION_FILE_NAME} contains placeholder value for '{placeholder_field}'. "
+                "Please edit submission.json before submitting."
+            )
 
         validation_payload: dict[str, Any] = {
             "name": payload.get("name"),
+            "model": payload.get("model"),
             "leaderboard": payload.get("leaderboard"),
             "reference": payload.get("reference"),
-            "version": payload.get("version"),
-            "contact_info": payload.get("contact_info"),
+            "code_repository": payload.get("code_repository"),
+            "contact_email": payload.get("contact_email"),
             "created_at_utc": self._now_utc_z(),
             "packaging_summary": {
                 "tasks_packaged": 0,
@@ -169,10 +169,11 @@ class SubmitHandler:
 
         return {
             "name": validated.name,
+            "model": validated.model,
             "leaderboard": validated.leaderboard.value,
             "reference": validated.reference,
-            "version": validated.version,
-            "contact_info": validated.contact_info,
+            "code_repository": validated.code_repository,
+            "contact_email": validated.contact_email,
             "packaged_tasks": packaged_tasks,
         }
 
@@ -224,6 +225,28 @@ class SubmitHandler:
 
         return validated
 
+    def _find_placeholder_field(self, value: Any, path: str = "") -> str | None:
+        if isinstance(value, str):
+            return path if "<EDIT:" in value else None
+
+        if isinstance(value, dict):
+            for key, nested_value in value.items():
+                next_path = f"{path}.{key}" if path else str(key)
+                nested_match = self._find_placeholder_field(nested_value, next_path)
+                if nested_match is not None:
+                    return nested_match
+            return None
+
+        if isinstance(value, list):
+            for index, nested_value in enumerate(value):
+                next_path = f"{path}[{index}]" if path else f"[{index}]"
+                nested_match = self._find_placeholder_field(nested_value, next_path)
+                if nested_match is not None:
+                    return nested_match
+            return None
+
+        return None
+
     def _compute_packaging_summary(
         self,
         *,
@@ -274,10 +297,11 @@ class SubmitHandler:
             raise ValueError(f"{_SUBMISSION_FILE_NAME} must contain a JSON object")
 
         submission_payload["name"] = submission_metadata["name"]
+        submission_payload["model"] = submission_metadata["model"]
         submission_payload["leaderboard"] = submission_metadata["leaderboard"]
         submission_payload["reference"] = submission_metadata["reference"]
-        submission_payload["version"] = submission_metadata["version"]
-        submission_payload["contact_info"] = submission_metadata["contact_info"]
+        submission_payload["code_repository"] = submission_metadata["code_repository"]
+        submission_payload["contact_email"] = submission_metadata["contact_email"]
         submission_payload["created_at_utc"] = created_at_utc
         submission_payload["packaging_summary"] = packaging_summary.model_dump(mode="json")
         submission_payload.pop("packaged_tasks", None)

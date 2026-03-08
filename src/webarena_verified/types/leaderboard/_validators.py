@@ -5,8 +5,9 @@ from pathlib import PurePosixPath
 
 RFC3339_UTC_Z_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
-NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+SUBMISSION_NAME_MAX_LENGTH = 64
 
 
 def validate_rfc3339_utc_z(value: str, field_name: str = "timestamp") -> str:
@@ -39,9 +40,14 @@ def validate_relative_repo_path(value: str, field_name: str = "path") -> str:
     return value
 
 
-def validate_model_name(value: str, field_name: str = "name") -> str:
-    """Validate submission name format."""
-    if not NAME_PATTERN.match(value):
+def validate_submission_name(value: str, field_name: str = "name") -> str:
+    if len(value) > SUBMISSION_NAME_MAX_LENGTH:
+        raise ValueError(f"{field_name} must be at most {SUBMISSION_NAME_MAX_LENGTH} characters")
+    return value
+
+
+def validate_model_name(value: str, field_name: str = "model") -> str:
+    if not MODEL_PATTERN.match(value):
         raise ValueError(f"{field_name} must match ^[A-Za-z0-9._-]+$ (e.g. MySystem-v1)")
     return value
 
@@ -53,7 +59,7 @@ def validate_http_url(value: str, field_name: str) -> str:
     return value
 
 
-def validate_email(value: str, field_name: str = "contact_info") -> str:
+def validate_email(value: str, field_name: str = "contact_email") -> str:
     """Validate email address format."""
     if not EMAIL_PATTERN.match(value):
         raise ValueError(f"{field_name} must be a valid email address")
