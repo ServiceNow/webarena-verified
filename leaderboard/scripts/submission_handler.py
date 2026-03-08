@@ -16,7 +16,12 @@ from .submission_evaluator import SubmissionEvaluator
 
 
 class IngestError(ValueError):
-    pass
+    """Raised when a submission ingest fails due to invalid input.
+
+    Covers missing fields in the GitHub dispatch event, HF snapshot issues,
+    ambiguous submission directories, and submission-uid mismatches.
+    Caught by the CI workflow to report a clear failure reason.
+    """
 
 
 def _require_dict(value: Any, *, field_name: str) -> dict[str, Any]:
@@ -126,6 +131,33 @@ def ingest_hf_submission(
     hf_token: str,
     evaluator_version: str,
 ) -> IngestResult:
+    """End-to-end ingest of a single HF dataset PR submission.
+
+    This is the top-level entry point for stage 1 of the leaderboard
+    pipeline, orchestrating the full sequence:
+
+    1. Parse the GitHub ``repository_dispatch`` event JSON.
+    2. Download the HF dataset snapshot at the PR head SHA.
+    3. Locate and validate the submission directory.
+    4. Evaluate all tasks via ``SubmissionEvaluator``.
+    5. Update leaderboard artifacts via ``LeaderboardBuilder``.
+
+    Triggered by the ``hf-ingest`` Invoke task (which is called from the
+    ``leaderboard-hf-ingest.yml`` GitHub Actions workflow).
+
+    Args:
+        repo_root: Checkout of the ``leaderboard-submissions`` branch.
+        event_path: Path to the ``$GITHUB_EVENT_PATH`` JSON file.
+        hf_repo_expected: HF dataset repo ID to validate against.
+        hf_token: Hugging Face API token.
+        evaluator_version: Reserved for future evaluator version pinning.
+
+    Returns:
+        ``IngestResult`` with paths to the written leaderboard files.
+
+    Raises:
+        IngestError: On any validation or snapshot failure.
+    """
     del evaluator_version
     flow_config = SubmissionFlowConfig()
     context = _parse_dispatch_context(event_path)
@@ -196,6 +228,26 @@ def sync_submissions(
     evaluator_version: str,
     max_recent_refs: int = 50,
 ) -> list[int]:
+    """Batch-sync recent HF dataset PRs by ingesting each one.
+
+    Lists open pull-request refs on the HF dataset repo, takes the most
+    recent ``max_recent_refs``, and calls ``ingest_hf_submission`` for each.
+    This is the scheduled counterpart to event-driven single-PR ingest —
+    it catches any PRs that were missed or need re-evaluation.
+
+    Triggered by the ``hf-sync-submissions`` Invoke task (run on a cron
+    schedule by the ``leaderboard-hf-ingest.yml`` workflow).
+
+    Args:
+        repo_root: Checkout of the ``leaderboard-submissions`` branch.
+        hf_repo: HF dataset repo ID (e.g. ``"AmineHA/WebArena-Verified"``).
+        hf_token: Hugging Face API token.
+        evaluator_version: Passed through to ``ingest_hf_submission``.
+        max_recent_refs: Cap on how many PR refs to process.
+
+    Returns:
+        List of HF PR numbers that were successfully processed.
+    """
     if not hf_repo.strip() or not hf_token.strip():
         raise ValueError("hf_repo and hf_token are required")
     if max_recent_refs < 1:

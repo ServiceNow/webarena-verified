@@ -27,6 +27,19 @@ from .models import (
 
 
 class SubmissionEvaluator:
+    """Runs WebArena-Verified evaluators on a submission and produces scoring summaries.
+
+    Sits at stage 2 of the ingest pipeline, between submission validation
+    (``SubmissionValidator``) and leaderboard building (``LeaderboardBuilder``).
+
+    On construction, loads the full task dataset and the hard-subset task IDs
+    so it can partition results into full and hard evaluation summaries.  For
+    each task directory in the submission, it delegates to ``WebArenaVerified.
+    evaluate_task`` and then aggregates the per-task ``TaskEvalResult`` objects
+    into ``EvaluationSummaryPayload`` instances — one per requested mode
+    (full, hard, or both).
+    """
+
     def __init__(self, flow_config: SubmissionFlowConfig | None = None) -> None:
         self._flow_config = flow_config or SubmissionFlowConfig()
         self._wa = WebArenaVerified()
@@ -44,6 +57,30 @@ class SubmissionEvaluator:
         submission: SubmissionMetadata,
         submission_mode: SubmissionMode,
     ) -> dict[SubmissionMode, EvaluationSummaryPayload]:
+        """Evaluate all tasks in a submission and return per-mode summaries.
+
+        Iterates over numbered task directories inside ``submission_dir``,
+        runs the WebArena-Verified evaluator on each, then builds
+        ``EvaluationSummaryPayload`` objects for the requested modes.
+
+        Called by ``submission_handler.ingest_hf_submission`` immediately
+        after validation succeeds.
+
+        Args:
+            submission_dir: Root of the unpacked submission (contains ``0/``,
+                ``1/``, … task directories).
+            submission: Validated submission metadata.
+            submission_mode: Which leaderboard(s) to score for (full, hard,
+                or both).
+
+        Returns:
+            Mapping from ``SubmissionMode`` to the corresponding evaluation
+            summary.
+
+        Raises:
+            ValueError: If ``submission_mode`` includes hard but the
+                submission contains no hard-subset tasks.
+        """
         task_dirs = sorted(path for path in submission_dir.iterdir() if path.is_dir() and path.name.isdigit())
         results: list[TaskEvalResult] = []
         for task_dir in task_dirs:

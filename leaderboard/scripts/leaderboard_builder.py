@@ -17,6 +17,25 @@ from .models import (
 
 
 class LeaderboardBuilder:
+    """Builds and updates ranked leaderboard generation artifacts.
+
+    Sits at stage 3 of the ingest pipeline.  After ``SubmissionEvaluator``
+    produces ``EvaluationSummaryPayload`` objects for each submission mode,
+    this class merges the new scores into (or rebuilds from) the existing
+    leaderboard rows, re-ranks by overall score, and writes three files to
+    the ``leaderboard-submissions`` branch checkout:
+
+    * ``<generation_dir>/full.json`` – ``LeaderboardGenerationArtifact``
+      for the full (812-task) leaderboard.
+    * ``<generation_dir>/hard.json`` – same for the hard (258-task) subset.
+    * ``leaderboard/latest.json`` – ``LeaderboardLatestArtifact`` pointer
+      with SHA-256 digests of the generation files.
+
+    The generation ID is a content-addressable hash of the ranked rows, so
+    unchanged leaderboard content reuses the same generation directory and
+    preserves the original timestamp.
+    """
+
     def __init__(self, flow_config: SubmissionFlowConfig | None = None) -> None:
         self._flow_config = flow_config or SubmissionFlowConfig()
 
@@ -31,6 +50,19 @@ class LeaderboardBuilder:
         submission_model: str,
         evaluation_summaries: dict[SubmissionMode, EvaluationSummaryPayload],
     ) -> tuple[Path, Path, Path]:
+        """Integrate a newly evaluated submission into the leaderboard.
+
+        Loads the existing rows from the current generation, removes any
+        prior entry for ``submission_uid`` (idempotent upsert), appends new
+        rows from the evaluation summaries, re-ranks, and writes updated
+        generation artifacts.
+
+        Called by ``submission_handler.ingest_hf_submission`` at the end of
+        a successful ingest cycle.
+
+        Returns:
+            ``(latest_path, full_path, hard_path)`` — the three files written.
+        """
         full_rows, hard_rows = self._load_existing_rows(repo_root)
         full_rows = [row for row in full_rows if row.submission_uid != submission_uid]
         hard_rows = [row for row in hard_rows if row.submission_uid != submission_uid]
@@ -65,6 +97,19 @@ class LeaderboardBuilder:
         return self._write_leaderboard_artifacts(repo_root=repo_root, full_rows=full_rows, hard_rows=hard_rows)
 
     def rebuild_leaderboard(self, *, repo_root: Path) -> tuple[Path, Path, Path]:
+        """Re-rank and rewrite generation artifacts from existing rows.
+
+        Unlike ``apply_submission_result``, this does not add or remove any
+        rows — it simply loads the current leaderboard state, re-ranks, and
+        writes fresh artifacts.  Useful for repairing artifacts after a
+        schema change or manual row edit.
+
+        Called by ``tasks.rebuild_leaderboard_artifacts`` (the Invoke CLI
+        entry point).
+
+        Returns:
+            ``(latest_path, full_path, hard_path)`` — the three files written.
+        """
         full_rows, hard_rows = self._load_existing_rows(repo_root)
         return self._write_leaderboard_artifacts(repo_root=repo_root, full_rows=full_rows, hard_rows=hard_rows)
 
