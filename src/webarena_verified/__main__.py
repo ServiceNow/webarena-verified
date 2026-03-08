@@ -396,7 +396,7 @@ def create_parser() -> argparse.ArgumentParser:
     submission_parser = subparsers.add_parser(
         "create-submission-pkg",
         help="Create submission package from task outputs",
-        description="Package agent responses and trimmed network traces into a submission folder",
+        description="Package agent responses and network traces into a submission folder",
         epilog=textwrap.dedent("""
             examples:
               # Create submission from single directory
@@ -407,6 +407,10 @@ def create_parser() -> argparse.ArgumentParser:
 
               # Mix explicit paths and glob patterns
               webarena-verified create-submission-pkg --run-output-dir ./special "./runs/run_*" --output ./my-submission
+
+              # Create package for hard leaderboard tasks only
+              webarena-verified create-submission-pkg --run-output-dir ./output \
+                --output ./my-submission --leaderboard hard
 
               # Overwrite existing output directory
               webarena-verified create-submission-pkg --run-output-dir ./output \\
@@ -426,6 +430,13 @@ def create_parser() -> argparse.ArgumentParser:
         type=str,
         required=True,
         help="Output submission package directory path",
+    )
+    submission_parser.add_argument(
+        "--leaderboard",
+        type=str,
+        default="both",
+        choices=["hard", "full", "both"],
+        help="Target leaderboard coverage scope for packaging (default: both)",
     )
     submission_parser.add_argument(
         "--force",
@@ -1472,6 +1483,7 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     command_info = {
         "Command": "create-submission-pkg",
         "Output Path": args.output,
+        "Leaderboard": args.leaderboard,
         "Force Overwrite": args.force,
         "Run Output Directories": "\n" + "\n".join(f"  • {path}" for path in args.run_output_dir),
     }
@@ -1496,12 +1508,13 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     def show_progress(current: int, total: int, task_id: int) -> None:
         logging_helper.print_progress(current, total, f"Processing task ID {task_id}")
 
-    logger.info("Processing run logs (copying agent response files and trimmed network logs)")
+    logger.info("Processing run logs (copying agent response and network log files)")
 
     try:
         result = wa.create_submission(
             output_dirs=output_dirs,
             output_dir=output_path,
+            leaderboard=args.leaderboard,
             force=args.force,
             progress_callback=show_progress,
         )
@@ -1516,31 +1529,16 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     print()
     logger.info("Processing complete")
 
-    # Calculate total valid tasks from all categories
-    total_found = (
-        len(result.tasks_packaged)
-        + len(result.missing_agent_response)
-        + len(result.missing_network_har)
-        + len(result.missing_both_files)
-        + len(result.invalid_har_files)
-    )
-    total_expected = total_found + len(result.missing_task_ids)
-
-    # Create summary dict with counts only (no lists)
     summary_info = {
         "Output Path": result.output_path,
-        "Tasks Packaged": f"{len(result.tasks_packaged)}/{total_expected}",
-        "Missing Agent Response": len(result.missing_agent_response),
-        "Missing Network HAR": len(result.missing_network_har),
-        "Missing Both Files": len(result.missing_both_files),
-        "Invalid HAR Files": len(result.invalid_har_files),
-        "Empty Agent Response": len(result.empty_agent_response),
-        "Duplicate Tasks": len(result.duplicate_task_ids),
-        "Unknown Tasks": len(result.unknown_task_ids),
-        "Missing from Output": len(result.missing_task_ids),
+        "Leaderboard": args.leaderboard,
+        "Packaged Task Directories": len(result.tasks_packaged),
     }
 
-    summary_info["Summary File"] = result.summary_file
+    for board, stats in sorted(result.packaged_tasks.items()):
+        summary_info[f"{board.title()} Coverage"] = (
+            f"{stats.valid}/{stats.expected} (incomplete: {stats.incomplete}, missing: {stats.missing})"
+        )
 
     # Display results in a panel
     logging_helper.print_panel("Submission Package Created", summary_info)
@@ -1551,7 +1549,7 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
 
     submission_file = Path(result.output_path) / "submission.json"
     print("\nNext steps:")
-    print(f"  1. Edit {submission_file} with your submission details (name, leaderboard, reference)")
+    print(f"  1. Edit {submission_file} with your submission details (name, reference, optional version/contact)")
     print(f"  2. Run: webarena-verified submit --submission-dir {result.output_path}")
 
     return 0

@@ -29,7 +29,7 @@ def canonical_submission_record_payload() -> dict:
         "hf_pr_number": 123,
         "hf_head_sha": "abc123",
         "hf_pr_url": "https://huggingface.co/datasets/owner/dataset/discussions/123",
-        "name": "TeamX/ModelY",
+        "name": "TeamX-ModelY",
         "leaderboard": "both",
         "reference": "https://example.com/paper",
         "model_version": "v1",
@@ -52,7 +52,7 @@ def canonical_submission_record_payload() -> dict:
 @pytest.fixture
 def intake_submission_payload() -> dict:
     return {
-        "name": "TeamX/ModelY",
+        "name": "TeamX-ModelY",
         "leaderboard": "both",
         "reference": "https://example.com/paper",
         "created_at_utc": "2026-02-07T12:00:00Z",
@@ -135,6 +135,13 @@ def test_intake_submission_rejects_unknown_field(intake_submission_payload: dict
     intake_submission_payload["submission_id"] = 123
 
     with pytest.raises(ValidationError):
+        IntakeSubmission(**intake_submission_payload)
+
+
+def test_intake_submission_rejects_slash_in_name(intake_submission_payload: dict):
+    intake_submission_payload["name"] = "Group/Name"
+
+    with pytest.raises(ValidationError, match="must match"):
         IntakeSubmission(**intake_submission_payload)
 
 

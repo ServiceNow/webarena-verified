@@ -31,7 +31,7 @@ def _write_intake(repo_root: Path) -> None:
     _write_json(
         submission_path,
         {
-            "name": "TeamX/ModelY",
+            "name": "TeamX-ModelY",
             "leaderboard": "both",
             "reference": "https://example.com/paper",
             "created_at_utc": "2026-03-07T10:00:00Z",

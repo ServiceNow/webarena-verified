@@ -10,31 +10,50 @@ from webarena_verified.api.internal.submit_handler import SubmitHandler
 from webarena_verified.types.leaderboard import IntakeManifest, IntakeSubmission
 
 
+def _submission_payload(*, leaderboard: str = "full", valid: int = 2, incomplete: int = 1, missing: int = 3) -> dict:
+    expected = valid + incomplete + missing
+    packaged_tasks: dict[str, dict[str, int]]
+    if leaderboard == "both":
+        packaged_tasks = {
+            "full": {
+                "valid": valid,
+                "incomplete": incomplete,
+                "missing": missing,
+                "expected": expected,
+            },
+            "hard": {
+                "valid": 1,
+                "incomplete": 0,
+                "missing": 257,
+                "expected": 258,
+            },
+        }
+    else:
+        packaged_tasks = {
+            leaderboard: {
+                "valid": valid,
+                "incomplete": incomplete,
+                "missing": missing,
+                "expected": expected,
+            }
+        }
+
+    return {
+        "name": "TeamX-ModelY",
+        "leaderboard": leaderboard,
+        "reference": "https://example.com/paper",
+        "version": "v1.0",
+        "contact_info": "team@example.com",
+        "packaged_tasks": packaged_tasks,
+    }
+
+
 @pytest.fixture
 def submission_dir_fixture(tmp_path: Path) -> Path:
     submission_dir = tmp_path / "submission"
     submission_dir.mkdir()
-
-    summary_payload = {
-        "packaging_summary": {
-            "tasks_packaged": 2,
-            "tasks_with_issues": 0,
-            "duplicate_tasks": 0,
-            "unknown_tasks": 0,
-            "missing_from_output": 0,
-        }
-    }
-    (submission_dir / "summary.json").write_text(json.dumps(summary_payload), encoding="utf-8")
     (submission_dir / "submission.json").write_text(
-        json.dumps(
-            {
-                "name": "TeamX/ModelY",
-                "leaderboard": "both",
-                "reference": "https://example.com/paper",
-                "version": "v1.0",
-                "contact_info": "team@example.com",
-            }
-        ),
+        json.dumps(_submission_payload(valid=2, incomplete=1, missing=3)),
         encoding="utf-8",
     )
 
@@ -45,7 +64,8 @@ def submission_dir_fixture(tmp_path: Path) -> Path:
 
     task_102 = submission_dir / "102"
     task_102.mkdir()
-    (task_102 / ".missing").write_text("", encoding="utf-8")
+    (task_102 / "agent_response.json").write_text('{"status":"SUCCESS"}', encoding="utf-8")
+    (task_102 / "network.har").write_text('{"log":{"entries":[]}}', encoding="utf-8")
 
     return submission_dir
 
@@ -78,7 +98,6 @@ def mock_hf_api(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         )
 
     api_instance.create_commit.side_effect = _create_commit
-
     api_class = Mock(return_value=api_instance)
     monkeypatch.setattr("webarena_verified.api.internal.submit_handler.HfApi", api_class)
     return api_class, api_instance, captured
@@ -90,37 +109,9 @@ def test_submit_validates_missing_dir(tmp_path: Path):
         handler.submit()
 
 
-def test_submit_validates_missing_summary(tmp_path: Path):
-    submission_dir = tmp_path / "submission"
-    submission_dir.mkdir()
-    task_dir = submission_dir / "101"
-    task_dir.mkdir()
-    (task_dir / "agent_response.json").write_text("{}", encoding="utf-8")
-    (task_dir / "network.har").write_text("{}", encoding="utf-8")
-    (submission_dir / "submission.json").write_text("{}", encoding="utf-8")
-
-    handler = SubmitHandler(submission_dir=submission_dir, hf_repo="org/repo", hf_token="token")
-    with pytest.raises(ValueError, match="summary.json"):
-        handler.submit()
-
-
 def test_submit_validates_missing_submission_json(tmp_path: Path):
     submission_dir = tmp_path / "submission"
     submission_dir.mkdir()
-    (submission_dir / "summary.json").write_text(
-        json.dumps(
-            {
-                "packaging_summary": {
-                    "tasks_packaged": 1,
-                    "tasks_with_issues": 0,
-                    "duplicate_tasks": 0,
-                    "unknown_tasks": 0,
-                    "missing_from_output": 0,
-                }
-            }
-        ),
-        encoding="utf-8",
-    )
     task_dir = submission_dir / "101"
     task_dir.mkdir()
     (task_dir / "agent_response.json").write_text("{}", encoding="utf-8")
@@ -134,28 +125,8 @@ def test_submit_validates_missing_submission_json(tmp_path: Path):
 def test_submit_validates_no_tasks(tmp_path: Path):
     submission_dir = tmp_path / "submission"
     submission_dir.mkdir()
-    (submission_dir / "summary.json").write_text(
-        json.dumps(
-            {
-                "packaging_summary": {
-                    "tasks_packaged": 0,
-                    "tasks_with_issues": 0,
-                    "duplicate_tasks": 0,
-                    "unknown_tasks": 0,
-                    "missing_from_output": 0,
-                }
-            }
-        ),
-        encoding="utf-8",
-    )
     (submission_dir / "submission.json").write_text(
-        json.dumps(
-            {
-                "name": "TeamX/ModelY",
-                "leaderboard": "both",
-                "reference": "https://example.com/paper",
-            }
-        ),
+        json.dumps(_submission_payload(valid=1, incomplete=0, missing=5)),
         encoding="utf-8",
     )
 
@@ -206,11 +177,46 @@ def test_submit_validates_contact_email(submission_dir_fixture: Path):
 
 def test_submit_validates_placeholder_values(submission_dir_fixture: Path):
     payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
-    payload["leaderboard"] = "<EDIT: hard | full | both>"
+    payload["reference"] = "<EDIT: https://link-to-paper-or-model>"
     (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
 
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
     with pytest.raises(ValueError, match="placeholder value"):
+        handler.submit()
+
+
+def test_submit_validates_packaged_tasks_structure(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["packaged_tasks"]["full"].pop("missing")
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="missing field"):
+        handler.submit()
+
+
+def test_submit_validates_packaged_tasks_invariant(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["packaged_tasks"]["full"]["expected"] = 999
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="valid \+ incomplete \+ missing"):
+        handler.submit()
+
+
+def test_submit_validates_packaged_tasks_match_task_dirs(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["packaged_tasks"]["full"]["valid"] = 3
+    payload["packaged_tasks"]["full"]["expected"] = (
+        payload["packaged_tasks"]["full"]["valid"]
+        + payload["packaged_tasks"]["full"]["incomplete"]
+        + payload["packaged_tasks"]["full"]["missing"]
+    )
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="do not match package contents"):
         handler.submit()
 
 
@@ -225,12 +231,14 @@ def test_submit_generates_valid_submission_json(submission_dir_fixture: Path, mo
     submission_payload = json.loads((snapshot_dir / inbox_prefix / "submission.json").read_text(encoding="utf-8"))
     submission = IntakeSubmission.model_validate(submission_payload)
 
-    assert submission.name == "TeamX/ModelY"
-    assert submission.leaderboard == "both"
+    assert submission.name == "TeamX-ModelY"
+    assert submission.leaderboard == "full"
     assert submission.reference == "https://example.com/paper"
     assert submission.version == "v1.0"
     assert submission.contact_info == "team@example.com"
     assert submission.packaging_summary.tasks_packaged == 2
+    assert submission.packaging_summary.tasks_with_issues == 1
+    assert submission.packaging_summary.missing_from_output == 3
 
 
 def test_submit_generates_valid_manifest_json(submission_dir_fixture: Path, mock_hf_api):

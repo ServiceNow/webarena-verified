@@ -27,7 +27,6 @@ submissions/
       tasks/
         <task_id>/agent_response.json
         <task_id>/network.har
-        <task_id>/.missing
   <submission_id>.json
 
 leaderboard_full.<generation_id>.json

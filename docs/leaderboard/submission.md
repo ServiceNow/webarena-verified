@@ -13,62 +13,68 @@ Your run output should contain task folders in this shape:
     network.har
 ```
 
-You can submit partial coverage. Missing or invalid tasks are tracked in the package summary.
+You can submit partial coverage. Package creation reports leaderboard coverage counts for valid, incomplete, and missing tasks.
 
 ## Step 1 - Create Submission Package
 
 ```bash
 uvx webarena-verified create-submission-pkg \
   --run-output-dir ./output \
-  --output ./my-submission
+  --output ./my-submission \
+  --leaderboard both
 ```
 
 If you prefer, you can run the same CLI through a local install, `uv run`, or Docker.
 
 The `--output` path is the submission package directory itself. If it already exists, the command will fail unless you pass `--force` to overwrite it.
 
-Expected result: a `./my-submission/` folder containing task folders, `summary.json`, `submission.json` (with placeholder values), and `manifest.json`.
+Expected result: a `./my-submission/` folder containing task folders, `submission.json`, and `manifest.json`.
 
-## Step 2 - Review `summary.json`
+`create-submission-pkg` now embeds coverage stats in `submission.json` under `packaged_tasks`:
 
-Open `summary.json` and check `packaging_summary` plus `issues`.
+- `valid`: tasks with both required files
+- `incomplete`: tasks with exactly one required file
+- `missing`: tasks with no files or no task directory
+- `expected`: total expected tasks for the leaderboard scope
 
-Common issue categories:
+## Step 2 - Edit `submission.json`
 
-| Category | Meaning |
-|---|---|
-| `missing_agent_response_only` | Task is missing `agent_response.json` |
-| `missing_network_har_only` | Task is missing `network.har` |
-| `missing_both_files` | Both required files are missing |
-| `invalid_har_files` | HAR exists but cannot be processed |
-| `empty_agent_response` | Agent response file exists but is empty |
-
-!!! tip
-    Fix issues before submitting when possible. Higher-quality packages reduce ingestion failures and improve evaluation coverage.
-
-## Step 3 - Edit `submission.json`
-
-Open `submission.json` and replace the placeholder values with your submission details:
+Open `submission.json` and replace the placeholder values for `name` and `reference`:
 
 ```json
 {
-  "name": "TeamX/ModelY",
+  "name": "MySystem-v1",
   "leaderboard": "both",
   "reference": "https://example.com/paper",
   "version": null,
-  "contact_info": null
+  "contact_info": null,
+  "packaged_tasks": {
+    "full": {
+      "valid": 750,
+      "incomplete": 12,
+      "missing": 50,
+      "expected": 812
+    },
+    "hard": {
+      "valid": 230,
+      "incomplete": 5,
+      "missing": 23,
+      "expected": 258
+    }
+  }
 }
 ```
 
 | Field | Required | Description |
 |---|---|---|
-| `name` | Yes | Model or team name (e.g. `TeamX/ModelY`) |
-| `leaderboard` | Yes | Target leaderboard: `hard`, `full`, or `both` |
+| `name` | Yes | Submission name (e.g. `MySystem-v1`) |
+| `leaderboard` | Yes | Auto-filled from `create-submission-pkg --leaderboard`; do not change unless you recreate the package |
 | `reference` | Yes | HTTP(S) URL to paper or model reference |
 | `version` | No | Model version identifier |
 | `contact_info` | No | Contact email address |
+| `packaged_tasks` | Yes | Auto-filled coverage summary; do not edit |
 
-## Step 4 - Submit To Leaderboard
+## Step 3 - Submit To Leaderboard
 
 ```bash
 uvx webarena-verified submit \

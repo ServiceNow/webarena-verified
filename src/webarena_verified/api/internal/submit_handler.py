@@ -19,23 +19,15 @@ from webarena_verified.types.leaderboard import (
 )
 from webarena_verified.types.submit_result import SubmitResult
 
-_SUMMARY_FILE_NAME = "summary.json"
 _SUBMISSION_FILE_NAME = "submission.json"
 _MANIFEST_FILE_NAME = "manifest.json"
 _TASKS_DIR_NAME = "tasks"
-_MISSING_SENTINEL_FILE = ".missing"
 _AGENT_RESPONSE_FILE = "agent_response.json"
 _NETWORK_HAR_FILE = "network.har"
 _MANIFEST_SCHEMA_VERSION = "1.0"
 _INBOX_PREFIX = "submissions/inbox"
 
-_REQUIRED_PACKAGING_SUMMARY_FIELDS = (
-    "tasks_packaged",
-    "tasks_with_issues",
-    "duplicate_tasks",
-    "unknown_tasks",
-    "missing_from_output",
-)
+_PACKAGED_TASKS_KEYS = ("valid", "incomplete", "missing", "expected")
 
 
 class SubmitHandler:
@@ -53,8 +45,11 @@ class SubmitHandler:
         logger.info("Loading submission metadata")
         submission_metadata = self._load_submission_metadata()
 
-        logger.info("Loading packaging summary")
-        packaging_summary = self._load_packaging_summary()
+        logger.info("Computing packaging summary")
+        packaging_summary = self._compute_packaging_summary(
+            task_dirs=task_dirs,
+            submission_metadata=submission_metadata,
+        )
 
         submission_uid = str(uuid.uuid4())
         logger.info(f"Submission UID: {submission_uid}")
@@ -97,10 +92,6 @@ class SubmitHandler:
         if not self.submission_dir.is_dir():
             raise ValueError(f"Submission path is not a directory: {self.submission_dir}")
 
-        summary_path = self.submission_dir / _SUMMARY_FILE_NAME
-        if not summary_path.exists() or not summary_path.is_file():
-            raise ValueError(f"Missing required {_SUMMARY_FILE_NAME} in: {self.submission_dir}")
-
         submission_path = self.submission_dir / _SUBMISSION_FILE_NAME
         if not submission_path.exists() or not submission_path.is_file():
             raise ValueError(f"Missing required {_SUBMISSION_FILE_NAME} in: {self.submission_dir}")
@@ -109,7 +100,7 @@ class SubmitHandler:
         if not task_dirs:
             raise ValueError(
                 "No valid numeric task directories found with required files "
-                f"({_AGENT_RESPONSE_FILE} + {_NETWORK_HAR_FILE} or {_MISSING_SENTINEL_FILE})"
+                f"({_AGENT_RESPONSE_FILE} + {_NETWORK_HAR_FILE})"
             )
         return task_dirs
 
@@ -124,14 +115,11 @@ class SubmitHandler:
         return valid
 
     def _is_valid_task_dir(self, task_dir: Path) -> bool:
-        if (task_dir / _MISSING_SENTINEL_FILE).exists():
-            return True
-
         has_agent_response = (task_dir / _AGENT_RESPONSE_FILE).exists()
         has_network_har = (task_dir / _NETWORK_HAR_FILE).exists()
         return has_agent_response and has_network_har
 
-    def _load_submission_metadata(self) -> dict[str, str | None]:
+    def _load_submission_metadata(self) -> dict[str, Any]:
         submission_path = self.submission_dir / _SUBMISSION_FILE_NAME
         try:
             payload = json.loads(submission_path.read_text(encoding="utf-8"))
@@ -141,7 +129,7 @@ class SubmitHandler:
         if not isinstance(payload, dict):
             raise ValueError(f"{_SUBMISSION_FILE_NAME} must contain a JSON object")
 
-        required_fields = ("name", "leaderboard", "reference")
+        required_fields = ("name", "leaderboard", "reference", "packaged_tasks")
         missing_fields = [field for field in required_fields if field not in payload]
         if missing_fields:
             raise ValueError(f"Missing required {_SUBMISSION_FILE_NAME} field(s): {', '.join(missing_fields)}")
@@ -173,43 +161,101 @@ class SubmitHandler:
             validated = IntakeSubmission.model_validate(validation_payload)
         except ValidationError as exc:
             raise ValueError(f"Invalid submission metadata: {exc}") from exc
+
+        packaged_tasks = self._validate_packaged_tasks(
+            leaderboard=validated.leaderboard.value,
+            packaged_tasks=payload.get("packaged_tasks"),
+        )
+
         return {
             "name": validated.name,
             "leaderboard": validated.leaderboard.value,
             "reference": validated.reference,
             "version": validated.version,
             "contact_info": validated.contact_info,
+            "packaged_tasks": packaged_tasks,
         }
 
-    def _load_packaging_summary(self) -> IntakePackagingSummary:
-        summary_path = self.submission_dir / _SUMMARY_FILE_NAME
-        try:
-            payload = json.loads(summary_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"Invalid JSON in {_SUMMARY_FILE_NAME}: {exc}") from exc
+    def _validate_packaged_tasks(self, *, leaderboard: str, packaged_tasks: Any) -> dict[str, dict[str, int]]:
+        if not isinstance(packaged_tasks, dict):
+            raise ValueError("submission.json field 'packaged_tasks' must be a JSON object")
 
-        if not isinstance(payload, dict):
-            raise ValueError(f"{_SUMMARY_FILE_NAME} must contain a JSON object")
+        keys = set(packaged_tasks.keys())
+        if not keys.issubset({"full", "hard"}):
+            raise ValueError("submission.json field 'packaged_tasks' can only contain 'full' and/or 'hard' keys")
 
-        packaging_summary = payload.get("packaging_summary")
-        if not isinstance(packaging_summary, dict):
-            raise ValueError(f"{_SUMMARY_FILE_NAME} must contain a 'packaging_summary' object")
+        required_keys = {leaderboard} if leaderboard in {"full", "hard"} else {"full", "hard"}
+        if keys != required_keys:
+            required = ", ".join(sorted(required_keys))
+            found = ", ".join(sorted(keys))
+            raise ValueError(
+                f"submission.json field 'packaged_tasks' must contain exactly [{required}] for leaderboard '{leaderboard}'. "
+                f"Found [{found}]"
+            )
 
-        missing_fields = [field for field in _REQUIRED_PACKAGING_SUMMARY_FIELDS if field not in packaging_summary]
-        if missing_fields:
-            raise ValueError(f"Missing required packaging_summary field(s): {', '.join(missing_fields)}")
+        validated: dict[str, dict[str, int]] = {}
+        for board, stats in packaged_tasks.items():
+            if not isinstance(stats, dict):
+                raise ValueError(f"submission.json packaged_tasks.{board} must be an object")
 
-        try:
-            return IntakePackagingSummary.model_validate(packaging_summary)
-        except ValidationError as exc:
-            raise ValueError(f"Invalid packaging_summary: {exc}") from exc
+            missing_stats_fields = [key for key in _PACKAGED_TASKS_KEYS if key not in stats]
+            if missing_stats_fields:
+                raise ValueError(
+                    f"submission.json packaged_tasks.{board} is missing field(s): {', '.join(missing_stats_fields)}"
+                )
+
+            typed_stats: dict[str, int] = {}
+            for key in _PACKAGED_TASKS_KEYS:
+                value = stats.get(key)
+                if not isinstance(value, int) or value < 0:
+                    raise ValueError(f"submission.json packaged_tasks.{board}.{key} must be a non-negative integer")
+                typed_stats[key] = value
+
+            if typed_stats["valid"] + typed_stats["incomplete"] + typed_stats["missing"] != typed_stats["expected"]:
+                raise ValueError(
+                    f"submission.json packaged_tasks.{board} is invalid: "
+                    "valid + incomplete + missing must equal expected"
+                )
+
+            if typed_stats["valid"] == 0:
+                raise ValueError(f"submission.json packaged_tasks.{board}.valid must be greater than 0")
+
+            validated[board] = typed_stats
+
+        return validated
+
+    def _compute_packaging_summary(
+        self,
+        *,
+        task_dirs: list[Path],
+        submission_metadata: dict[str, Any],
+    ) -> IntakePackagingSummary:
+        leaderboard = submission_metadata["leaderboard"]
+        stats_by_board = submission_metadata["packaged_tasks"]
+        selected_board = "full" if leaderboard == "both" else leaderboard
+        selected_stats = stats_by_board[selected_board]
+
+        tasks_packaged = len(task_dirs)
+        if tasks_packaged != selected_stats["valid"]:
+            raise ValueError(
+                "submission.json packaged task stats do not match package contents: "
+                f"expected {selected_stats['valid']} valid {selected_board} tasks, found {tasks_packaged}"
+            )
+
+        return IntakePackagingSummary(
+            tasks_packaged=tasks_packaged,
+            tasks_with_issues=selected_stats["incomplete"],
+            duplicate_tasks=0,
+            unknown_tasks=0,
+            missing_from_output=selected_stats["missing"],
+        )
 
     def _prepare_staging(
         self,
         *,
         staging_dir: Path,
         task_dirs: list[Path],
-        submission_metadata: dict[str, str | None],
+        submission_metadata: dict[str, Any],
         packaging_summary: IntakePackagingSummary,
     ) -> int:
         tasks_root = staging_dir / _TASKS_DIR_NAME
@@ -234,6 +280,8 @@ class SubmitHandler:
         submission_payload["contact_info"] = submission_metadata["contact_info"]
         submission_payload["created_at_utc"] = created_at_utc
         submission_payload["packaging_summary"] = packaging_summary.model_dump(mode="json")
+        submission_payload.pop("packaged_tasks", None)
+
         submission = IntakeSubmission.model_validate(submission_payload)
         staged_submission_path.write_text(submission.model_dump_json(indent=2) + "\n", encoding="utf-8")
 

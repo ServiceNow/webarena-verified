@@ -21,7 +21,7 @@ Each row includes:
 
 ## UI Features
 
-- Search and filter by model/team name or submission ID
+- Search and filter by submission name or submission ID
 - Toggle between Full and Hard boards
 - Export leaderboard rows as CSV
 

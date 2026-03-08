@@ -118,7 +118,7 @@ class CanonicalSubmissionRecord(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
-        """Validate model/team name format."""
+        """Validate submission name format."""
         return validate_model_name(value, "name")
 
     @field_validator("reference")

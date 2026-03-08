@@ -8,9 +8,11 @@ from webarena_verified.core.utils import logger
 from webarena_verified.environments import MAGENTO_ADMIN_AUTO_LOGIN_HEADER
 from webarena_verified.types.agent_response import MainObjectiveType
 from webarena_verified.types.config import WebArenaVerifiedConfig
+from webarena_verified.types.data import TaskSubset
 from webarena_verified.types.eval import TaskEvalResult
 from webarena_verified.types.task import WebArenaSite, WebArenaVerifiedTask
 from webarena_verified.types.tracing import NetworkTrace
+from webarena_verified.utils import get_package_assets_path
 
 from .internal.data_reader import WebArenaVerifiedDataReader
 from .internal.evaluator import WebArenaVerifiedEvaluator
@@ -246,34 +248,27 @@ class WebArenaVerified:
         output_dirs: list[Path],
         output_dir: Path,
         *,
+        leaderboard: str = "both",
         force: bool = False,
         progress_callback: Callable[[int, int, int], None] | None = None,
     ) -> "SubmissionResult":
         """Create submission package from task outputs.
 
-        Never fails - always creates a package with summary.json documenting issues.
-
         Args:
             output_dirs: List of output directories to scan
             output_dir: Output directory where submission package will be created
+            leaderboard: Target leaderboard scope (hard, full, both)
             force: Whether to overwrite output_dir if it already exists
             progress_callback: Optional callback for progress updates (current, total, task_id)
 
         Returns:
-            SubmissionResult with comprehensive issue tracking:
+            SubmissionResult with packaging stats:
                 - output_path: Final output path
                 - tasks_packaged: List of task IDs successfully packaged
-                - missing_agent_response: Task IDs missing only agent_response.json
-                - missing_network_har: Task IDs missing only network.har
-                - missing_both_files: Task IDs missing both required files
-                - invalid_har_files: Task IDs with invalid or empty HAR files
-                - empty_agent_response: Task IDs with empty agent response files
-                - duplicate_task_ids: Task IDs found in multiple directories
-                - unknown_task_ids: Task IDs not in reader's dataset
-                - missing_task_ids: Valid task IDs with no output directory
-                - summary_file: Path to summary.json with detailed issue info
+                - packaged_tasks: Coverage counts per leaderboard
 
         Raises:
+            ValueError: If leaderboard is invalid or hard subset is inconsistent
             FileExistsError: If output path already exists and force is False
 
         Example:
@@ -282,16 +277,34 @@ class WebArenaVerified:
             result = wa.create_submission(
                 output_dirs=[Path("./run1"), Path("./run2")],
                 output_dir=Path("./my-submission"),
+                leaderboard="both",
                 force=True,
             )
             print(f"Packaged {len(result.tasks_packaged)} tasks")
-            print(f"Issues: {len(result.duplicate_task_ids)} duplicates")
-            print(f"See details: {result.summary_file}")
+            print(result.packaged_tasks)
             ```
         """
-        valid_task_ids = set(self._reader.task_id_map.keys())
-        handler = SubmissionHandler(output_dirs, self._config, valid_task_ids)
-        return handler.create_submission(output_dir, force=force, progress_callback=progress_callback)
+        valid_leaderboards = {"hard", "full", "both"}
+        if leaderboard not in valid_leaderboards:
+            valid = ", ".join(sorted(valid_leaderboards))
+            raise ValueError(f"Invalid leaderboard '{leaderboard}'. Must be one of: {valid}")
+
+        full_task_ids = set(self._reader.task_id_map.keys())
+        hard_subset_path = get_package_assets_path() / "dataset" / "subsets" / "webarena-verified-hard.json"
+        hard_task_ids = set(TaskSubset.from_file(hard_subset_path).task_ids)
+
+        invalid_hard_ids = hard_task_ids - full_task_ids
+        if invalid_hard_ids:
+            sample = sorted(invalid_hard_ids)[:10]
+            raise ValueError(f"Hard subset contains task IDs missing from the full dataset: {sample}")
+
+        handler = SubmissionHandler(output_dirs, self._config, full_task_ids, hard_task_ids)
+        return handler.create_submission(
+            output_dir,
+            leaderboard=leaderboard,
+            force=force,
+            progress_callback=progress_callback,
+        )
 
     def submit(
         self,

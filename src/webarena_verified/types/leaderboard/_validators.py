@@ -5,7 +5,7 @@ from pathlib import PurePosixPath
 
 RFC3339_UTC_Z_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
-NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$")
+NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -40,9 +40,9 @@ def validate_relative_repo_path(value: str, field_name: str = "path") -> str:
 
 
 def validate_model_name(value: str, field_name: str = "name") -> str:
-    """Validate model/team name format."""
+    """Validate submission name format."""
     if not NAME_PATTERN.match(value):
-        raise ValueError(f"{field_name} must match ^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$")
+        raise ValueError(f"{field_name} must match ^[A-Za-z0-9._-]+$ (e.g. MySystem-v1)")
     return value
 
 
