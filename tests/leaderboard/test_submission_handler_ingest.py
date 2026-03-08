@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from leaderboard.scripts import submission_handler
+from leaderboard.scripts import submission_data_backend, submission_handler
 from leaderboard.scripts.models import EvaluationSummaryPayload
 from webarena_verified.submission.models import SubmissionMode
 
@@ -11,20 +11,6 @@ from webarena_verified.submission.models import SubmissionMode
 def _write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-
-
-def _dispatch_event(*, head_sha: str = "sha-1") -> dict:
-    return {
-        "client_payload": {
-            "event_id": "evt-1",
-            "event_scope": "schedule",
-            "event_action": "sync_submissions",
-            "hf_repo": "org/dataset",
-            "hf_pr_number": 42,
-            "hf_head_sha": head_sha,
-            "hf_pr_url": "https://huggingface.co/datasets/org/dataset/discussions/42",
-        }
-    }
 
 
 def _summary() -> EvaluationSummaryPayload:
@@ -119,10 +105,7 @@ def test_submission_handler_updates_leaderboard_artifacts(tmp_path: Path, monkey
     snapshot_root = tmp_path / "snapshot"
     _write_submission_tree(snapshot_root, submission_uid=submission_uid)
 
-    event_path = tmp_path / "event.json"
-    _write_json(event_path, _dispatch_event())
-
-    monkeypatch.setattr(submission_handler, "snapshot_download", lambda **_kwargs: str(snapshot_root))
+    monkeypatch.setattr(submission_data_backend, "snapshot_download", lambda **_kwargs: str(snapshot_root))
 
     class FakeEvaluator:
         def __init__(self, *_args, **_kwargs) -> None:
@@ -138,30 +121,16 @@ def test_submission_handler_updates_leaderboard_artifacts(tmp_path: Path, monkey
 
     result = submission_handler.ingest_hf_submission(
         repo_root=tmp_path,
-        event_path=event_path,
-        hf_repo_expected="org/dataset",
+        hf_repo="org/dataset",
+        hf_pr_number=42,
+        hf_head_sha="sha-1",
         hf_token="hf-token",
-        evaluator_version="v1",
     )
 
     assert result.submission_uid == submission_uid
     assert result.leaderboard_latest_path.endswith("leaderboard/latest.json")
     assert Path(result.full_artifact_path).name == "full.json"
     assert Path(result.hard_artifact_path).name == "hard.json"
-
-
-def test_submission_handler_rejects_repo_mismatch(tmp_path: Path) -> None:
-    event_path = tmp_path / "event.json"
-    _write_json(event_path, _dispatch_event())
-
-    with pytest.raises(ValueError, match="does not match"):
-        submission_handler.ingest_hf_submission(
-            repo_root=tmp_path,
-            event_path=event_path,
-            hf_repo_expected="different/repo",
-            hf_token="hf-token",
-            evaluator_version="v1",
-        )
 
 
 def test_submission_handler_resolves_submission_uid_from_pr_diff_when_snapshot_has_multiple(
@@ -173,10 +142,7 @@ def test_submission_handler_resolves_submission_uid_from_pr_diff_when_snapshot_h
     _write_submission_tree(snapshot_root, submission_uid=selected_uid)
     _write_submission_tree(snapshot_root, submission_uid=other_uid)
 
-    event_path = tmp_path / "event.json"
-    _write_json(event_path, _dispatch_event())
-
-    monkeypatch.setattr(submission_handler, "snapshot_download", lambda **_kwargs: str(snapshot_root))
+    monkeypatch.setattr(submission_data_backend, "snapshot_download", lambda **_kwargs: str(snapshot_root))
 
     class FakeDetails:
         diff = "\n".join(
@@ -203,15 +169,15 @@ def test_submission_handler_resolves_submission_uid_from_pr_diff_when_snapshot_h
                 SubmissionMode.HARD: _summary(),
             }
 
-    monkeypatch.setattr(submission_handler, "HfApi", FakeHfApi)
+    monkeypatch.setattr(submission_data_backend, "HfApi", FakeHfApi)
     monkeypatch.setattr(submission_handler, "SubmissionEvaluator", FakeEvaluator)
 
     result = submission_handler.ingest_hf_submission(
         repo_root=tmp_path,
-        event_path=event_path,
-        hf_repo_expected="org/dataset",
+        hf_repo="org/dataset",
+        hf_pr_number=42,
+        hf_head_sha="sha-1",
         hf_token="hf-token",
-        evaluator_version="v1",
     )
 
     assert result.submission_uid == selected_uid

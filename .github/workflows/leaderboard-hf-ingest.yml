@@ -31,14 +31,12 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO: ${{ vars.WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO || vars.LEADERBOARD_HF_REPO || 'AmineHA/WebArena-Verified-Submissions-dev' }}
-          EVALUATOR_VERSION: ${{ vars.LEADERBOARD_EVALUATOR_VERSION }}
         run: |
           set -euo pipefail
           uv run inv dev.leaderboard.hf-sync-submissions \
             --repo-root "." \
             --hf-repo "$WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO" \
-            --hf-token "$HF_TOKEN" \
-            --evaluator-version "$EVALUATOR_VERSION"
+            --hf-token "$HF_TOKEN"
 
       - name: Commit and push leaderboard updates
         run: |

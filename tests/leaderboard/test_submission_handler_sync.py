@@ -1,10 +1,9 @@
-import json
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from leaderboard.scripts import submission_handler
+from leaderboard.scripts import submission_data_backend, submission_handler
 
 
 def test_sync_submissions_processes_recent_hf_refs(tmp_path: Path, monkeypatch) -> None:
@@ -25,24 +24,23 @@ def test_sync_submissions_processes_recent_hf_refs(tmp_path: Path, monkeypatch) 
     ingest_calls: list[dict] = []
 
     def fake_ingest(**kwargs):
-        payload = json.loads(Path(kwargs["event_path"]).read_text(encoding="utf-8"))
-        ingest_calls.append(payload["client_payload"])
+        ingest_calls.append(kwargs)
         return SimpleNamespace()
 
-    monkeypatch.setattr(submission_handler, "HfApi", FakeHfApi)
+    monkeypatch.setattr(submission_data_backend, "HfApi", FakeHfApi)
     monkeypatch.setattr(submission_handler, "ingest_hf_submission", fake_ingest)
 
     synced = submission_handler.sync_submissions(
         repo_root=tmp_path,
         hf_repo="org/dataset",
         hf_token="hf-token",
-        evaluator_version="v1",
         max_recent_refs=1,
     )
 
     assert synced == [5]
     assert ingest_calls[0]["hf_pr_number"] == 5
-    assert ingest_calls[0]["event_action"] == "sync_submissions"
+    assert ingest_calls[0]["hf_repo"] == "org/dataset"
+    assert ingest_calls[0]["hf_head_sha"] == "sha-5"
 
 
 def test_sync_submissions_requires_hf_repo_and_hf_token(tmp_path: Path) -> None:
@@ -51,7 +49,6 @@ def test_sync_submissions_requires_hf_repo_and_hf_token(tmp_path: Path) -> None:
             repo_root=tmp_path,
             hf_repo="",
             hf_token="",
-            evaluator_version="v1",
         )
 
 
@@ -61,6 +58,5 @@ def test_sync_submissions_rejects_invalid_max_recent_refs(tmp_path: Path) -> Non
             repo_root=tmp_path,
             hf_repo="org/dataset",
             hf_token="hf-token",
-            evaluator_version="v1",
             max_recent_refs=0,
         )
