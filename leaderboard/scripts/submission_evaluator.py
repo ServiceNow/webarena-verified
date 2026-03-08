@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import datetime as dt
-from pathlib import Path
+import logging
+from pathlib import Path  # noqa: TC003
 
 from webarena_verified.api import WebArenaVerified
+from webarena_verified.submission.config import SubmissionFlowConfig
+from webarena_verified.submission.models import SubmissionMetadata, SubmissionMode
 from webarena_verified.types.data import TaskSubset
 from webarena_verified.types.eval import (
     WEBARENA_VERIFIED_VERSION,
@@ -11,11 +14,8 @@ from webarena_verified.types.eval import (
     TaskEvalResult,
     compute_evaluator_checksum,
 )
-from webarena_verified.types.task import WebArenaVerifiedTask
+from webarena_verified.types.task import WebArenaVerifiedTask  # noqa: TC001
 from webarena_verified.utils import get_package_assets_path
-
-from webarena_verified.submission.config import SubmissionFlowConfig
-from webarena_verified.submission.models import SubmissionMetadata, SubmissionMode
 
 from .models import (
     EvaluationScores,
@@ -24,6 +24,8 @@ from .models import (
     OverallCounts,
     SiteCounts,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SubmissionEvaluator:
@@ -82,6 +84,9 @@ class SubmissionEvaluator:
                 submission contains no hard-subset tasks.
         """
         task_dirs = sorted(path for path in submission_dir.iterdir() if path.is_dir() and path.name.isdigit())
+        logger.info(
+            "Evaluating %d task directories in %s (mode=%s)", len(task_dirs), submission_dir.name, submission_mode
+        )
         results: list[TaskEvalResult] = []
         for task_dir in task_dirs:
             task_id = int(task_dir.name)
@@ -92,6 +97,7 @@ class SubmissionEvaluator:
             )
             results.append(result)
 
+        logger.info("Evaluation finished: %d tasks evaluated", len(results))
         summaries: dict[SubmissionMode, EvaluationSummaryPayload] = {}
         if submission_mode in {SubmissionMode.FULL, SubmissionMode.BOTH}:
             summaries[SubmissionMode.FULL] = self._build_summary(
@@ -183,10 +189,32 @@ class SubmissionEvaluator:
                 per_site[site_key].failure_count += 1
                 per_site[site_key].failed_or_error_count += 1
 
-        for site_key, site_counts in per_site.items():
+        for _site_key, site_counts in per_site.items():
             site_counts.missing_count = max(site_counts.expected_total - site_counts.total, 0)
 
         return EvaluationSummaryCounts(overall=overall, per_site=per_site)
+
+    @staticmethod
+    def _tally_site_buckets(
+        items: list[TaskEvalResult] | list[WebArenaVerifiedTask],
+        *,
+        success_only: bool,
+    ) -> dict[str, int]:
+        single_sites = ("shopping", "shopping_admin", "gitlab", "map", "reddit")
+        all_keys: tuple[str, ...] = (*single_sites, "multisite", "gitlab_reddit")
+        buckets: dict[str, int] = {k: 0 for k in all_keys}  # noqa: C420
+        for item in items:
+            if success_only and getattr(item, "status", None) != EvalStatus.SUCCESS:
+                continue
+            site_values = {site.value for site in item.sites}
+            if len(site_values) > 1:
+                buckets["multisite"] += 1
+            if site_values == {"gitlab", "reddit"}:
+                buckets["gitlab_reddit"] += 1
+            for site_name in single_sites:
+                if site_name in site_values:
+                    buckets[site_name] += 1
+        return buckets
 
     def _build_scores(
         self, *, results: list[TaskEvalResult], expected_tasks: list[WebArenaVerifiedTask]
@@ -194,51 +222,15 @@ class SubmissionEvaluator:
         expected_total = len(expected_tasks)
         success_total = sum(1 for result in results if result.status == EvalStatus.SUCCESS)
 
-        expected_bucket_total = {
-            "shopping": 0,
-            "shopping_admin": 0,
-            "gitlab": 0,
-            "map": 0,
-            "reddit": 0,
-            "multisite": 0,
-            "gitlab_reddit": 0,
-        }
-        bucket_success = dict.fromkeys(expected_bucket_total, 0)
-
-        for task in expected_tasks:
-            site_values = {site.value for site in task.sites}
-            if len(site_values) > 1:
-                expected_bucket_total["multisite"] += 1
-            if site_values == {"gitlab", "reddit"}:
-                expected_bucket_total["gitlab_reddit"] += 1
-            for site_name in ("shopping", "shopping_admin", "gitlab", "map", "reddit"):
-                if site_name in site_values:
-                    expected_bucket_total[site_name] += 1
-
-        for result in results:
-            site_values = {site.value for site in result.sites}
-            if result.status == EvalStatus.SUCCESS:
-                if len(site_values) > 1:
-                    bucket_success["multisite"] += 1
-                if site_values == {"gitlab", "reddit"}:
-                    bucket_success["gitlab_reddit"] += 1
-
-            for site_name in ("shopping", "shopping_admin", "gitlab", "map", "reddit"):
-                if site_name in site_values and result.status == EvalStatus.SUCCESS:
-                    bucket_success[site_name] += 1
+        expected_bucket_total = self._tally_site_buckets(expected_tasks, success_only=False)
+        bucket_success = self._tally_site_buckets(results, success_only=True)
 
         def ratio(success_count: int, total_count: int) -> float:
             return 0.0 if total_count == 0 else success_count / total_count
 
         return EvaluationScores(
             overall=ratio(success_total, expected_total),
-            shopping=ratio(bucket_success["shopping"], expected_bucket_total["shopping"]),
-            shopping_admin=ratio(bucket_success["shopping_admin"], expected_bucket_total["shopping_admin"]),
-            gitlab=ratio(bucket_success["gitlab"], expected_bucket_total["gitlab"]),
-            map=ratio(bucket_success["map"], expected_bucket_total["map"]),
-            reddit=ratio(bucket_success["reddit"], expected_bucket_total["reddit"]),
-            multisite=ratio(bucket_success["multisite"], expected_bucket_total["multisite"]),
-            gitlab_reddit=ratio(bucket_success["gitlab_reddit"], expected_bucket_total["gitlab_reddit"]),
+            **{key: ratio(bucket_success[key], expected_bucket_total[key]) for key in bucket_success},
         )
 
     def _tasks_for_expected_ids(self, expected_task_ids: set[int]) -> list[WebArenaVerifiedTask]:

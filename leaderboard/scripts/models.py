@@ -5,7 +5,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
-from webarena_verified.submission.models import (
+from webarena_verified.submission.models import (  # noqa: TC001
     RelativePath,
     Sha256Hex,
     SubmissionMode,
@@ -87,7 +87,7 @@ class EvaluationSummaryCounts(BaseModel):
 
 
 class EvaluationScores(BaseModel):
-    """Normalised success-rate scores (0.0–1.0) broken down by site.
+    """Normalised success-rate scores (0.0-1.0) broken down by site.
 
     Computed by ``SubmissionEvaluator._build_scores`` from raw task results.
     The ``overall`` field is the aggregate across all tasks; remaining fields
@@ -198,8 +198,7 @@ class LeaderboardLatestArtifact(BaseModel):
     Written alongside each generation by ``LeaderboardBuilder``.  Contains
     the ``generation_id``, relative paths to the full and hard generation
     files, their SHA-256 digests, and a self-checksum.  The leaderboard UI
-    and ``rebuild_leaderboard_artifacts`` both read this file to locate the
-    active generation.
+    reads this file to locate the active generation.
     """
 
     model_config = ConfigDict(extra="forbid")
