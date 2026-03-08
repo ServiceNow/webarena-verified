@@ -1,0 +1,51 @@
+name: Leaderboard HF Ingest
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync_submissions:
+    name: Sync submissions from HF schedule trigger
+    runs-on: ubuntu-latest
+    concurrency:
+      group: leaderboard-data-writer
+      cancel-in-progress: false
+    steps:
+      - name: Checkout leaderboard-submissions
+        uses: actions/checkout@v4
+        with:
+          ref: leaderboard-submissions
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+          configure-git-identity: "true"
+
+      - name: Sync pending submissions from HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO: ${{ vars.WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO || vars.LEADERBOARD_HF_REPO || 'AmineHA/WebArena-Verified-Submissions-dev' }}
+        run: |
+          set -euo pipefail
+          uv run inv dev.leaderboard.hf-sync-submissions \
+            --repo-root "." \
+            --hf-repo "$WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO" \
+            --hf-token "$HF_TOKEN"
+
+      - name: Commit and push leaderboard updates
+        run: |
+          set -euo pipefail
+          git add -A leaderboard
+          if git diff --cached --quiet; then
+            echo "No submission sync changes" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          git commit -m "Sync HF submissions and rebuild leaderboard"
+          git push origin HEAD:leaderboard-submissions

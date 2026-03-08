@@ -1,0 +1,213 @@
+import pytest
+from pydantic import ValidationError
+
+from webarena_verified.types.leaderboard import (
+    CanonicalSubmissionRecord,
+    IntakeManifest,
+    IntakeSubmission,
+    SubmissionLeaderboard,
+)
+
+
+@pytest.fixture
+def canonical_submission_record_payload() -> dict:
+    return {
+        "submission_id": 123,
+        "submission_uid": "hf:owner/dataset:pr-123@abc123",
+        "github_pr_number": 123,
+        "github_pr_url": "https://github.com/owner/repo/pull/123",
+        "source_repository_id": 777,
+        "source_repository_full_name": "fork-owner/repo-fork",
+        "github_pr_author_id": 456,
+        "github_pr_author_login": "octocat",
+        "eval_completed_at_utc": "2026-02-07T12:10:00Z",
+        "evaluator_version": "1.2.3",
+        "status": "accepted",
+        "hf_repo": "owner/dataset",
+        "hf_path": "submissions/123",
+        "hf_revision": "abc123",
+        "hf_pr_number": 123,
+        "hf_head_sha": "abc123",
+        "hf_pr_url": "https://huggingface.co/datasets/owner/dataset/discussions/123",
+        "name": "TeamX-ModelY",
+        "model": "gpt-4.1-mini",
+        "leaderboard": "both",
+        "reference": "https://example.com/paper",
+        "code_repository": "https://github.com/org/repo",
+        "model_version": "v1",
+        "contact_email": "team@example.com",
+        "overall_score": 0.95,
+        "shopping_score": 0.91,
+        "reddit_score": 0.88,
+        "gitlab_score": 0.9,
+        "wikipedia_score": 0.87,
+        "map_score": 0.86,
+        "shopping_admin_score": 0.92,
+        "success_count": 10,
+        "failure_count": 2,
+        "error_count": 0,
+        "missing_count": 1,
+        "checksum": "a" * 64,
+    }
+
+
+@pytest.fixture
+def intake_submission_payload() -> dict:
+    return {
+        "name": "TeamX-ModelY",
+        "model": "gpt-4.1-mini",
+        "leaderboard": "both",
+        "reference": "https://example.com/paper",
+        "code_repository": "https://github.com/org/repo",
+        "created_at_utc": "2026-02-07T12:00:00Z",
+        "packaging_summary": {
+            "tasks_packaged": 100,
+            "tasks_with_issues": 3,
+            "duplicate_tasks": 1,
+            "unknown_tasks": 1,
+            "missing_from_output": 1,
+        },
+        "contact_email": "team@example.com",
+    }
+
+
+@pytest.fixture
+def intake_manifest_payload() -> dict:
+    return {
+        "schema_version": "1.0",
+        "created_at_utc": "2026-02-07T12:00:00Z",
+        "files": [
+            {
+                "path": "submission.json",
+                "sha256": "b" * 64,
+                "size_bytes": 128,
+            },
+            {
+                "path": "tasks/1/agent_response.json",
+                "sha256": "c" * 64,
+                "size_bytes": 256,
+            },
+        ],
+    }
+
+
+def test_canonical_submission_record_valid(canonical_submission_record_payload: dict):
+    record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    assert record.submission_id == 123
+    assert record.hf_revision == "abc123"
+
+
+def test_canonical_submission_record_allows_decoupled_github_identity(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload["github_pr_number"] = 456
+
+    record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    assert record.github_pr_number == 456
+
+
+def test_canonical_submission_record_allows_missing_legacy_source_fields(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload.pop("source_repository_id")
+    canonical_submission_record_payload.pop("source_repository_full_name")
+    canonical_submission_record_payload.pop("github_pr_author_id")
+    canonical_submission_record_payload.pop("github_pr_author_login")
+
+    record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    assert record.source_repository_id is None
+
+
+def test_canonical_submission_record_backfills_missing_model_from_name(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload.pop("model")
+
+    record = CanonicalSubmissionRecord(**canonical_submission_record_payload)
+    assert record.model == record.name
+
+
+def test_canonical_submission_record_rejects_invalid_overall_score(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload["overall_score"] = -0.1
+
+    with pytest.raises(ValidationError, match="greater than or equal to 0"):
+        CanonicalSubmissionRecord(**canonical_submission_record_payload)
+
+
+def test_canonical_submission_record_rejects_invalid_contact_email(canonical_submission_record_payload: dict):
+    canonical_submission_record_payload["contact_email"] = "not-an-email"
+
+    with pytest.raises(ValidationError, match="contact_email must be a valid email"):
+        CanonicalSubmissionRecord(**canonical_submission_record_payload)
+
+
+def test_intake_submission_valid(intake_submission_payload: dict):
+    intake = IntakeSubmission(**intake_submission_payload)
+    assert intake.packaging_summary.tasks_packaged == 100
+    assert intake.leaderboard == SubmissionLeaderboard.BOTH
+
+
+def test_intake_submission_allows_slash_in_name(intake_submission_payload: dict):
+    intake_submission_payload["name"] = "Group/Name"
+
+    intake = IntakeSubmission(**intake_submission_payload)
+    assert intake.name == "Group/Name"
+
+
+def test_intake_submission_rejects_unknown_field(intake_submission_payload: dict):
+    intake_submission_payload["submission_id"] = 123
+
+    with pytest.raises(ValidationError):
+        IntakeSubmission(**intake_submission_payload)
+
+
+def test_intake_submission_rejects_name_too_long(intake_submission_payload: dict):
+    intake_submission_payload["name"] = "x" * 65
+
+    with pytest.raises(ValidationError, match="at most"):
+        IntakeSubmission(**intake_submission_payload)
+
+
+def test_intake_submission_rejects_missing_model(intake_submission_payload: dict):
+    intake_submission_payload.pop("model")
+
+    with pytest.raises(ValidationError, match="model"):
+        IntakeSubmission(**intake_submission_payload)
+
+
+def test_intake_submission_rejects_missing_contact_email(intake_submission_payload: dict):
+    intake_submission_payload.pop("contact_email")
+
+    with pytest.raises(ValidationError, match="contact_email"):
+        IntakeSubmission(**intake_submission_payload)
+
+
+def test_intake_submission_allows_missing_code_repository(intake_submission_payload: dict):
+    intake_submission_payload.pop("code_repository")
+
+    intake = IntakeSubmission(**intake_submission_payload)
+    assert intake.code_repository is None
+
+
+def test_intake_manifest_valid(intake_manifest_payload: dict):
+    manifest = IntakeManifest(**intake_manifest_payload)
+    assert len(manifest.files) == 2
+
+
+def test_intake_manifest_rejects_duplicate_paths(intake_manifest_payload: dict):
+    intake_manifest_payload["files"] = [
+        {
+            "path": "tasks/1/network.har",
+            "sha256": "d" * 64,
+            "size_bytes": 1,
+        },
+        {
+            "path": "tasks/1/network.har",
+            "sha256": "e" * 64,
+            "size_bytes": 2,
+        },
+    ]
+
+    with pytest.raises(ValidationError, match="unique path"):
+        IntakeManifest(**intake_manifest_payload)
+
+
+def test_intake_manifest_rejects_path_traversal(intake_manifest_payload: dict):
+    intake_manifest_payload["files"][0]["path"] = "../submission.json"
+
+    with pytest.raises(ValidationError, match=r"must not contain '\.\.'"):
+        IntakeManifest(**intake_manifest_payload)

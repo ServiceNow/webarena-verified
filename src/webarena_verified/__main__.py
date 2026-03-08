@@ -13,6 +13,8 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
+from huggingface_hub.errors import HfHubHTTPError, HFValidationError
+
 from webarena_verified.api.internal.subsets_manager import SubsetsManager
 from webarena_verified.api.webarena_verified import WebArenaVerified
 from webarena_verified.core.utils import logger
@@ -36,6 +38,8 @@ from webarena_verified.utils import (
     get_eval_result_file_path,
     get_trace_file_path,
 )
+
+_DEFAULT_HF_REPO = "AmineHA/WebArena-Verified-Submissions-dev"
 
 
 def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
@@ -241,6 +245,11 @@ def create_parser() -> argparse.ArgumentParser:
         default=None,
         help="Path to executable script that transforms agent response (receives file path, outputs JSON to stdout)",
     )
+    eval_tasks_parser.add_argument(
+        "--write-evaluation-summary",
+        action="store_true",
+        help="Write evaluation_summary.json for full-folder runs (disallowed with --task-ids)",
+    )
 
     # subset-export subcommand
     subset_export_parser = subparsers.add_parser(
@@ -389,57 +398,79 @@ def create_parser() -> argparse.ArgumentParser:
     agent_input_get_parser.add_argument("--output", type=str, help="Output JSON file path")
 
     # create-submission-pkg subcommand
-    submission_tar_parser = subparsers.add_parser(
+    submission_parser = subparsers.add_parser(
         "create-submission-pkg",
         help="Create submission package from task outputs",
-        description="Package agent responses and trimmed network traces into a tar archive or folder",
+        description="Package agent responses and network traces into a submission folder",
         epilog=textwrap.dedent("""
             examples:
               # Create submission from single directory
-              webarena-verified create-submission-pkg --run-output-dir ./output --output ./submissions
+              webarena-verified create-submission-pkg --run-output-dir ./output --output ./my-submission
 
               # Use glob pattern to match multiple directories
-              webarena-verified create-submission-pkg --run-output-dir "./runs/run_*" --output ./submissions
+              webarena-verified create-submission-pkg --run-output-dir "./runs/run_*" --output ./my-submission
 
               # Mix explicit paths and glob patterns
-              webarena-verified create-submission-pkg --run-output-dir ./special "./runs/run_*" --output ./submissions
+              webarena-verified create-submission-pkg --run-output-dir ./special "./runs/run_*" --output ./my-submission
 
-              # Output as folder instead of tar
-              webarena-verified create-submission-pkg --run-output-dir ./output --output ./submissions --no-tar
+              # Create package for hard leaderboard tasks only
+              webarena-verified create-submission-pkg --run-output-dir ./output \
+                --output ./my-submission --leaderboard hard
 
-              # Use custom name instead of auto-generated timestamp
+              # Overwrite existing output directory
               webarena-verified create-submission-pkg --run-output-dir ./output \\
-                --output ./submissions --name experiment-001
-
-            Output naming:
-              - Default (auto-generated): webarena-verified-submission-YYYYMMDD_HHMMSS.tar.gz
-              - Custom name: {custom-name}.tar.gz (or {custom-name}/ for folder mode)
+                --output ./my-submission --force
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    submission_tar_parser.add_argument(
+    submission_parser.add_argument(
         "--run-output-dir",
         type=str,
         nargs="+",
         required=True,
         help="One or more run output directories (supports glob patterns like './runs/run_*')",
     )
-    submission_tar_parser.add_argument(
+    submission_parser.add_argument(
         "--output",
         type=str,
         required=True,
-        help="Output root directory (submission created inside with timestamp)",
+        help="Output submission package directory path",
     )
-    submission_tar_parser.add_argument(
-        "--no-tar",
-        action="store_true",
-        help="Skip tar creation, output as folder instead",
-    )
-    submission_tar_parser.add_argument(
-        "--name",
+    submission_parser.add_argument(
+        "--leaderboard",
         type=str,
-        default=None,
-        help="Custom name for submission package (if not provided, auto-generates timestamp-based name)",
+        default="both",
+        choices=["hard", "full", "both"],
+        help="Target leaderboard coverage scope for packaging (default: both)",
+    )
+    submission_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite output directory if it already exists",
+    )
+
+    submit_parser = subparsers.add_parser(
+        "submit",
+        help="Submit a package to the HuggingFace leaderboard dataset",
+        description="Upload a submission package to HuggingFace and create a PR for leaderboard evaluation",
+        epilog=textwrap.dedent("""
+            examples:
+              # Submit package after editing submission.json
+              webarena-verified submit \\
+                --submission-dir ./my-submission
+
+        environment variables:
+          HF_TOKEN                                         HuggingFace authentication token (or use: hf auth login)
+          WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO Target dataset repository
+                                                           (default: AmineHA/WebArena-Verified-Submissions-dev)
+            """),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    submit_parser.add_argument(
+        "--submission-dir",
+        type=str,
+        required=True,
+        help="Path to submission package directory (output of create-submission-pkg)",
     )
 
     # trim-network-logs subcommand
@@ -901,6 +932,10 @@ def eval_tasks(args: argparse.Namespace) -> int:
     """Execute eval-tasks command (batch evaluation)"""
     output_dir = Path(args.output_dir)
 
+    if args.write_evaluation_summary and args.task_ids:
+        logger.error("--write-evaluation-summary is only supported for full-folder evaluation (without --task-ids)")
+        return 1
+
     # Resolve initial config for task discovery (without task_id)
     task_config = _resolve_config(args.config, output_dir)
     wa = _create_evaluator(task_config)
@@ -917,6 +952,7 @@ def eval_tasks(args: argparse.Namespace) -> int:
     # Print header and setup logging
     _print_batch_header(task_ids)
     log_file = output_dir / "eval_log.txt"
+    expected_tasks = [wa.get_task(task_id) for task_id in task_ids]
 
     # Evaluate each task
     results = []
@@ -974,7 +1010,11 @@ def eval_tasks(args: argparse.Namespace) -> int:
 
     # Create TasksEvalResults and save to file
     data_checksum = compute_data_file_checksum(task_config.test_data_file)
-    tasks_eval_results = TasksEvalResults.create(task_results=results, data_checksum=data_checksum)
+    tasks_eval_results = TasksEvalResults.create(
+        task_results=results,
+        data_checksum=data_checksum,
+        expected_tasks=expected_tasks,
+    )
 
     # Save results to file (skip when task-ids is specified since it's a partial evaluation)
     if args.task_ids:
@@ -987,6 +1027,12 @@ def eval_tasks(args: argparse.Namespace) -> int:
                 tasks_eval_results.model_dump(mode="json", exclude_none=True, exclude={"task_results"}), indent=2
             )
         )
+
+    if getattr(args, "write_evaluation_summary", False):
+        summary_file = output_dir / "evaluation_summary.json"
+        summary_payload = tasks_eval_results.model_dump(mode="json", exclude_none=True, exclude={"task_results"})
+        summary_file.write_text(serialize_to_json(summary_payload, indent=2))
+        logger.info(f"Wrote evaluation summary to {summary_file}")
 
     # Print summary banner and output JSON to stdout (exclude detailed task_results)
     print("\n" + "=" * 60)
@@ -1457,8 +1503,9 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     # Display command info
     command_info = {
         "Command": "create-submission-pkg",
-        "Output Root": args.output,
-        "Format": "Folder" if args.no_tar else "Tar Archive",
+        "Output Path": args.output,
+        "Leaderboard": args.leaderboard,
+        "Force Overwrite": args.force,
         "Run Output Directories": "\n" + "\n".join(f"  • {path}" for path in args.run_output_dir),
     }
     logging_helper.print_panel("Submission Package Creation", command_info)
@@ -1474,7 +1521,7 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
         else:
             output_dirs.append(Path(pattern))
 
-    output_root = Path(args.output)
+    output_path = Path(args.output)
 
     wa = WebArenaVerified()
 
@@ -1482,14 +1529,14 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     def show_progress(current: int, total: int, task_id: int) -> None:
         logging_helper.print_progress(current, total, f"Processing task ID {task_id}")
 
-    logger.info("Processing run logs (copying agent response files and trimmed network logs)")
+    logger.info("Processing run logs (copying agent response and network log files)")
 
     try:
         result = wa.create_submission(
             output_dirs=output_dirs,
-            output_root=output_root,
-            no_tar=args.no_tar,
-            custom_name=args.name,
+            output_dir=output_path,
+            leaderboard=args.leaderboard,
+            force=args.force,
             progress_callback=show_progress,
         )
     except ValueError as e:
@@ -1503,35 +1550,16 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     print()
     logger.info("Processing complete")
 
-    # Calculate total valid tasks from all categories
-    total_found = (
-        len(result.tasks_packaged)
-        + len(result.missing_agent_response)
-        + len(result.missing_network_har)
-        + len(result.missing_both_files)
-        + len(result.invalid_har_files)
-    )
-    total_expected = total_found + len(result.missing_task_ids)
-
-    # Create summary dict with counts only (no lists)
     summary_info = {
         "Output Path": result.output_path,
-        "Type": "Tar Archive" if result.is_tar else "Folder",
-        "Tasks Packaged": f"{len(result.tasks_packaged)}/{total_expected}",
-        "Missing Agent Response": len(result.missing_agent_response),
-        "Missing Network HAR": len(result.missing_network_har),
-        "Missing Both Files": len(result.missing_both_files),
-        "Invalid HAR Files": len(result.invalid_har_files),
-        "Empty Agent Response": len(result.empty_agent_response),
-        "Duplicate Tasks": len(result.duplicate_task_ids),
-        "Unknown Tasks": len(result.unknown_task_ids),
-        "Missing from Output": len(result.missing_task_ids),
+        "Leaderboard": args.leaderboard,
+        "Packaged Task Directories": len(result.tasks_packaged),
     }
 
-    if result.archive_size:
-        summary_info["Archive Size"] = f"{result.archive_size:,} bytes"
-
-    summary_info["Summary File"] = result.summary_file
+    for board, stats in sorted(result.packaged_tasks.items()):
+        summary_info[f"{board.title()} Coverage"] = (
+            f"{stats.valid}/{stats.expected} (incomplete: {stats.incomplete}, missing: {stats.missing})"
+        )
 
     # Display results in a panel
     logging_helper.print_panel("Submission Package Created", summary_info)
@@ -1540,6 +1568,51 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
         logger.error("No valid tasks were packaged")
         return 1
 
+    submission_file = Path(result.output_path) / "submission.json"
+    print("\nNext steps:")
+    print(
+        f"  1. Edit {submission_file} with your submission details "
+        "(name, model, reference, contact_email, optional code_repository)"
+    )
+    print(f"  2. Run: webarena-verified submit --submission-dir {result.output_path}")
+
+    return 0
+
+
+def submit_cmd(args: argparse.Namespace) -> int:
+    hf_repo = os.environ.get("WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO", _DEFAULT_HF_REPO)
+
+    hf_token = os.environ.get("HF_TOKEN")
+
+    command_info = {
+        "Command": "submit",
+        "Submission Directory": args.submission_dir,
+        "HF Repository": hf_repo,
+    }
+    logging_helper.print_panel("Leaderboard Submission", command_info)
+
+    try:
+        wa = WebArenaVerified()
+        result = wa.submit(
+            submission_dir=Path(args.submission_dir),
+            hf_repo=hf_repo,
+            hf_token=hf_token,
+        )
+    except ValueError as e:
+        logger.error(str(e))
+        return 1
+    except (HfHubHTTPError, HFValidationError) as e:
+        logger.error(f"HuggingFace submission failed: {e}")
+        return 1
+
+    result_info = {
+        "PR URL": result.pr_url,
+        "PR Number": result.pr_number,
+        "Submission UID": result.submission_uid,
+        "Tasks Submitted": result.tasks_submitted,
+        "HF Repository": result.hf_repo,
+    }
+    logging_helper.print_panel("Submission Created", result_info)
     return 0
 
 
@@ -1563,6 +1636,8 @@ def main() -> None:
         sys.exit(subsets_create(args))
     elif args.command == "create-submission-pkg":
         sys.exit(create_submission_pkg(args))
+    elif args.command == "submit":
+        sys.exit(submit_cmd(args))
     elif args.command == "trim-network-logs":
         sys.exit(trim_network_logs(args))
     elif args.command == "dataset-get":

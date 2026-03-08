@@ -1,0 +1,67 @@
+name: Leaderboard Site Build
+
+on:
+  pull_request:
+    paths:
+      - "leaderboard/site/**"
+      - ".github/workflows/leaderboard-site-build.yml"
+  workflow_dispatch:
+    inputs:
+      manifest_url_override:
+        description: "Optional manifest URL override for this run"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leaderboard-site-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build leaderboard site with production manifest source
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: leaderboard/site/package-lock.json
+
+      - name: Install site dependencies
+        run: npm ci
+        working-directory: leaderboard/site
+
+      - name: Resolve manifest URL
+        id: cfg
+        env:
+          MANIFEST_URL_OVERRIDE: ${{ github.event.inputs.manifest_url_override }}
+          CONFIGURED_MANIFEST_URL: ${{ vars.PUBLIC_LEADERBOARD_MANIFEST_URL }}
+        run: |
+          set -euo pipefail
+          MANIFEST_URL="$(uv run inv dev.leaderboard.site-resolve-manifest-url \
+            --manifest-url-override "$MANIFEST_URL_OVERRIDE" \
+            --configured-manifest-url "$CONFIGURED_MANIFEST_URL")"
+          echo "$MANIFEST_URL"
+          echo "manifest_url=$MANIFEST_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Run site tests
+        run: npm test
+        working-directory: leaderboard/site
+
+      - name: Build site
+        env:
+          PUBLIC_LEADERBOARD_MANIFEST_URL: ${{ steps.cfg.outputs.manifest_url }}
+        run: npm run build
+        working-directory: leaderboard/site
+
+      - name: Build summary
+        run: |
+          echo "manifest_url=${{ steps.cfg.outputs.manifest_url }}" >> "$GITHUB_STEP_SUMMARY"

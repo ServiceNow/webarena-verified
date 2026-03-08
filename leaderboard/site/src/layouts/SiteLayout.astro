@@ -1,0 +1,64 @@
+---
+import "../styles/global.css";
+
+const { title, description = "WebArena-Verified leaderboard and benchmark resources." } = Astro.props;
+const pathname = Astro.url.pathname;
+const baseUrl = import.meta.env.BASE_URL;
+const withBase = (path) => new URL(path.replace(/^\//, ""), `https://dummy${baseUrl}`).pathname;
+const basePath = withBase("/");
+
+const navLinks = [
+  { href: withBase("/"), label: "Leaderboard" },
+  { href: withBase("/submission"), label: "Submission Guidelines" },
+  { href: "https://servicenow.github.io/webarena-verified/", label: "Documentation", external: true },
+  { href: "https://github.com/ServiceNow/webarena-verified", label: "GitHub", external: true },
+  { href: withBase("/contact"), label: "Contact" }
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href={withBase("/favicon.ico")} />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-shell site-header-inner">
+        <a class="brand" href={withBase("/")}>
+          <span>WebArena-Verified</span>
+        </a>
+        <nav class="top-nav" aria-label="Main">
+          {
+            navLinks.map((link) => {
+              const isActive = !link.external && (link.href === basePath ? pathname === link.href : pathname.startsWith(link.href));
+              return (
+                <a
+                  href={link.href}
+                  class={isActive ? "active" : ""}
+                  target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noreferrer" : undefined}
+                >
+                  {link.label}
+                  {link.external ? <span class="external-link-icon" aria-hidden="true">↗</span> : null}
+                </a>
+              );
+            })
+          }
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-shell page-shell-wide">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-shell footer-inner">
+        <p>WebArena-Verified benchmark leaderboard and submission portal.</p>
+      </div>
+    </footer>
+  </body>
+</html>

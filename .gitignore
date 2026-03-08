@@ -225,6 +225,8 @@ __marimo__/
 output/
 scratch/
 *.wip.json
+.sisyphus/
+.wip/
 *.json.backup
 *.json.bkp
 *.tmp.json

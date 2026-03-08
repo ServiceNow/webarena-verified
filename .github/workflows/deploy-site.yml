@@ -1,0 +1,111 @@
+name: Deploy Site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "leaderboard/site/**"
+      - ".github/workflows/deploy-site.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Docs version to deploy (e.g., 1.0.0 or dev)"
+        required: false
+        default: "dev"
+      manifest_url_override:
+        description: "Optional leaderboard manifest URL override"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy docs and leaderboard
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          sync-args: --group dev
+          configure-git-identity: "true"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: leaderboard/site/package-lock.json
+
+      - name: Install leaderboard site dependencies
+        run: npm ci
+        working-directory: leaderboard/site
+
+      - name: Fetch gh-pages branch
+        run: |
+          git fetch origin gh-pages --depth=1 || echo "gh-pages branch does not exist yet"
+
+      # Step 1: mike deploy (no --push) updates local gh-pages ref
+      - name: Deploy docs to local gh-pages
+        run: uv run mike deploy ${{ inputs.version || 'dev' }}
+
+      # Step 2: Build leaderboard Astro app
+      - name: Resolve manifest URL
+        id: cfg
+        env:
+          MANIFEST_URL_OVERRIDE: ${{ inputs.manifest_url_override || '' }}
+          CONFIGURED_MANIFEST_URL: ${{ vars.PUBLIC_LEADERBOARD_MANIFEST_URL }}
+        run: |
+          set -euo pipefail
+          MANIFEST_URL="$(uv run inv dev.leaderboard.site-resolve-manifest-url \
+            --manifest-url-override "$MANIFEST_URL_OVERRIDE" \
+            --configured-manifest-url "$CONFIGURED_MANIFEST_URL")"
+          echo "manifest_url=$MANIFEST_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Build leaderboard site
+        env:
+          PUBLIC_LEADERBOARD_MANIFEST_URL: ${{ steps.cfg.outputs.manifest_url }}
+        run: npm run build
+        working-directory: leaderboard/site
+
+      # Step 3: Inject leaderboard dist into gh-pages and push
+      - name: Inject leaderboard and push gh-pages
+        run: |
+          set -euo pipefail
+
+          # Checkout gh-pages into a worktree
+          git worktree add _gh-pages gh-pages
+
+          # Remove old leaderboard dir (if any) and copy fresh build
+          rm -rf _gh-pages/leaderboard
+          cp -r leaderboard/site/dist _gh-pages/leaderboard
+
+          # Commit and push
+          cd _gh-pages
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to deploy" >> "$GITHUB_STEP_SUMMARY"
+          else
+            git commit -m "Deploy docs and leaderboard"
+            git push origin gh-pages
+            echo "Deployed docs and leaderboard to gh-pages" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Deploy summary
+        run: |
+          echo "docs_version=${{ inputs.version || 'dev' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "manifest_url=${{ steps.cfg.outputs.manifest_url }}" >> "$GITHUB_STEP_SUMMARY"

@@ -2,22 +2,24 @@
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from webarena_verified.core.utils import logger
 from webarena_verified.environments import MAGENTO_ADMIN_AUTO_LOGIN_HEADER
+from webarena_verified.submission import SubmissionPackager, SubmissionUploader
+from webarena_verified.submission.models import SubmissionMode
 from webarena_verified.types.agent_response import MainObjectiveType
 from webarena_verified.types.config import WebArenaVerifiedConfig
+from webarena_verified.types.data import TaskSubset
 from webarena_verified.types.eval import TaskEvalResult
+from webarena_verified.types.submission import PackagedTaskStats, SubmissionResult
+from webarena_verified.types.submit_result import SubmitResult
 from webarena_verified.types.task import WebArenaSite, WebArenaVerifiedTask
 from webarena_verified.types.tracing import NetworkTrace
+from webarena_verified.utils import get_package_assets_path
 
 from .internal.data_reader import WebArenaVerifiedDataReader
 from .internal.evaluator import WebArenaVerifiedEvaluator
-from .internal.submission_handler import SubmissionHandler
-
-if TYPE_CHECKING:
-    from .internal.submission_handler import SubmissionResult
 
 
 class WebArenaVerified:
@@ -242,60 +244,101 @@ class WebArenaVerified:
     def create_submission(
         self,
         output_dirs: list[Path],
-        output_root: Path,
+        output_dir: Path,
         *,
-        no_tar: bool = False,
-        custom_name: str | None = None,
+        leaderboard: str = "both",
+        force: bool = False,
         progress_callback: Callable[[int, int, int], None] | None = None,
     ) -> "SubmissionResult":
         """Create submission package from task outputs.
 
-        Never fails - always creates a package with summary.json documenting issues.
-
         Args:
             output_dirs: List of output directories to scan
-            output_root: Root directory where submission will be created
-            no_tar: If True, output as folder instead of tar.gz
-            custom_name: Optional custom name for submission package (auto-generates timestamp if None)
+            output_dir: Output directory where submission package will be created
+            leaderboard: Target leaderboard scope (hard, full, both)
+            force: Whether to overwrite output_dir if it already exists
             progress_callback: Optional callback for progress updates (current, total, task_id)
 
         Returns:
-            SubmissionResult with comprehensive issue tracking:
-                - output_path: Final output path (with timestamp)
-                - is_tar: True for tar.gz, False for folder
+            SubmissionResult with packaging stats:
+                - output_path: Final output path
                 - tasks_packaged: List of task IDs successfully packaged
-                - missing_agent_response: Task IDs missing only agent_response.json
-                - missing_network_har: Task IDs missing only network.har
-                - missing_both_files: Task IDs missing both required files
-                - invalid_har_files: Task IDs with invalid or empty HAR files
-                - empty_agent_response: Task IDs with empty agent response files
-                - duplicate_task_ids: Task IDs found in multiple directories
-                - unknown_task_ids: Task IDs not in reader's dataset
-                - missing_task_ids: Valid task IDs with no output directory
-                - archive_size: Size in bytes (tar only, None for folder)
-                - summary_file: Path to summary.json with detailed issue info
+                - packaged_tasks: Coverage counts per leaderboard
 
         Raises:
-            ValueError: If custom_name contains invalid characters
-            FileExistsError: If output path already exists
+            ValueError: If leaderboard is invalid or hard subset is inconsistent
+            FileExistsError: If output path already exists and force is False
 
         Example:
             ```python
             wa = WebArenaVerified()
             result = wa.create_submission(
                 output_dirs=[Path("./run1"), Path("./run2")],
-                output_root=Path("./submissions"),
-                custom_name="experiment-001",  # Optional custom name
+                output_dir=Path("./my-submission"),
+                leaderboard="both",
+                force=True,
             )
             print(f"Packaged {len(result.tasks_packaged)} tasks")
-            print(f"Issues: {len(result.duplicate_task_ids)} duplicates")
-            print(f"See details: {result.summary_file}")
+            print(result.packaged_tasks)
             ```
         """
-        valid_task_ids = set(self._reader.task_id_map.keys())
-        handler = SubmissionHandler(output_dirs, self._config, valid_task_ids)
-        return handler.create_submission(
-            output_root, no_tar=no_tar, custom_name=custom_name, progress_callback=progress_callback
+        mode = SubmissionMode(leaderboard)
+        packager = SubmissionPackager(run_output_dirs=output_dirs, evaluator_config=self._config)
+        result = packager.create_package(output_dir=output_dir, mode=mode, force=force)
+
+        hard_subset_path = get_package_assets_path() / "dataset" / "subsets" / "webarena-verified-hard.json"
+        hard_task_ids = set(TaskSubset.from_file(hard_subset_path).task_ids)
+        all_task_ids = {task.task_id for task in self.get_tasks()}
+        packaged_task_ids = set(result.tasks_packaged)
+
+        packaged_tasks: dict[str, PackagedTaskStats] = {}
+        if mode in {SubmissionMode.FULL, SubmissionMode.BOTH}:
+            full_expected = len(all_task_ids)
+            full_valid = len(packaged_task_ids & all_task_ids)
+            packaged_tasks["full"] = PackagedTaskStats(
+                valid=full_valid,
+                incomplete=0,
+                missing=max(full_expected - full_valid, 0),
+                expected=full_expected,
+            )
+        if mode in {SubmissionMode.HARD, SubmissionMode.BOTH}:
+            hard_expected = len(all_task_ids & hard_task_ids)
+            hard_valid = len(packaged_task_ids & hard_task_ids)
+            packaged_tasks["hard"] = PackagedTaskStats(
+                valid=hard_valid,
+                incomplete=0,
+                missing=max(hard_expected - hard_valid, 0),
+                expected=hard_expected,
+            )
+
+        return SubmissionResult(
+            output_path=result.output_path,
+            tasks_packaged=result.tasks_packaged,
+            packaged_tasks=packaged_tasks,
+        )
+
+    def submit(
+        self,
+        submission_dir: Path,
+        *,
+        hf_repo: str | None = None,
+        hf_token: str | None = None,
+    ) -> "SubmitResult":
+        import os
+
+        resolved_repo = hf_repo or os.environ.get(
+            "WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO",
+            "AmineHA/WebArena-Verified-Submissions-dev",
+        )
+        uploader = SubmissionUploader(submission_dir=submission_dir, hf_repo=resolved_repo, hf_token=hf_token)
+        uploaded = uploader.upload()
+        return SubmitResult(
+            pr_url=uploaded.pr_url,
+            pr_number=uploaded.pr_number,
+            submission_uid=uploaded.submission_uid,
+            hf_repo=uploaded.hf_repo,
+            submission_dir=uploaded.submission_dir,
+            tasks_submitted=uploaded.tasks_submitted,
         )
 
     @staticmethod
