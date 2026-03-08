@@ -90,7 +90,9 @@ extra_css:
   - stylesheets/default.css
 
 nav:
-  - Leaderboard: https://servicenow.github.io/webarena-verified/leaderboard/
+  - Leaderboard:
+      - Overview: leaderboard/index.md
+      - Submitting Results: leaderboard/submission.md
   - Getting Started:
       - Quick Start: index.md
       - Usage:

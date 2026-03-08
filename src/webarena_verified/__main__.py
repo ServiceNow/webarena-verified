@@ -13,6 +13,8 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
+from huggingface_hub.errors import HFValidationError, HfHubHTTPError
+from webarena_verified.api.internal.submit_handler import SubmitHandler
 from webarena_verified.api.internal.subsets_manager import SubsetsManager
 from webarena_verified.api.webarena_verified import WebArenaVerified
 from webarena_verified.core.utils import logger
@@ -36,6 +38,8 @@ from webarena_verified.utils import (
     get_eval_result_file_path,
     get_trace_file_path,
 )
+
+_DEFAULT_HF_REPO = "AmineHA/WebArena-Verified-Submissions-dev"
 
 
 def _add_env_subcommand(subparsers: argparse._SubParsersAction) -> None:
@@ -433,6 +437,57 @@ def create_parser() -> argparse.ArgumentParser:
         default=None,
         help="Custom name for submission package (if not provided, auto-generates timestamp-based name)",
     )
+
+    submit_parser = subparsers.add_parser(
+        "submit",
+        help="Submit a package to the HuggingFace leaderboard dataset",
+        description="Upload a submission package to HuggingFace and create a PR for leaderboard evaluation",
+        epilog=textwrap.dedent("""
+            examples:
+              # Submit with required fields
+              webarena-verified submit \\
+                --submission-dir ./submissions/my-submission \\
+                --name "TeamX/ModelY" \\
+                --leaderboard both \\
+                --reference "https://example.com/paper"
+
+              # Submit with optional fields
+              webarena-verified submit \\
+                --submission-dir ./submissions/my-submission \\
+                --name "TeamX/ModelY" \\
+                --leaderboard hard \\
+                --reference "https://example.com/paper" \\
+                --version "v1.0" \\
+                --contact-info "team@example.com"
+
+        environment variables:
+          HF_TOKEN                                         HuggingFace authentication token (or use: hf auth login)
+              WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO Target dataset repository (default: AmineHA/WebArena-Verified-Submissions-dev)
+            """),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    submit_parser.add_argument(
+        "--submission-dir",
+        type=str,
+        required=True,
+        help="Path to submission package directory (output of create-submission-pkg)",
+    )
+    submit_parser.add_argument("--name", type=str, required=True, help="Model or team name (e.g., TeamX/ModelY)")
+    submit_parser.add_argument(
+        "--leaderboard",
+        type=str,
+        required=True,
+        choices=["hard", "full", "both"],
+        help="Target leaderboard",
+    )
+    submit_parser.add_argument(
+        "--reference",
+        type=str,
+        required=True,
+        help="HTTP(S) URL to paper or model reference",
+    )
+    submit_parser.add_argument("--version", type=str, default=None, help="Model version identifier")
+    submit_parser.add_argument("--contact-info", type=str, default=None, help="Contact email address")
 
     # trim-network-logs subcommand
     trim_logs_parser = subparsers.add_parser(
@@ -1529,6 +1584,52 @@ def create_submission_pkg(args: argparse.Namespace) -> int:
     return 0
 
 
+def submit_cmd(args: argparse.Namespace) -> int:
+    hf_repo = os.environ.get("WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO", _DEFAULT_HF_REPO)
+
+    hf_token = os.environ.get("HF_TOKEN")
+
+    command_info = {
+        "Command": "submit",
+        "Submission Directory": args.submission_dir,
+        "Name": args.name,
+        "Leaderboard": args.leaderboard,
+        "Reference": args.reference,
+        "HF Repository": hf_repo,
+    }
+    logging_helper.print_panel("Leaderboard Submission", command_info)
+
+    try:
+        handler = SubmitHandler(
+            submission_dir=Path(args.submission_dir),
+            hf_repo=hf_repo,
+            hf_token=hf_token,
+        )
+        result = handler.submit(
+            name=args.name,
+            leaderboard=args.leaderboard,
+            reference=args.reference,
+            version=args.version,
+            contact_info=args.contact_info,
+        )
+    except ValueError as e:
+        logger.error(str(e))
+        return 1
+    except (HfHubHTTPError, HFValidationError) as e:
+        logger.error(f"HuggingFace submission failed: {e}")
+        return 1
+
+    result_info = {
+        "PR URL": result.pr_url,
+        "PR Number": result.pr_number,
+        "Submission UID": result.submission_uid,
+        "Tasks Submitted": result.tasks_submitted,
+        "HF Repository": result.hf_repo,
+    }
+    logging_helper.print_panel("Submission Created", result_info)
+    return 0
+
+
 def main() -> None:
     """Main CLI entry point"""
     parser = create_parser()
@@ -1549,6 +1650,8 @@ def main() -> None:
         sys.exit(subsets_create(args))
     elif args.command == "create-submission-pkg":
         sys.exit(create_submission_pkg(args))
+    elif args.command == "submit":
+        sys.exit(submit_cmd(args))
     elif args.command == "trim-network-logs":
         sys.exit(trim_network_logs(args))
     elif args.command == "dataset-get":

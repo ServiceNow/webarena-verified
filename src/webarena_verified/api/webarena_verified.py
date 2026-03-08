@@ -14,10 +14,12 @@ from webarena_verified.types.tracing import NetworkTrace
 
 from .internal.data_reader import WebArenaVerifiedDataReader
 from .internal.evaluator import WebArenaVerifiedEvaluator
+from .internal.submit_handler import SubmitHandler
 from .internal.submission_handler import SubmissionHandler
 
 if TYPE_CHECKING:
-    from .internal.submission_handler import SubmissionResult
+    from webarena_verified.types.submit_result import SubmitResult
+    from webarena_verified.types.submission import SubmissionResult
 
 
 class WebArenaVerified:
@@ -291,6 +293,33 @@ class WebArenaVerified:
         valid_task_ids = set(self._reader.task_id_map.keys())
         handler = SubmissionHandler(output_dirs, self._config, valid_task_ids)
         return handler.create_submission(output_root, custom_name=custom_name, progress_callback=progress_callback)
+
+    def submit(
+        self,
+        submission_dir: Path,
+        *,
+        name: str,
+        leaderboard: str,
+        reference: str,
+        hf_repo: str | None = None,
+        hf_token: str | None = None,
+        version: str | None = None,
+        contact_info: str | None = None,
+    ) -> "SubmitResult":
+        import os
+
+        resolved_repo = hf_repo or os.environ.get(
+            "WEBARENA_VERIFIED_LEADERBOARD_SUBMISSION_HF_REPO",
+            "AmineHA/WebArena-Verified-Submissions-dev",
+        )
+        handler = SubmitHandler(submission_dir=submission_dir, hf_repo=resolved_repo, hf_token=hf_token)
+        return handler.submit(
+            name=name,
+            leaderboard=leaderboard,
+            reference=reference,
+            version=version,
+            contact_info=contact_info,
+        )
 
     @staticmethod
     def _load_config(config: Path | WebArenaVerifiedConfig | None = None) -> WebArenaVerifiedConfig:

@@ -7160,8 +7160,8 @@ name = "uvicorn"
 version = "0.38.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "click" },
-    { name = "h11" },
+    { name = "click", marker = "sys_platform != 'emscripten'" },
+    { name = "h11", marker = "sys_platform != 'emscripten'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cb/ce/f06b84e2697fef4688ca63bdb2fdf113ca0a3be33f94488f2cadb690b0cf/uvicorn-0.38.0.tar.gz", hash = "sha256:fd97093bdd120a2609fc0d3afe931d4d4ad688b6e75f0f929fde1bc36fe0e91d", size = 80605, upload-time = "2025-10-18T13:46:44.63Z" }
 wheels = [
@@ -7244,6 +7244,7 @@ dependencies = [
     { name = "compact-json" },
     { name = "geographiclib" },
     { name = "geopy" },
+    { name = "huggingface-hub" },
     { name = "jsonpath-ng" },
     { name = "pint" },
     { name = "price-parser" },
@@ -7278,7 +7279,6 @@ dev = [
     { name = "docker-squash" },
     { name = "environment-control" },
     { name = "filelock" },
-    { name = "huggingface-hub" },
     { name = "invoke" },
     { name = "jinja2" },
     { name = "litellm" },
@@ -7312,6 +7312,7 @@ requires-dist = [
     { name = "filelock", marker = "extra == 'examples'", specifier = ">=3.16.1" },
     { name = "geographiclib", specifier = "==2.1" },
     { name = "geopy", specifier = "==2.4.1" },
+    { name = "huggingface-hub", specifier = ">=0.34.4" },
     { name = "jinja2", marker = "extra == 'examples'", specifier = ">=3.1.6" },
     { name = "jsonpath-ng", specifier = "==1.7.0" },
     { name = "pint", specifier = "==0.25" },
@@ -7340,7 +7341,6 @@ dev = [
     { name = "docker-squash", specifier = ">=1.2.2" },
     { name = "environment-control", editable = "packages/environment_control" },
     { name = "filelock", specifier = ">=3.16.1" },
-    { name = "huggingface-hub", specifier = ">=0.34.4" },
     { name = "invoke", specifier = ">=2.2.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "litellm", specifier = ">=1.80.5" },
