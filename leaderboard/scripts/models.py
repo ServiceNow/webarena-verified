@@ -12,6 +12,7 @@ from webarena_verified.submission.models import (  # noqa: TC001
     SubmissionUid,
     UtcZ,
 )
+from webarena_verified.types.eval import EvalResultsSummary, EvaluationScores  # noqa: TC001
 from webarena_verified.types.leaderboard._validators import validate_http_url
 
 
@@ -33,86 +34,13 @@ class ScoreField(StrEnum):
     GITLAB_REDDIT = "gitlab_reddit"
 
 
-class OverallCounts(BaseModel):
-    """Aggregate task-level counts across all sites for one evaluation mode.
-
-    Produced by ``SubmissionEvaluator._build_counts`` as part of the
-    ``EvaluationSummaryCounts`` breakdown.  Tracks how many tasks succeeded,
-    failed, or errored, along with the expected total (so missing tasks can
-    be detected).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    total: int = Field(ge=0)
-    success_count: int = Field(ge=0)
-    failure_count: int = Field(ge=0)
-    error_count: int = Field(ge=0)
-    failed_or_error_count: int = Field(ge=0)
-    expected_total: int = Field(ge=0, default=0)
-    missing_count: int = Field(ge=0, default=0)
-
-
-class SiteCounts(BaseModel):
-    """Per-site task-level counts for one evaluation mode.
-
-    Same shape as ``OverallCounts`` but scoped to a single site key (e.g.
-    ``"shopping"``, ``"gitlab-reddit"``).  Collected in the ``per_site``
-    dict of ``EvaluationSummaryCounts``.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    total: int = Field(ge=0)
-    success_count: int = Field(ge=0)
-    failure_count: int = Field(ge=0)
-    error_count: int = Field(ge=0)
-    failed_or_error_count: int = Field(ge=0)
-    expected_total: int = Field(ge=0, default=0)
-    missing_count: int = Field(ge=0, default=0)
-
-
-class EvaluationSummaryCounts(BaseModel):
-    """Combined overall + per-site task counts for one evaluation run.
-
-    Wraps ``OverallCounts`` and a ``per_site`` mapping of ``SiteCounts``.
-    Embedded inside ``EvaluationSummaryPayload`` to give a complete
-    statistical picture of the evaluation before scores are derived.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    overall: OverallCounts
-    per_site: dict[str, SiteCounts]
-
-
-class EvaluationScores(BaseModel):
-    """Normalised success-rate scores (0.0-1.0) broken down by site.
-
-    Computed by ``SubmissionEvaluator._build_scores`` from raw task results.
-    The ``overall`` field is the aggregate across all tasks; remaining fields
-    are per-site ratios.  These scores are carried forward into
-    ``LeaderboardRow`` for ranking.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    overall: float = Field(ge=0.0, le=1.0)
-    shopping: float = Field(ge=0.0, le=1.0)
-    shopping_admin: float = Field(ge=0.0, le=1.0)
-    gitlab: float = Field(ge=0.0, le=1.0)
-    map: float = Field(ge=0.0, le=1.0)
-    reddit: float = Field(ge=0.0, le=1.0)
-    multisite: float = Field(ge=0.0, le=1.0)
-    gitlab_reddit: float = Field(ge=0.0, le=1.0)
-
-
 class EvaluationSummaryPayload(BaseModel):
     """Full evaluation output for one submission mode (full or hard).
 
-    Created by ``SubmissionEvaluator._build_summary`` after all tasks have
-    been evaluated.  Contains version/checksum metadata for reproducibility,
-    the raw ``summary`` counts, and the derived ``scores``.  Passed to
+    Created by ``SubmissionEvaluator.evaluate_submission`` after all tasks
+    have been evaluated via ``TasksEvalResults.create``. Contains
+    version/checksum metadata for reproducibility, the raw ``summary``
+    counts, and the derived ``scores``. Passed to
     ``LeaderboardBuilder.apply_submission_result`` to update the leaderboard.
     """
 
@@ -122,7 +50,7 @@ class EvaluationSummaryPayload(BaseModel):
     webarena_verified_version: str = Field(min_length=1)
     webarena_verified_evaluator_checksum: str = Field(min_length=1)
     webarena_verified_data_checksum: str = Field(min_length=1)
-    summary: EvaluationSummaryCounts
+    summary: EvalResultsSummary
     scores: EvaluationScores
 
 

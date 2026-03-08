@@ -4,7 +4,7 @@ from importlib.metadata import version
 from types import MappingProxyType
 from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict, model_serializer
+from pydantic import BaseModel, ConfigDict, Field, model_serializer
 
 from ..core.utils.checksum import compute_evaluator_checksum
 from .common import SerializableMappingProxyType
@@ -23,6 +23,8 @@ class SiteEvalResultsSummary(BaseModel):
     failure_count: int = 0
     error_count: int = 0
     failed_or_error_count: int = 0
+    expected_total: int = 0
+    missing_count: int = 0
     success_task_ids: list[int] = []
     failed_task_ids: list[int] = []
     error_task_ids: list[int] = []
@@ -36,6 +38,8 @@ class OverallEvalSummary(BaseModel):
     failure_count: int = 0
     error_count: int = 0
     failed_or_error_count: int = 0
+    expected_total: int = 0
+    missing_count: int = 0
 
 
 class EvalResultsSummary(BaseModel):
@@ -242,6 +246,21 @@ class TaskEvalResult(BaseModel):
         )
 
 
+class EvaluationScores(BaseModel):
+    """Per-site success-rate scores (0.0-1.0) for a batch evaluation."""
+
+    overall: float = Field(default=0.0, ge=0.0, le=1.0)
+    shopping: float = Field(default=0.0, ge=0.0, le=1.0)
+    shopping_admin: float = Field(default=0.0, ge=0.0, le=1.0)
+    gitlab: float = Field(default=0.0, ge=0.0, le=1.0)
+    map: float = Field(default=0.0, ge=0.0, le=1.0)
+    reddit: float = Field(default=0.0, ge=0.0, le=1.0)
+    multisite: float = Field(default=0.0, ge=0.0, le=1.0)
+    gitlab_reddit: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class TasksEvalResults(BaseModel):
     """Collection of evaluation results for multiple tasks."""
 
@@ -250,26 +269,94 @@ class TasksEvalResults(BaseModel):
     webarena_verified_evaluator_checksum: str = compute_evaluator_checksum()
     webarena_verified_data_checksum: str
     summary: EvalResultsSummary
+    scores: EvaluationScores | None = None
     task_results: tuple[TaskEvalResult, ...]
 
     model_config = ConfigDict(frozen=True)
 
     @classmethod
-    def create(cls, *, task_results: list[TaskEvalResult] | tuple[TaskEvalResult], data_checksum: str) -> Self:
+    def create(
+        cls,
+        *,
+        task_results: list[TaskEvalResult] | tuple[TaskEvalResult, ...],
+        data_checksum: str,
+        expected_tasks: list[WebArenaVerifiedTask] | tuple[WebArenaVerifiedTask, ...] | None = None,
+    ) -> Self:
         """Create TasksEvalResults with computed summary."""
-        timestamp = datetime.datetime.now(datetime.UTC).isoformat()
-        summary = cls._compute_summary(task_results)
+        timestamp = datetime.datetime.now(tz=datetime.UTC).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+        summary = cls._compute_summary(task_results, expected_tasks=expected_tasks)
+        scores = (
+            cls._compute_scores(task_results, expected_tasks=expected_tasks) if expected_tasks is not None else None
+        )
 
         return cls(
             timestamp=timestamp,
             summary=summary,
+            scores=scores,
             task_results=tuple(task_results),
             webarena_verified_data_checksum=data_checksum,
         )
 
     @staticmethod
+    def _compute_scores(
+        task_results: list[TaskEvalResult] | tuple[TaskEvalResult, ...],
+        expected_tasks: list[WebArenaVerifiedTask] | tuple[WebArenaVerifiedTask, ...],
+    ) -> EvaluationScores:
+        bucket_keys = (
+            "shopping",
+            "shopping_admin",
+            "gitlab",
+            "map",
+            "reddit",
+            "multisite",
+            "gitlab_reddit",
+        )
+
+        def tally_site_buckets(
+            items: list[TaskEvalResult]
+            | tuple[TaskEvalResult, ...]
+            | list[WebArenaVerifiedTask]
+            | tuple[WebArenaVerifiedTask, ...],
+        ) -> dict[str, int]:
+            buckets = dict.fromkeys(bucket_keys, 0)
+
+            for item in items:
+                site_values = {site.value for site in item.sites}
+
+                for site_name in ("shopping", "shopping_admin", "gitlab", "map", "reddit"):
+                    if site_name in site_values:
+                        buckets[site_name] += 1
+
+                if len(site_values) > 1:
+                    buckets["multisite"] += 1
+
+                if site_values == {"gitlab", "reddit"}:
+                    buckets["gitlab_reddit"] += 1
+
+            return buckets
+
+        successful_results = [result for result in task_results if result.status == EvalStatus.SUCCESS]
+        denominator_buckets = tally_site_buckets(expected_tasks)
+        numerator_buckets = tally_site_buckets(successful_results)
+
+        def compute_ratio(numerator: int, denominator: int) -> float:
+            return numerator / denominator if denominator > 0 else 0.0
+
+        return EvaluationScores(
+            overall=compute_ratio(len(successful_results), len(expected_tasks)),
+            shopping=compute_ratio(numerator_buckets["shopping"], denominator_buckets["shopping"]),
+            shopping_admin=compute_ratio(numerator_buckets["shopping_admin"], denominator_buckets["shopping_admin"]),
+            gitlab=compute_ratio(numerator_buckets["gitlab"], denominator_buckets["gitlab"]),
+            map=compute_ratio(numerator_buckets["map"], denominator_buckets["map"]),
+            reddit=compute_ratio(numerator_buckets["reddit"], denominator_buckets["reddit"]),
+            multisite=compute_ratio(numerator_buckets["multisite"], denominator_buckets["multisite"]),
+            gitlab_reddit=compute_ratio(numerator_buckets["gitlab_reddit"], denominator_buckets["gitlab_reddit"]),
+        )
+
+    @staticmethod
     def _compute_summary(
         task_results: list[TaskEvalResult] | tuple[TaskEvalResult, ...],
+        expected_tasks: list[WebArenaVerifiedTask] | tuple[WebArenaVerifiedTask, ...] | None = None,
     ) -> EvalResultsSummary:
         """Compute overall and per-site summary statistics from task results."""
         per_site: dict[str, SiteEvalResultsSummary] = {}
@@ -300,6 +387,22 @@ class TasksEvalResults(BaseModel):
             if result.status != EvalStatus.SUCCESS:
                 per_site[site_key].failed_or_error_count += 1
                 overall.failed_or_error_count += 1
+
+        if expected_tasks is not None:
+            expected_by_site: dict[str, int] = {}
+            for expected_task in expected_tasks:
+                expected_site_key = "-".join(sorted(site.value for site in expected_task.sites))
+                expected_by_site[expected_site_key] = expected_by_site.get(expected_site_key, 0) + 1
+
+                if expected_site_key not in per_site:
+                    per_site[expected_site_key] = SiteEvalResultsSummary()
+
+            overall.expected_total = len(expected_tasks)
+            overall.missing_count = max(overall.expected_total - overall.total, 0)
+
+            for site_key, expected_total in expected_by_site.items():
+                per_site[site_key].expected_total = expected_total
+                per_site[site_key].missing_count = max(expected_total - per_site[site_key].total, 0)
 
         return EvalResultsSummary(overall=overall, per_site=per_site)
 

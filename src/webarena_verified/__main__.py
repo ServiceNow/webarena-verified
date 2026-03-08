@@ -952,6 +952,7 @@ def eval_tasks(args: argparse.Namespace) -> int:
     # Print header and setup logging
     _print_batch_header(task_ids)
     log_file = output_dir / "eval_log.txt"
+    expected_tasks = [wa.get_task(task_id) for task_id in task_ids]
 
     # Evaluate each task
     results = []
@@ -1009,7 +1010,11 @@ def eval_tasks(args: argparse.Namespace) -> int:
 
     # Create TasksEvalResults and save to file
     data_checksum = compute_data_file_checksum(task_config.test_data_file)
-    tasks_eval_results = TasksEvalResults.create(task_results=results, data_checksum=data_checksum)
+    tasks_eval_results = TasksEvalResults.create(
+        task_results=results,
+        data_checksum=data_checksum,
+        expected_tasks=expected_tasks,
+    )
 
     # Save results to file (skip when task-ids is specified since it's a partial evaluation)
     if args.task_ids:
@@ -1026,55 +1031,6 @@ def eval_tasks(args: argparse.Namespace) -> int:
     if getattr(args, "write_evaluation_summary", False):
         summary_file = output_dir / "evaluation_summary.json"
         summary_payload = tasks_eval_results.model_dump(mode="json", exclude_none=True, exclude={"task_results"})
-        overall = tasks_eval_results.summary.overall
-
-        def score(numerator: int, denominator: int) -> float:
-            return 0.0 if denominator == 0 else numerator / denominator
-
-        by_site = tasks_eval_results.summary.per_site
-        single_site_totals = {
-            "shopping": 0,
-            "shopping_admin": 0,
-            "gitlab": 0,
-            "map": 0,
-            "reddit": 0,
-        }
-        single_site_successes = dict.fromkeys(single_site_totals, 0)
-        multisite_total = 0
-        multisite_success = 0
-        gitlab_reddit_total = 0
-        gitlab_reddit_success = 0
-
-        for site_key, site_summary in by_site.items():
-            split_sites = sorted(site_key.split("-"))
-            if len(split_sites) > 1:
-                multisite_total += site_summary.total
-                multisite_success += site_summary.success_count
-            if split_sites == ["gitlab", "reddit"]:
-                gitlab_reddit_total += site_summary.total
-                gitlab_reddit_success += site_summary.success_count
-            if len(split_sites) == 1 and split_sites[0] in single_site_totals:
-                site_name = split_sites[0]
-                single_site_totals[site_name] += site_summary.total
-                single_site_successes[site_name] += site_summary.success_count
-
-        summary_payload["summary"]["overall"]["expected_total"] = overall.total
-        summary_payload["summary"]["overall"]["missing_count"] = 0
-        overall_expected_total = summary_payload["summary"]["overall"]["expected_total"]
-        for site_key, site_summary in by_site.items():
-            summary_payload["summary"]["per_site"][site_key]["expected_total"] = site_summary.total
-            summary_payload["summary"]["per_site"][site_key]["missing_count"] = 0
-
-        summary_payload["scores"] = {
-            "overall": score(overall.success_count, overall_expected_total),
-            "shopping": score(single_site_successes["shopping"], single_site_totals["shopping"]),
-            "shopping_admin": score(single_site_successes["shopping_admin"], single_site_totals["shopping_admin"]),
-            "gitlab": score(single_site_successes["gitlab"], single_site_totals["gitlab"]),
-            "map": score(single_site_successes["map"], single_site_totals["map"]),
-            "reddit": score(single_site_successes["reddit"], single_site_totals["reddit"]),
-            "multisite": score(multisite_success, multisite_total),
-            "gitlab_reddit": score(gitlab_reddit_success, gitlab_reddit_total),
-        }
         summary_file.write_text(serialize_to_json(summary_payload, indent=2))
         logger.info(f"Wrote evaluation summary to {summary_file}")
 
