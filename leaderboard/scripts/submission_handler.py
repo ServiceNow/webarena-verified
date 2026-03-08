@@ -23,6 +23,19 @@ def _locate_submission_directory(
     submission_uid_override: str | None,
     backend: SubmissionDataBackend,
 ) -> Path:
+    """Resolve which submission directory a PR targets inside the HF snapshot.
+
+    A snapshot may contain multiple ``submissions/<uid>/`` folders. This
+    function picks the right one using three tiers:
+
+    1. **Explicit override** – use *submission_uid_override* directly.
+    2. **Single candidate** – if only one directory has the required files
+       (``submission.json``, ``manifest.json``, ``_internal.json``), use it.
+    3. **PR diff heuristic** – parse the PR diff to find which
+       ``submissions/<uid>/`` path was touched; use it if exactly one matches.
+
+    Raises ``ValueError`` when none of the above yields a unique directory.
+    """
     candidates: list[Path] = []
     for child in sorted(submissions_root.iterdir(), key=lambda item: item.name):
         if not child.is_dir():
