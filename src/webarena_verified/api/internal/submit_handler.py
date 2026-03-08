@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import uuid
 from pathlib import Path
-from typing import cast
+from typing import Any
 
 from huggingface_hub import CommitOperationAdd, HfApi
 from pydantic import ValidationError
@@ -16,7 +16,6 @@ from webarena_verified.types.leaderboard import (
     IntakeManifestFile,
     IntakePackagingSummary,
     IntakeSubmission,
-    SubmissionLeaderboard,
 )
 from webarena_verified.types.submit_result import SubmitResult
 
@@ -47,15 +46,12 @@ class SubmitHandler:
 
     def submit(
         self,
-        *,
-        name: str,
-        leaderboard: str,
-        reference: str,
-        version: str | None = None,
-        contact_info: str | None = None,
     ) -> SubmitResult:
         logger.info(f"Validating submission directory: {self.submission_dir}")
         task_dirs = self._validate_submission_dir()
+
+        logger.info("Loading submission metadata")
+        submission_metadata = self._load_submission_metadata()
 
         logger.info("Loading packaging summary")
         packaging_summary = self._load_packaging_summary()
@@ -69,13 +65,14 @@ class SubmitHandler:
             tasks_submitted = self._prepare_staging(
                 staging_dir=staging_dir,
                 task_dirs=task_dirs,
-                name=name,
-                leaderboard=leaderboard,
-                reference=reference,
+                submission_metadata=submission_metadata,
                 packaging_summary=packaging_summary,
-                version=version,
-                contact_info=contact_info,
             )
+
+            name = submission_metadata["name"]
+            leaderboard = submission_metadata["leaderboard"]
+            if name is None or leaderboard is None:
+                raise ValueError(f"{_SUBMISSION_FILE_NAME} must include non-empty 'name' and 'leaderboard'")
 
             logger.info("Uploading submission to HuggingFace")
             pr_url, pr_number = self._upload_to_hf(
@@ -104,6 +101,10 @@ class SubmitHandler:
         if not summary_path.exists() or not summary_path.is_file():
             raise ValueError(f"Missing required {_SUMMARY_FILE_NAME} in: {self.submission_dir}")
 
+        submission_path = self.submission_dir / _SUBMISSION_FILE_NAME
+        if not submission_path.exists() or not submission_path.is_file():
+            raise ValueError(f"Missing required {_SUBMISSION_FILE_NAME} in: {self.submission_dir}")
+
         task_dirs = self._collect_valid_task_dirs()
         if not task_dirs:
             raise ValueError(
@@ -129,6 +130,56 @@ class SubmitHandler:
         has_agent_response = (task_dir / _AGENT_RESPONSE_FILE).exists()
         has_network_har = (task_dir / _NETWORK_HAR_FILE).exists()
         return has_agent_response and has_network_har
+
+    def _load_submission_metadata(self) -> dict[str, str | None]:
+        submission_path = self.submission_dir / _SUBMISSION_FILE_NAME
+        try:
+            payload = json.loads(submission_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON in {_SUBMISSION_FILE_NAME}: {exc}") from exc
+
+        if not isinstance(payload, dict):
+            raise ValueError(f"{_SUBMISSION_FILE_NAME} must contain a JSON object")
+
+        required_fields = ("name", "leaderboard", "reference")
+        missing_fields = [field for field in required_fields if field not in payload]
+        if missing_fields:
+            raise ValueError(f"Missing required {_SUBMISSION_FILE_NAME} field(s): {', '.join(missing_fields)}")
+
+        for key in ("name", "leaderboard", "reference", "version", "contact_info"):
+            value = payload.get(key)
+            if isinstance(value, str) and value.strip().startswith("<EDIT:"):
+                raise ValueError(
+                    f"{_SUBMISSION_FILE_NAME} contains placeholder value for '{key}'. "
+                    "Please edit submission.json before submitting."
+                )
+
+        validation_payload: dict[str, Any] = {
+            "name": payload.get("name"),
+            "leaderboard": payload.get("leaderboard"),
+            "reference": payload.get("reference"),
+            "version": payload.get("version"),
+            "contact_info": payload.get("contact_info"),
+            "created_at_utc": self._now_utc_z(),
+            "packaging_summary": {
+                "tasks_packaged": 0,
+                "tasks_with_issues": 0,
+                "duplicate_tasks": 0,
+                "unknown_tasks": 0,
+                "missing_from_output": 0,
+            },
+        }
+        try:
+            validated = IntakeSubmission.model_validate(validation_payload)
+        except ValidationError as exc:
+            raise ValueError(f"Invalid submission metadata: {exc}") from exc
+        return {
+            "name": validated.name,
+            "leaderboard": validated.leaderboard.value,
+            "reference": validated.reference,
+            "version": validated.version,
+            "contact_info": validated.contact_info,
+        }
 
     def _load_packaging_summary(self) -> IntakePackagingSummary:
         summary_path = self.submission_dir / _SUMMARY_FILE_NAME
@@ -158,12 +209,8 @@ class SubmitHandler:
         *,
         staging_dir: Path,
         task_dirs: list[Path],
-        name: str,
-        leaderboard: str,
-        reference: str,
+        submission_metadata: dict[str, str | None],
         packaging_summary: IntakePackagingSummary,
-        version: str | None,
-        contact_info: str | None,
     ) -> int:
         tasks_root = staging_dir / _TASKS_DIR_NAME
         tasks_root.mkdir(parents=True, exist_ok=True)
@@ -172,25 +219,23 @@ class SubmitHandler:
             shutil.copytree(task_dir, tasks_root / task_dir.name)
 
         created_at_utc = self._now_utc_z()
-        submission_path = staging_dir / _SUBMISSION_FILE_NAME
-        try:
-            allowed_leaderboards = {item.value for item in SubmissionLeaderboard}
-            if leaderboard not in allowed_leaderboards:
-                raise ValueError(f"leaderboard must be one of: {', '.join(sorted(allowed_leaderboards))}")
+        source_submission_path = self.submission_dir / _SUBMISSION_FILE_NAME
+        staged_submission_path = staging_dir / _SUBMISSION_FILE_NAME
+        shutil.copy2(source_submission_path, staged_submission_path)
 
-            resolved_leaderboard = cast(SubmissionLeaderboard, leaderboard)
-            submission = IntakeSubmission(
-                name=name,
-                leaderboard=resolved_leaderboard,
-                reference=reference,
-                created_at_utc=created_at_utc,
-                packaging_summary=packaging_summary,
-                version=version,
-                contact_info=contact_info,
-            )
-        except (ValidationError, ValueError) as exc:
-            raise ValueError(f"Invalid submission metadata: {exc}") from exc
-        submission_path.write_text(submission.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        submission_payload = json.loads(staged_submission_path.read_text(encoding="utf-8"))
+        if not isinstance(submission_payload, dict):
+            raise ValueError(f"{_SUBMISSION_FILE_NAME} must contain a JSON object")
+
+        submission_payload["name"] = submission_metadata["name"]
+        submission_payload["leaderboard"] = submission_metadata["leaderboard"]
+        submission_payload["reference"] = submission_metadata["reference"]
+        submission_payload["version"] = submission_metadata["version"]
+        submission_payload["contact_info"] = submission_metadata["contact_info"]
+        submission_payload["created_at_utc"] = created_at_utc
+        submission_payload["packaging_summary"] = packaging_summary.model_dump(mode="json")
+        submission = IntakeSubmission.model_validate(submission_payload)
+        staged_submission_path.write_text(submission.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
         manifest_entries = self._build_manifest_entries(staging_dir)
         manifest = IntakeManifest(

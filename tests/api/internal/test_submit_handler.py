@@ -25,6 +25,18 @@ def submission_dir_fixture(tmp_path: Path) -> Path:
         }
     }
     (submission_dir / "summary.json").write_text(json.dumps(summary_payload), encoding="utf-8")
+    (submission_dir / "submission.json").write_text(
+        json.dumps(
+            {
+                "name": "TeamX/ModelY",
+                "leaderboard": "both",
+                "reference": "https://example.com/paper",
+                "version": "v1.0",
+                "contact_info": "team@example.com",
+            }
+        ),
+        encoding="utf-8",
+    )
 
     task_101 = submission_dir / "101"
     task_101.mkdir()
@@ -75,7 +87,7 @@ def mock_hf_api(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 def test_submit_validates_missing_dir(tmp_path: Path):
     handler = SubmitHandler(submission_dir=tmp_path / "does-not-exist", hf_repo="org/repo", hf_token="token")
     with pytest.raises(ValueError, match="does not exist"):
-        handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com")
+        handler.submit()
 
 
 def test_submit_validates_missing_summary(tmp_path: Path):
@@ -85,10 +97,38 @@ def test_submit_validates_missing_summary(tmp_path: Path):
     task_dir.mkdir()
     (task_dir / "agent_response.json").write_text("{}", encoding="utf-8")
     (task_dir / "network.har").write_text("{}", encoding="utf-8")
+    (submission_dir / "submission.json").write_text("{}", encoding="utf-8")
 
     handler = SubmitHandler(submission_dir=submission_dir, hf_repo="org/repo", hf_token="token")
     with pytest.raises(ValueError, match="summary.json"):
-        handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com")
+        handler.submit()
+
+
+def test_submit_validates_missing_submission_json(tmp_path: Path):
+    submission_dir = tmp_path / "submission"
+    submission_dir.mkdir()
+    (submission_dir / "summary.json").write_text(
+        json.dumps(
+            {
+                "packaging_summary": {
+                    "tasks_packaged": 1,
+                    "tasks_with_issues": 0,
+                    "duplicate_tasks": 0,
+                    "unknown_tasks": 0,
+                    "missing_from_output": 0,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    task_dir = submission_dir / "101"
+    task_dir.mkdir()
+    (task_dir / "agent_response.json").write_text("{}", encoding="utf-8")
+    (task_dir / "network.har").write_text("{}", encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="submission.json"):
+        handler.submit()
 
 
 def test_submit_validates_no_tasks(tmp_path: Path):
@@ -108,52 +148,77 @@ def test_submit_validates_no_tasks(tmp_path: Path):
         ),
         encoding="utf-8",
     )
+    (submission_dir / "submission.json").write_text(
+        json.dumps(
+            {
+                "name": "TeamX/ModelY",
+                "leaderboard": "both",
+                "reference": "https://example.com/paper",
+            }
+        ),
+        encoding="utf-8",
+    )
 
     handler = SubmitHandler(submission_dir=submission_dir, hf_repo="org/repo", hf_token="token")
     with pytest.raises(ValueError, match="No valid numeric task directories"):
-        handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com")
+        handler.submit()
 
 
 def test_submit_validates_name_format(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["name"] = "Invalid Name!"
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
     with pytest.raises(ValueError, match="name"):
-        handler.submit(name="Invalid Name!", leaderboard="both", reference="https://example.com")
+        handler.submit()
 
 
 def test_submit_validates_leaderboard_value(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["leaderboard"] = "invalid"
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
     with pytest.raises(ValueError, match="leaderboard"):
-        handler.submit(name="TeamX/ModelY", leaderboard="invalid", reference="https://example.com")
+        handler.submit()
 
 
 def test_submit_validates_reference_url(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["reference"] = "ftp://example.com"
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
     with pytest.raises(ValueError, match="reference"):
-        handler.submit(name="TeamX/ModelY", leaderboard="both", reference="ftp://example.com")
+        handler.submit()
 
 
 def test_submit_validates_contact_email(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["contact_info"] = "invalid-email"
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
     with pytest.raises(ValueError, match="contact_info"):
-        handler.submit(
-            name="TeamX/ModelY",
-            leaderboard="both",
-            reference="https://example.com",
-            contact_info="invalid-email",
-        )
+        handler.submit()
+
+
+def test_submit_validates_placeholder_values(submission_dir_fixture: Path):
+    payload = json.loads((submission_dir_fixture / "submission.json").read_text(encoding="utf-8"))
+    payload["leaderboard"] = "<EDIT: hard | full | both>"
+    (submission_dir_fixture / "submission.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
+    with pytest.raises(ValueError, match="placeholder value"):
+        handler.submit()
 
 
 def test_submit_generates_valid_submission_json(submission_dir_fixture: Path, mock_hf_api):
     _, _, captured = mock_hf_api
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
 
-    result = handler.submit(
-        name="TeamX/ModelY",
-        leaderboard="both",
-        reference="https://example.com/paper",
-        version="v1.0",
-        contact_info="team@example.com",
-    )
+    result = handler.submit()
 
     snapshot_dir = captured["snapshot_dir"]
     inbox_prefix = f"submissions/inbox/{result.submission_uid}"
@@ -172,7 +237,7 @@ def test_submit_generates_valid_manifest_json(submission_dir_fixture: Path, mock
     _, _, captured = mock_hf_api
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
 
-    result = handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com/paper")
+    result = handler.submit()
 
     snapshot_dir = captured["snapshot_dir"]
     inbox_prefix = f"submissions/inbox/{result.submission_uid}"
@@ -196,7 +261,7 @@ def test_submit_manifest_includes_submission_json(submission_dir_fixture: Path, 
     _, _, captured = mock_hf_api
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
 
-    result = handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com/paper")
+    result = handler.submit()
 
     snapshot_dir = captured["snapshot_dir"]
     inbox_prefix = f"submissions/inbox/{result.submission_uid}"
@@ -209,7 +274,7 @@ def test_submit_single_atomic_commit(submission_dir_fixture: Path, mock_hf_api):
     api_class, api_instance, captured = mock_hf_api
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
 
-    result = handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com/paper")
+    result = handler.submit()
 
     api_class.assert_called_once_with(token="token")
     api_instance.create_commit.assert_called_once()
@@ -230,7 +295,7 @@ def test_submit_single_atomic_commit(submission_dir_fixture: Path, mock_hf_api):
 
 def test_submit_returns_pr_url(submission_dir_fixture: Path, mock_hf_api):
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
-    result = handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com/paper")
+    result = handler.submit()
 
     assert result.pr_url == "https://huggingface.co/datasets/org/repo/discussions/42"
     assert result.pr_number == 42
@@ -247,13 +312,13 @@ def test_submit_hf_error_propagation(submission_dir_fixture: Path, monkeypatch: 
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
 
     with pytest.raises(RuntimeError, match="hf failed"):
-        handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com/paper")
+        handler.submit()
 
 
 def test_submit_success_flow(submission_dir_fixture: Path, mock_hf_api):
     _, _, _ = mock_hf_api
     handler = SubmitHandler(submission_dir=submission_dir_fixture, hf_repo="org/repo", hf_token="token")
 
-    result = handler.submit(name="TeamX/ModelY", leaderboard="both", reference="https://example.com/paper")
+    result = handler.submit()
 
     assert result.pr_number == 42

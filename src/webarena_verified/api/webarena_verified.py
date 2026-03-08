@@ -244,9 +244,9 @@ class WebArenaVerified:
     def create_submission(
         self,
         output_dirs: list[Path],
-        output_root: Path,
+        output_dir: Path,
         *,
-        custom_name: str | None = None,
+        force: bool = False,
         progress_callback: Callable[[int, int, int], None] | None = None,
     ) -> "SubmissionResult":
         """Create submission package from task outputs.
@@ -255,13 +255,13 @@ class WebArenaVerified:
 
         Args:
             output_dirs: List of output directories to scan
-            output_root: Root directory where submission will be created
-            custom_name: Optional custom name for submission package (auto-generates timestamp if None)
+            output_dir: Output directory where submission package will be created
+            force: Whether to overwrite output_dir if it already exists
             progress_callback: Optional callback for progress updates (current, total, task_id)
 
         Returns:
             SubmissionResult with comprehensive issue tracking:
-                - output_path: Final output path (with timestamp)
+                - output_path: Final output path
                 - tasks_packaged: List of task IDs successfully packaged
                 - missing_agent_response: Task IDs missing only agent_response.json
                 - missing_network_har: Task IDs missing only network.har
@@ -274,16 +274,15 @@ class WebArenaVerified:
                 - summary_file: Path to summary.json with detailed issue info
 
         Raises:
-            ValueError: If custom_name contains invalid characters
-            FileExistsError: If output path already exists
+            FileExistsError: If output path already exists and force is False
 
         Example:
             ```python
             wa = WebArenaVerified()
             result = wa.create_submission(
                 output_dirs=[Path("./run1"), Path("./run2")],
-                output_root=Path("./submissions"),
-                custom_name="experiment-001",  # Optional custom name
+                output_dir=Path("./my-submission"),
+                force=True,
             )
             print(f"Packaged {len(result.tasks_packaged)} tasks")
             print(f"Issues: {len(result.duplicate_task_ids)} duplicates")
@@ -292,19 +291,14 @@ class WebArenaVerified:
         """
         valid_task_ids = set(self._reader.task_id_map.keys())
         handler = SubmissionHandler(output_dirs, self._config, valid_task_ids)
-        return handler.create_submission(output_root, custom_name=custom_name, progress_callback=progress_callback)
+        return handler.create_submission(output_dir, force=force, progress_callback=progress_callback)
 
     def submit(
         self,
         submission_dir: Path,
         *,
-        name: str,
-        leaderboard: str,
-        reference: str,
         hf_repo: str | None = None,
         hf_token: str | None = None,
-        version: str | None = None,
-        contact_info: str | None = None,
     ) -> "SubmitResult":
         import os
 
@@ -313,13 +307,7 @@ class WebArenaVerified:
             "AmineHA/WebArena-Verified-Submissions-dev",
         )
         handler = SubmitHandler(submission_dir=submission_dir, hf_repo=resolved_repo, hf_token=hf_token)
-        return handler.submit(
-            name=name,
-            leaderboard=leaderboard,
-            reference=reference,
-            version=version,
-            contact_info=contact_info,
-        )
+        return handler.submit()
 
     @staticmethod
     def _load_config(config: Path | WebArenaVerifiedConfig | None = None) -> WebArenaVerifiedConfig:

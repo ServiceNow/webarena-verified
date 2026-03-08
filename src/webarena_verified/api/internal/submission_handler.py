@@ -1,7 +1,8 @@
 """Handler for submission package creation."""
 
 import datetime
-import re
+import hashlib
+import json
 import shutil
 import tempfile
 from collections.abc import Callable
@@ -11,6 +12,7 @@ from typing import Any
 from webarena_verified.core.utils import logger
 from webarena_verified.core.utils.trim_network_logs import trim_har_file
 from webarena_verified.types.config import WebArenaVerifiedConfig
+from webarena_verified.types.leaderboard import IntakeManifest, IntakeManifestFile
 from webarena_verified.types.submission import SubmissionResult
 from webarena_verified.types.submission_summary import (
     DuplicateTasks,
@@ -50,30 +52,24 @@ class SubmissionHandler:
         self.config = config
         self.valid_task_ids = valid_task_ids
 
-    @staticmethod
-    def _validate_custom_name(name: str) -> None:
-        """Validate custom submission name.
+    _SUBMISSION_PLACEHOLDERS = {
+        "name": "<EDIT: your model or team name, e.g. TeamX/ModelY>",
+        "leaderboard": "<EDIT: hard | full | both>",
+        "reference": "<EDIT: https://link-to-paper-or-model>",
+        "version": None,
+        "contact_info": None,
+    }
 
-        Args:
-            name: Custom name to validate
-
-        Raises:
-            ValueError: If name contains invalid characters or is empty
-        """
-        if not name or not name.strip():
-            raise ValueError("Submission name cannot be empty")
-
-        # Allow alphanumeric, hyphens, underscores only
-        if not re.match(r"^[a-zA-Z0-9_-]+$", name):
-            raise ValueError(
-                f"Invalid submission name '{name}'. Only alphanumeric characters, hyphens, and underscores are allowed."
-            )
+    _MANIFEST_FILE_NAME = "manifest.json"
+    _SUMMARY_FILE_NAME = "summary.json"
+    _SUBMISSION_FILE_NAME = "submission.json"
+    _MANIFEST_SCHEMA_VERSION = "1.0"
 
     def create_submission(
         self,
-        output_root: Path,
+        output_dir: Path,
         *,
-        custom_name: str | None = None,
+        force: bool = False,
         progress_callback: Callable[[int, int, int], None] | None = None,
     ) -> SubmissionResult:
         """Create submission package from task outputs.
@@ -81,61 +77,25 @@ class SubmissionHandler:
         Never fails - always creates a package with summary.json documenting issues.
 
         Args:
-            output_root: Root directory where submission will be created
-            custom_name: Optional custom name for the submission package (auto-generates timestamp if None)
+            output_dir: Output directory where submission will be created
+            force: Whether to overwrite output directory if it already exists
             progress_callback: Optional callback for progress updates (current, total, task_id)
 
         Returns:
             SubmissionResult with comprehensive issue tracking and summary_file path
 
         Raises:
-            ValueError: If custom_name contains invalid characters
-            FileExistsError: If output path already exists
+            FileExistsError: If output path already exists and force is False
         """
-        # Generate output path (custom or auto-generated with timestamp)
-        output_path = self._generate_output_path(output_root, custom_name)
+        if output_dir.exists():
+            if not force:
+                raise FileExistsError(
+                    f"Output path already exists: {output_dir}. Use --force to overwrite the existing directory."
+                )
+            shutil.rmtree(output_dir)
 
-        # Discover tasks using reader's task IDs as source of truth
         discovery_result = self._discover_task_outputs()
-
-        # Package tasks (never fails, creates summary.json)
-        return self._package_tasks(discovery_result, output_path, progress_callback)
-
-    def _generate_output_path(self, output_root: Path, custom_name: str | None = None) -> Path:
-        """Generate output path with custom or auto-generated name.
-
-        Args:
-            output_root: Root directory for output
-            custom_name: Optional custom name (if None, auto-generates timestamp)
-
-        Returns:
-            Full output path
-
-        Raises:
-            ValueError: If custom_name contains invalid characters
-            FileExistsError: If output path already exists
-        """
-        if custom_name:
-            name = custom_name
-
-            # Validate custom name
-            self._validate_custom_name(name)
-        else:
-            # Auto-generate timestamp-based name
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            name = f"webarena-verified-submission-{timestamp}"
-
-        # Construct full path
-        output_path = output_root / name
-
-        # Check for conflicts
-        if output_path.exists():
-            raise FileExistsError(
-                f"Output path already exists: {output_path}. "
-                "Please choose a different name or remove the existing file."
-            )
-
-        return output_path
+        return self._package_tasks(discovery_result, output_dir, progress_callback)
 
     def _discover_task_outputs(self) -> dict[str, Any]:
         """Discover task outputs and categorize them.
@@ -351,8 +311,22 @@ class SubmissionHandler:
                 invalid_har_files=invalid_har_files,
                 empty_agent_response=empty_agent_response,
             )
-            summary_file = tmp_path / "summary.json"
-            summary_file.write_text(summary_data.model_dump_json(indent=2))
+            summary_file = tmp_path / self._SUMMARY_FILE_NAME
+            summary_file.write_text(summary_data.model_dump_json(indent=2) + "\n", encoding="utf-8")
+            self._write_submission_placeholders(tmp_path)
+
+            manifest_entries = self._build_manifest_entries(tmp_path)
+            manifest = IntakeManifest(
+                schema_version=self._MANIFEST_SCHEMA_VERSION,
+                created_at_utc=datetime.datetime.now(tz=datetime.UTC)
+                .replace(microsecond=0)
+                .strftime("%Y-%m-%dT%H:%M:%SZ"),
+                files=manifest_entries,
+            )
+            (tmp_path / self._MANIFEST_FILE_NAME).write_text(
+                manifest.model_dump_json(indent=2) + "\n",
+                encoding="utf-8",
+            )
 
             output_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copytree(tmp_path, output_path)
@@ -371,3 +345,32 @@ class SubmissionHandler:
             missing_task_ids=discovery_result["missing_tasks"],
             summary_file=summary_file_path,
         )
+
+    def _write_submission_placeholders(self, output_dir: Path) -> None:
+        (output_dir / self._SUBMISSION_FILE_NAME).write_text(
+            json.dumps(self._SUBMISSION_PLACEHOLDERS, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def _build_manifest_entries(self, output_dir: Path) -> list[IntakeManifestFile]:
+        entries: list[IntakeManifestFile] = []
+        for path in sorted(output_dir.rglob("*")):
+            if not path.is_file() or path.name == self._MANIFEST_FILE_NAME:
+                continue
+            relative = path.relative_to(output_dir).as_posix()
+            entries.append(
+                IntakeManifestFile(
+                    path=relative,
+                    sha256=self._sha256(path),
+                    size_bytes=path.stat().st_size,
+                )
+            )
+        return entries
+
+    @staticmethod
+    def _sha256(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as file_obj:
+            for chunk in iter(lambda: file_obj.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
