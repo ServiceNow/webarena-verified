@@ -3,6 +3,13 @@ from pathlib import Path
 SITE_BUILD_WORKFLOW_PATH = Path(".github/workflows/leaderboard-site-build.yml")
 
 
+def test_site_build_workflow_is_pr_only() -> None:
+    workflow = SITE_BUILD_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    assert "pull_request:" in workflow
+    assert "push:" not in workflow
+
+
 def test_site_build_workflow_sets_branch_hosted_manifest_default() -> None:
     workflow = SITE_BUILD_WORKFLOW_PATH.read_text(encoding="utf-8")
 

@@ -1,9 +1,7 @@
 name: Leaderboard Site Build
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
     paths:
       - "leaderboard/site/**"
       - ".github/workflows/leaderboard-site-build.yml"

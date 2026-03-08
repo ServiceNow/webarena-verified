@@ -1,7 +1,7 @@
 from pathlib import Path
 
 HF_INGEST_WORKFLOW_PATH = Path(".github/workflows/leaderboard-hf-ingest.yml")
-DOCS_WORKFLOW_PATH = Path(".github/workflows/dev-docs-publish.yml")
+DEPLOY_SITE_WORKFLOW_PATH = Path(".github/workflows/deploy-site.yml")
 
 
 def _read(path: Path) -> str:
@@ -21,11 +21,31 @@ def test_hf_ingest_workflow_is_schedule_only() -> None:
     assert "python - <<'PY'" not in workflow
 
 
-def test_docs_publish_trigger_is_independent_from_leaderboard_data() -> None:
-    workflow = _read(DOCS_WORKFLOW_PATH)
+def test_deploy_site_workflow_triggers_on_docs_and_leaderboard_changes() -> None:
+    workflow = _read(DEPLOY_SITE_WORKFLOW_PATH)
 
-    assert 'group: "pages"' in workflow
     assert '- "docs/**"' in workflow
     assert '- "mkdocs.yml"' in workflow
-    assert "leaderboard_manifest.json" not in workflow
-    assert '"submissions/**"' not in workflow
+    assert '- "leaderboard/site/**"' in workflow
+    assert 'group: "pages"' in workflow
+
+
+def test_deploy_site_workflow_builds_docs_and_leaderboard() -> None:
+    workflow = _read(DEPLOY_SITE_WORKFLOW_PATH)
+
+    # Docs: mike deploy without --push (worktree handles the push)
+    assert "mike deploy" in workflow
+    assert "mike deploy --push" not in workflow
+
+    # Leaderboard: npm build + manifest resolution
+    assert "npm run build" in workflow
+    assert "PUBLIC_LEADERBOARD_MANIFEST_URL" in workflow
+    assert "dev.leaderboard.site-resolve-manifest-url" in workflow
+
+
+def test_deploy_site_workflow_uses_worktree_inject() -> None:
+    workflow = _read(DEPLOY_SITE_WORKFLOW_PATH)
+
+    assert "git worktree add" in workflow
+    assert "gh-pages" in workflow
+    assert "cp -r leaderboard/site/dist" in workflow
