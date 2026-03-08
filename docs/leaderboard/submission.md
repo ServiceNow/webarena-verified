@@ -20,12 +20,14 @@ You can submit partial coverage. Missing or invalid tasks are tracked in the pac
 ```bash
 uvx webarena-verified create-submission-pkg \
   --run-output-dir ./output \
-  --output ./submissions
+  --output ./my-submission
 ```
 
 If you prefer, you can run the same CLI through a local install, `uv run`, or Docker.
 
-Expected result: a folder like `./submissions/webarena-verified-submission-YYYYMMDD_HHMMSS/` with task folders and `summary.json`.
+The `--output` path is the submission package directory itself. If it already exists, the command will fail unless you pass `--force` to overwrite it.
+
+Expected result: a `./my-submission/` folder containing task folders, `summary.json`, `submission.json` (with placeholder values), and `manifest.json`.
 
 ## Step 2 - Review `summary.json`
 
@@ -44,20 +46,39 @@ Common issue categories:
 !!! tip
     Fix issues before submitting when possible. Higher-quality packages reduce ingestion failures and improve evaluation coverage.
 
-## Step 3 - Submit To Leaderboard
+## Step 3 - Edit `submission.json`
+
+Open `submission.json` and replace the placeholder values with your submission details:
+
+```json
+{
+  "name": "TeamX/ModelY",
+  "leaderboard": "both",
+  "reference": "https://example.com/paper",
+  "version": null,
+  "contact_info": null
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | Yes | Model or team name (e.g. `TeamX/ModelY`) |
+| `leaderboard` | Yes | Target leaderboard: `hard`, `full`, or `both` |
+| `reference` | Yes | HTTP(S) URL to paper or model reference |
+| `version` | No | Model version identifier |
+| `contact_info` | No | Contact email address |
+
+## Step 4 - Submit To Leaderboard
 
 ```bash
 uvx webarena-verified submit \
-  --submission-dir ./submissions/my-submission \
-  --name "TeamX/ModelY" \
-  --leaderboard both \
-  --reference "https://example.com/paper"
+  --submission-dir ./my-submission
 ```
 
 What this command does:
 
-1. Validates the package.
-2. Generates `submission.json` and `manifest.json`.
+1. Validates the package and reads your `submission.json`.
+2. Regenerates `manifest.json` for integrity.
 3. Uploads the payload to HuggingFace and creates a dataset PR.
 
 Expected output includes the HuggingFace PR URL, for example:
