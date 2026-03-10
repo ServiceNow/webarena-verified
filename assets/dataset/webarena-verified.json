@@ -6618,7 +6618,7 @@
       },
       {
         "evaluator": "NetworkEventEvaluator",
-        "expected": {"url": "__SHOPPING__/electronics/headphones.html"}
+        "expected": {"url": ["__SHOPPING__/electronics/headphones.html", "__SHOPPING__/electronics.html?cat=60"]}
       }
     ],
     "revision": 2
@@ -6639,7 +6639,7 @@
       },
       {
         "evaluator": "NetworkEventEvaluator",
-        "expected": {"url": "__SHOPPING__/clothing-shoes-jewelry/men/shoes.html"}
+        "expected": {"url": ["__SHOPPING__/clothing-shoes-jewelry/men/shoes.html", "__SHOPPING__/clothing-shoes-jewelry.html?cat=145"]}
       }
     ],
     "revision": 2
@@ -6660,7 +6660,7 @@
       },
       {
         "evaluator": "NetworkEventEvaluator",
-        "expected": {"url": "__SHOPPING__/clothing-shoes-jewelry/women/clothing.html"}
+        "expected": {"url": ["__SHOPPING__/clothing-shoes-jewelry/women/clothing.html", "__SHOPPING__/clothing-shoes-jewelry.html?cat=143"]}
       }
     ],
     "revision": 2
@@ -6682,7 +6682,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/office-products/office-furniture-lighting/cabinets-racks-shelves.html"
+          "url": ["__SHOPPING__/office-products/office-furniture-lighting/cabinets-racks-shelves.html", "__SHOPPING__/office-products.html?cat=187"]
         }
       }
     ],
@@ -6872,7 +6872,7 @@
         "evaluator": "NetworkEventEvaluator",
         "ignored_query_params_patterns": ["^(?!price$).+$"],
         "expected": {
-          "url": "__SHOPPING__/clothing-shoes-jewelry/women/shoes.html",
+          "url": ["__SHOPPING__/clothing-shoes-jewelry/women/shoes.html", "__SHOPPING__/clothing-shoes-jewelry.html?cat=144"],
           "query_params": { "price": ["0-25"] }
         }
       }
@@ -6896,7 +6896,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/clothing-shoes-jewelry/men/shoes.html",
+          "url": ["__SHOPPING__/clothing-shoes-jewelry/men/shoes.html", "__SHOPPING__/clothing-shoes-jewelry.html?cat=145"],
           "query_params": { "price": ["0-30"] }
         }
       }
@@ -6920,7 +6920,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/beauty-personal-care/makeup/makeup-remover.html",
+          "url": ["__SHOPPING__/beauty-personal-care/makeup/makeup-remover.html", "__SHOPPING__/beauty-personal-care.html?cat=140"],
           "query_params": { "price": ["0-46.99"] }
         }
       }
@@ -6944,7 +6944,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/beauty-personal-care/oral-care/children-s-dental-care.html",
+          "url": ["__SHOPPING__/beauty-personal-care/oral-care/children-s-dental-care.html", "__SHOPPING__/beauty-personal-care.html?cat=116"],
           "query_params": { "price": ["0-78"] }
         }
       }
@@ -6968,7 +6968,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/home-kitchen/furniture/accent-furniture.html",
+          "url": ["__SHOPPING__/home-kitchen/furniture/accent-furniture.html", "__SHOPPING__/home-kitchen.html?cat=157"],
           "query_params": { "price": ["0-199"] }
         }
       }
@@ -8886,7 +8886,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/video-games/playstation-4/accessories.html",
+          "url": ["__SHOPPING__/video-games/playstation-4/accessories.html", "__SHOPPING__/video-games.html?cat=236"],
           "query_params": { "product_list_order": ["price"] }
         }
       }
@@ -8910,7 +8910,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/health-household/diet-sports-nutrition/nutrition-bars-drinks.html",
+          "url": ["__SHOPPING__/health-household/diet-sports-nutrition/nutrition-bars-drinks.html", "__SHOPPING__/health-household.html?cat=192"],
           "query_params": { "product_list_order": ["price"] }
         }
       }
@@ -8934,7 +8934,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/clothing-shoes-jewelry/sport-specific-clothing/competitive-swimwear.html",
+          "url": ["__SHOPPING__/clothing-shoes-jewelry/sport-specific-clothing/competitive-swimwear.html", "__SHOPPING__/clothing-shoes-jewelry.html?cat=149"],
           "query_params": { "product_list_order": ["price"] }
         }
       }
@@ -8958,7 +8958,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/home-kitchen/furniture/living-room-furniture.html",
+          "url": ["__SHOPPING__/home-kitchen/furniture/living-room-furniture.html", "__SHOPPING__/home-kitchen.html?cat=154"],
           "query_params": { "product_list_order": ["price"], "product_list_dir": ["desc"] }
         }
       }
@@ -8982,7 +8982,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "expected": {
-          "url": "__SHOPPING__/home-kitchen/bedding/kids-bedding.html",
+          "url": ["__SHOPPING__/home-kitchen/bedding/kids-bedding.html", "__SHOPPING__/home-kitchen.html?cat=155"],
           "query_params": { "product_list_dir": ["desc"] }
         }
       }
