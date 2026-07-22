@@ -21374,7 +21374,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "ignored_query_params_patterns": [".*"],
-        "expected": {"url": "^.*/route/v1/.*/-75.1718916,39.9011873;-79.9427192,40.4441897.*$"}
+        "expected": {"url": "^.*/route/v1/.*/-79.9427192,40.4441897;-75.1718916,39.9011873.*$"}
       }
     ],
     "revision": 2
@@ -21400,7 +21400,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "ignored_query_params_patterns": [".*"],
-        "expected": {"url": "^.*/route/v1/.*/-75.1712951,39.9042046;-79.9427192,40.4441897.*$"}
+        "expected": {"url": "^.*/route/v1/.*/-79.9427192,40.4441897;-75.1712951,39.9042046.*$"}
       }
     ],
     "revision": 2
@@ -21426,7 +21426,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "ignored_query_params_patterns": [".*"],
-        "expected": {"url": "^.*/route/v1/.*/-73.9265212,40.8295828;-79.9427192,40.4441897.*$"}
+        "expected": {"url": "^.*/route/v1/.*/-79.9427192,40.4441897;-73.9265212,40.8295828.*$"}
       }
     ],
     "revision": 2
@@ -21452,7 +21452,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "ignored_query_params_patterns": [".*"],
-        "expected": {"url": "^.*/route/v1/.*/-73.9935443,40.7505085;-79.9427192,40.4441897.*$"}
+        "expected": {"url": "^.*/route/v1/.*/-79.9427192,40.4441897;-73.9935443,40.7505085.*$"}
       }
     ],
     "revision": 2
@@ -21478,7 +21478,7 @@
       {
         "evaluator": "NetworkEventEvaluator",
         "ignored_query_params_patterns": [".*"],
-        "expected": {"url": "^.*/route/v1/.*/-71.0621475,42.3662922;-79.9427192,40.4441897.*$"}
+        "expected": {"url": "^.*/route/v1/.*/-79.9427192,40.4441897;-71.0621475,42.3662922.*$"}
       }
     ],
     "revision": 2

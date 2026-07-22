@@ -112,6 +112,15 @@ def test_eval_config(task_id: int, dataset_by_task_id: dict[int, dict[str, Any]]
             )
 
 
+@pytest.mark.parametrize("task_id", range(737, 742))
+def test_cmu_route_tasks_start_at_cmu(task_id: int, dataset_by_task_id: dict[int, dict[str, Any]]) -> None:
+    """OSRM route coordinates must follow the origin-to-destination order in the intent."""
+    task = dataset_by_task_id[task_id]
+    network_eval = next(evaluation for evaluation in task["eval"] if evaluation["evaluator"] == "NetworkEventEvaluator")
+
+    assert "/-79.9427192,40.4441897;" in network_eval["expected"]["url"]
+
+
 def test_intent_template_consistency(
     intent_template_id: int,
     tasks_by_intent_template_id: dict[int, list[dict[str, Any]]],
