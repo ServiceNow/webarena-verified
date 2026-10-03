@@ -142,6 +142,13 @@ class AgentResponseEvaluator(BaseEvaluator[AgentResponseEvaluatorCfg]):
         retrieved_data_raw = (
             (retrieved_data_raw,) if not isinstance(retrieved_data_raw, (list, tuple)) else tuple(retrieved_data_raw)
         )
+        if config.results_schema.get("type") == "null":
+            if strict:
+                raise ValueError("Null results schema expects no retrieved_data")
+            # Preserve unexpected actual data so comparison reports a mismatch.
+            # A null-only schema has no array item type to normalize against.
+            return retrieved_data_raw
+
         _derender_url_fct = partial(context.config.derender_url, sites=context.task.sites, strict=strict)
         # TODO: Maybe call normalize array directly here
         return self.value_normalizer.normalize_array(
