@@ -1,9 +1,13 @@
 """Markdown string data type for normalized comparison."""
 
+import contextlib
 import re
 from typing import Any
 
 from .base import NormalizedType
+
+# Typographic quotes and apostrophes (U+2018, U+2019, U+201C, U+201D) and their ASCII forms
+_TYPOGRAPHIC_QUOTES = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"'})
 
 
 class MarkdownString(NormalizedType[str]):
@@ -38,9 +42,17 @@ class MarkdownString(NormalizedType[str]):
         - Case sensitivity
         - Special characters
 
-        We only strip leading/trailing whitespace.
+        We only derender site URLs (as the base class does), fold typographic quotes and apostrophes
+        to ASCII, and strip leading/trailing whitespace.
         """
-        return s.strip()
+        # Derender site URLs (best effort), so a link written with the site's address matches
+        # an expected link written with its template (e.g. __REDDIT__/f/DIY/...)
+        if self.derender_url_fct is not None and "http" in s:
+            with contextlib.suppress(Exception):
+                s = self.derender_url_fct(s, strict=False)
+
+        # Fold typographic quotes and apostrophes (a site may render "Won't" with U+2019)
+        return s.translate(_TYPOGRAPHIC_QUOTES).strip()
 
     def _type_normalize(self, value: Any) -> str:
         """Normalize markdown string for comparison.

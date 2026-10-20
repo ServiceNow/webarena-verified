@@ -1,8 +1,12 @@
 """Unit tests for MarkdownString data type."""
 
+from functools import partial
+
 import pytest
 
 from webarena_verified.core.evaluation.data_types import MarkdownString
+from webarena_verified.types.config import WebArenaVerifiedConfig
+from webarena_verified.types.task import WebArenaSite
 
 # ===== Basic Functionality Tests =====
 
@@ -221,6 +225,87 @@ def test_real_world_example():
     # Should normalize to the same value
     assert markdown1 == markdown2
     assert markdown1.normalized == markdown2.normalized
+
+
+@pytest.fixture
+def derender_url_fct():
+    """Derender function as NetworkEventEvaluator passes it for a GitLab and Reddit task."""
+    config = WebArenaVerifiedConfig.model_validate(
+        {"environments": {"gitlab": {"urls": ["http://localhost:8023"]}, "reddit": {"urls": ["http://localhost:9999"]}}}
+    )
+    return partial(config.derender_url, sites=(WebArenaSite.GITLAB, WebArenaSite.REDDIT))
+
+
+def test_site_urls_derendered(derender_url_fct):
+    """Test that links with the site's address match expected links with its template (task 564)."""
+    # Expected README content of task 564
+    expected = (
+        "# live_a_life\n\n## Most Active DIY Threads\n\n"
+        "- [Separate glued plastic parts](__REDDIT__/f/DIY/118903/separate-glued-plastic-parts)\n"
+        "- [How would you fix this dryer vent mess?](__REDDIT__/f/DIY/118923/how-would-you-fix-this-dryer-vent-mess)\n"
+        "- [Basement Bulkhead/Soffit + Wall Framing](__REDDIT__/f/DIY/118935/basement-bulkhead-soffit-wall-framing)"
+    )
+    # README content committed by an agent run on task 564
+    actual = (
+        "# live_a_life\n\n## Most Active DIY Threads\n\n"
+        "- [Separate glued plastic parts](http://localhost:9999/f/DIY/118903/separate-glued-plastic-parts)\n"
+        "- [How would you fix this dryer vent mess?](http://localhost:9999/f/DIY/118923/how-would-you-fix-this-dryer-vent-mess)\n"
+        "- [Basement Bulkhead/Soffit + Wall Framing](http://localhost:9999/f/DIY/118935/basement-bulkhead-soffit-wall-framing)\n"
+    )
+
+    assert MarkdownString(expected, derender_url_fct=derender_url_fct) == MarkdownString(
+        actual, derender_url_fct=derender_url_fct
+    )
+
+
+@pytest.mark.parametrize(
+    ("value1", "value2"),
+    [
+        ("Won\u2019t", "Won't"),
+        ("\u2018single\u2019", "'single'"),
+        ("\u201cdouble\u201d", '"double"'),
+    ],
+)
+def test_typographic_quotes_folded(value1, value2):
+    """Test that typographic quotes and apostrophes match their ASCII forms."""
+    md1 = MarkdownString(value1)
+    md2 = MarkdownString(value2)
+    assert md1 == md2
+    assert md2 == md1  # Symmetric
+
+
+def test_site_rendered_title_matches(derender_url_fct):
+    """Test a README committed for task 562 against its expected content.
+
+    The forum renders the fourth title with a typographic apostrophe and the README
+    holds the site's address; the expected content writes "Won't" and __REDDIT__.
+    """
+    # Expected README content of task 562
+    expected = (
+        "# Awesome_DIY_ideas\n\n## Most Active DIY Threads\n\n"
+        "- [Separate glued plastic parts](__REDDIT__/f/DIY/118903/separate-glued-plastic-parts)\n"
+        "- [How would you fix this dryer vent mess?](__REDDIT__/f/DIY/118923/how-would-you-fix-this-dryer-vent-mess)\n"
+        "- [Basement Bulkhead/Soffit + Wall Framing](__REDDIT__/f/DIY/118935/basement-bulkhead-soffit-wall-framing)\n"
+        "- [GE Water Heater Pilot Light Won't Stay Lit](__REDDIT__/f/DIY/118904/ge-water-heater-pilot-light-won-t-stay-lit)\n"
+        "- [Attempting to move a wall outlet in my basement a few inches to the left and am totally stumped. "
+        "Any help GREATLY appreciated!!](__REDDIT__/f/DIY/118960/attempting-to-move-a-wall-outlet-in-my-basement-a-few-inches)\n"
+        "- [AFCI Outlet Question](__REDDIT__/f/DIY/118931/afci-outlet-question)"
+    )
+    # README content committed by an agent run on task 562
+    actual = (
+        "# Awesome_DIY_ideas\n\n## Most Active DIY Threads\n\n"
+        "- [Separate glued plastic parts](http://localhost:9999/f/DIY/118903/separate-glued-plastic-parts)\n"
+        "- [How would you fix this dryer vent mess?](http://localhost:9999/f/DIY/118923/how-would-you-fix-this-dryer-vent-mess)\n"
+        "- [Basement Bulkhead/Soffit + Wall Framing](http://localhost:9999/f/DIY/118935/basement-bulkhead-soffit-wall-framing)\n"
+        "- [GE Water Heater Pilot Light Won\u2019t Stay Lit](http://localhost:9999/f/DIY/118904/ge-water-heater-pilot-light-won-t-stay-lit)\n"
+        "- [Attempting to move a wall outlet in my basement a few inches to the left and am totally stumped. "
+        "Any help GREATLY appreciated!!](http://localhost:9999/f/DIY/118960/attempting-to-move-a-wall-outlet-in-my-basement-a-few-inches)\n"
+        "- [AFCI Outlet Question](http://localhost:9999/f/DIY/118931/afci-outlet-question)\n"
+    )
+
+    assert MarkdownString(expected, derender_url_fct=derender_url_fct) == MarkdownString(
+        actual, derender_url_fct=derender_url_fct
+    )
 
 
 # ===== Alternatives Support Tests =====
