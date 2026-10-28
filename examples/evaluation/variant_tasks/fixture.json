@@ -1,0 +1,43 @@
+{
+  "name": "Variant retrieval demonstration",
+  "query": "WAV-VARIANT-DEMO",
+  "currency": "USD",
+  "listings": [
+    {
+      "sku": "WAV-VARIANT-DEMO-ALDER",
+      "seller": "Alder",
+      "advertised_price_cents": 800,
+      "variants": [
+        {"size": "S", "price_cents": 800, "in_stock": true},
+        {"size": "M", "price_cents": 2000, "in_stock": true}
+      ]
+    },
+    {
+      "sku": "WAV-VARIANT-DEMO-BIRCH",
+      "seller": "Birch",
+      "advertised_price_cents": 900,
+      "variants": [
+        {"size": "S", "price_cents": 900, "in_stock": true},
+        {"size": "M", "price_cents": 1200, "in_stock": false}
+      ]
+    },
+    {
+      "sku": "WAV-VARIANT-DEMO-CEDAR",
+      "seller": "Cedar",
+      "advertised_price_cents": 1100,
+      "variants": [
+        {"size": "S", "price_cents": 1100, "in_stock": true},
+        {"size": "M", "price_cents": 1400, "in_stock": true}
+      ]
+    },
+    {
+      "sku": "WAV-VARIANT-DEMO-DUNE",
+      "seller": "Dune",
+      "advertised_price_cents": 1000,
+      "variants": [
+        {"size": "S", "price_cents": 1000, "in_stock": true},
+        {"size": "L", "price_cents": 1300, "in_stock": true}
+      ]
+    }
+  ]
+}
